@@ -140,7 +140,9 @@ std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
   return separated_bins;
 }
 
-std::vector plotMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+
+  std::vector<TF1*> allfits;
 
   TString mname, dname, cname;
   mname.Form("mc_%i_",bin);
@@ -158,7 +160,10 @@ std::vector plotMassBins(TString channel, Int_t bin, std::vector<Double_t> masse
 
   graph_mc->SetLineWidth(0);
   graph_mc->SetMarkerStyle(20);
-  //graph_mc->Fit("pol2");
+  graph_mc->Fit("pol2");
+
+  TF1 * mcfit = graph_mc->GetFunction("pol2");
+  allfits.push_back(mcfit);
 
   graph_mc->Draw("A P E1");
   graph_mc->Write(mname+channel);
@@ -173,13 +178,17 @@ std::vector plotMassBins(TString channel, Int_t bin, std::vector<Double_t> masse
   graph->SetLineWidth(0);
   graph->SetMarkerColor(kRed);
   graph->SetMarkerStyle(20);
-  //graph->Fit("pol2");
+  graph->Fit("pol2");
+
+  TF1 * datfit = graph->GetFunction("pol2");
+  allfits.push_back(datfit);
 
   graph->Draw("same P E1");
   graph->Write(dname+channel);
 
   c->Write();
-  
+
+  return allfits;
 }
 
 TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
@@ -206,15 +215,16 @@ TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH
   chisquare->Draw("AP");
   chisquare->Write(name+channel);
 
-  return = chisquare->GetFunction("pol2");
+  return chisquare->GetFunction("pol2");
 }
 
-Double_t getTopMass(TF1 * chi2fit) {
-
-  return mt = fit->GetMinimumX(0,330);
+Double_t getTopMass(TF1 * fit) {
+  
+  // For now, just return the function's minimum:
+  return fit->GetMinimumX(0,330);
 }
 
-void extract_mass(TString channel, std::vector<TString> systematics) {
+Double_t extract_mass(TString channel, std::vector<TString> systematics) {
 
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
@@ -224,6 +234,11 @@ void extract_mass(TString channel, std::vector<TString> systematics) {
     // Input files:
     TString filename = "preunfolded/" + (*sys) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
     TFile * datafile = new TFile(filename);
+
+    if(!datafile->IsOpen()) {
+      std::cout << "Failed to access data file " << filename << std::endl;
+      return 0.;
+    }
 
     Double_t topmass = nominalmass;
     if(sys->Contains("UP")) {
@@ -254,16 +269,18 @@ void extract_mass(TString channel, std::vector<TString> systematics) {
   TFile output("massfit_bins.root","update");
   gDirectory->pwd();
 
+  std::vector<std::vector<TF1*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
-    plotMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin));
+    fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }
 
   TF1 * fit = getChiSquare(channel,masses,data_hists,mc_hists);
-  std::cout << channel << ": minimum Chi2 @ m_t=" << getTopMass(fit) << std::endl;
+  Double_t extracted_mass = getTopMass(fit);
 
   //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
   std::cout << "Done." << std::endl;
+  return extracted_mass;
 }
 
 
@@ -285,7 +302,8 @@ void extract() {
   systematics.push_back("MASS_UP_6GEV");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extract_mass(*ch,systematics);
+    Double_t topmass = extract_mass(*ch,systematics);
+    std::cout << *ch << ": minimum Chi2 @ m_t=" << topmass << std::endl;
   }
 
 }
