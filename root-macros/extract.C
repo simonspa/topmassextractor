@@ -1,0 +1,291 @@
+#include <iostream>
+#include <vector>
+#include <TH1D.h>
+#include <TFile.h>
+#include <TF1.h>
+#include <TString.h>
+#include <TCanvas.h>
+#include <TGraphErrors.h>
+
+Double_t nominalmass = 172.5;
+
+template<class t>
+bool isApprox(t a, t b, double eps = 0.01) {
+    if (fabs(a - b) < eps)
+        return true;
+    else
+        return false;
+}
+
+/**
+ * following numbers and mass dependence provided in NNLO paper arXiv:1303.6254
+ * errors are NOT returned in % (so e.g. 0.026)
+ */
+float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0){
+    /*
+     * all numbers following arxiv 1303.6254
+     *
+     */
+    float mref=173.3;
+    float referencexsec=0;
+    float deltam=topmass-mref;
+
+
+    float a1=0,a2=0;
+
+    if(isApprox(energy,8.f,0.01)){
+        a1=-1.1125;
+        a2=0.070778;
+        referencexsec=245.8;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.026;
+    }
+    else if(isApprox(energy,7.f,0.01)){
+        a1=-1.24243;
+        a2=0.890776;
+        referencexsec=172.0;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.028;
+    }
+
+    float reldm=mref/(mref+deltam);
+
+    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
+
+    return out;
+}
+
+TH1D * getSignalHistogram(Double_t mass, TFile * histos) {
+
+  // Histogram containing data:
+  TH1D * aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
+  // Histogram containing reconstructed events:
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+  // Histograms containing the background:
+  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
+  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
+
+  Int_t nbins = aDataHist->GetNbinsX();
+  std::cout << "Data hist has " << nbins << " bins." << std::endl;
+
+  // Iterate over all bins:
+  for(Int_t bin = 1; bin <= nbins; bin++) {
+    // Calculate the signal fraction from reconstructed events and TT background:
+    Double_t fsignal = aRecHist->GetBinContent(bin)/(aRecHist->GetBinContent(bin)+aTtBgrHist->GetBinContent(bin));
+    // Correct the TTBgr for different TTBar Cross sections (mass dependent):
+    Double_t corr_ttbgr = aTtBgrHist->GetBinContent(bin)*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+
+    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+    Double_t signal = (aDataHist->GetBinContent(bin) - (aBgrHist->GetBinContent(bin) - corr_ttbgr))*fsignal;
+    std::cout << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " fsig=" << fsignal << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin) << std::endl;
+    
+    // Write background subtrated signal:
+    aDataHist->SetBinContent(bin,signal);
+  }
+
+  // Return signal-only histogram:
+  return aDataHist;
+}
+
+TH1D * getSimulationHistogram(Double_t mass, TFile * histos) {
+
+  // Histogram containing reconstructed events:
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+
+  Int_t nbins = aRecHist->GetNbinsX();
+  std::cout << "Reco hist has " << nbins << " bins." << std::endl;
+
+  // Iterate over all bins:
+  for(Int_t bin = 1; bin <= nbins; bin++) {
+    // Correct the Reco events for different TTBar Cross sections (mass dependent):
+    Double_t corr_reco = aRecHist->GetBinContent(bin)*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+    std::cout << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco << std::endl;
+    
+    // Write corrected Reco:
+    aRecHist->SetBinContent(bin,corr_reco);
+  }
+
+  // Return reco histogram:
+  return aRecHist;
+}
+
+
+std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
+
+  std::vector<std::vector<Double_t> > separated_bins;
+  Int_t nbins = histograms.at(0)->GetNbinsX();
+
+  // For every bin, prepare a new histogram containing all mass points:
+  for(Int_t bin = 1; bin <= nbins; bin++) {
+
+    std::cout << "Filling bin " << bin << " mass points ";
+ 
+    // Prepare new vector for this bin:
+    std::vector<Double_t> thisbin;
+
+    for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
+      // Set the corresponding bin in output vector:
+      thisbin.push_back((*hist)->GetBinContent(bin));
+      std::cout << (hist - histograms.begin()) << " ";
+    }
+    std::cout << std::endl;
+
+    separated_bins.push_back(thisbin);
+  }
+  
+  return separated_bins;
+}
+
+std::vector plotMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+
+  TString mname, dname, cname;
+  mname.Form("mc_%i_",bin);
+  dname.Form("dat_%i_",bin);
+  cname.Form("dat_mc_%i_",bin);
+  TCanvas* c = new TCanvas(cname+channel,cname+channel);
+  c->cd();
+
+  TGraphErrors * graph_mc = new TGraphErrors();
+  graph_mc->SetTitle(mname+channel);
+  for(UInt_t point = 0; point < masses.size(); ++point) {
+    graph_mc->SetPoint(point, masses.at(point), mc.at(point));
+    //graph_mc->SetPointError(point,0,sqrt(mc.at(point)));
+  }
+
+  graph_mc->SetLineWidth(0);
+  graph_mc->SetMarkerStyle(20);
+  //graph_mc->Fit("pol2");
+
+  graph_mc->Draw("A P E1");
+  graph_mc->Write(mname+channel);
+
+  TGraphErrors * graph = new TGraphErrors();
+  graph->SetTitle(dname+channel);
+  for(UInt_t point = 0; point < masses.size(); ++point) {
+    graph->SetPoint(point, masses.at(point), data.at(point));
+    graph->SetPointError(point,0,sqrt(data.at(point)));
+  }
+
+  graph->SetLineWidth(0);
+  graph->SetMarkerColor(kRed);
+  graph->SetMarkerStyle(20);
+  //graph->Fit("pol2");
+
+  graph->Draw("same P E1");
+  graph->Write(dname+channel);
+
+  c->Write();
+  
+}
+
+TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+
+  TString name = "chi2_";
+
+  TGraphErrors * chisquare = new TGraphErrors();
+  chisquare->SetTitle(name+channel);
+
+  for(UInt_t point = 0; point < masses.size(); ++point) {
+
+    Double_t chi2 = 0;
+
+    // Iterate over all bins:
+    for(Int_t bin = 1; bin <= data.at(point)->GetNbinsX(); bin++) {
+      Double_t chi = (data.at(point)->GetBinContent(bin) - mc.at(point)->GetBinContent(bin))/sqrt(data.at(point)->GetBinContent(bin));
+      chi2 += chi*chi;
+    }
+    chisquare->SetPoint(point, masses.at(point), chi2);
+  }
+
+  chisquare->Fit("pol2");
+  chisquare->SetMarkerStyle(20);
+  chisquare->Draw("AP");
+  chisquare->Write(name+channel);
+
+  return = chisquare->GetFunction("pol2");
+}
+
+Double_t getTopMass(TF1 * chi2fit) {
+
+  return mt = fit->GetMinimumX(0,330);
+}
+
+void extract_mass(TString channel, std::vector<TString> systematics) {
+
+  std::vector<TH1D*> data_hists;
+  std::vector<TH1D*> mc_hists;
+  std::vector<Double_t> masses;
+
+  for(std::vector<TString>::iterator sys = systematics.begin(); sys != systematics.end(); ++sys) {
+    // Input files:
+    TString filename = "preunfolded/" + (*sys) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    TFile * datafile = new TFile(filename);
+
+    Double_t topmass = nominalmass;
+    if(sys->Contains("UP")) {
+      if(sys->Contains("1GEV")) topmass += 1;
+      else if(sys->Contains("3GEV")) topmass += 3;
+      else if(sys->Contains("6GEV")) topmass += 6;
+    }
+    else if(sys->Contains("DOWN")) {
+      if(sys->Contains("1GEV")) topmass -= 1;
+      else if(sys->Contains("3GEV")) topmass -= 3;
+      else if(sys->Contains("6GEV")) topmass -= 6;
+    }
+
+    std::cout << "Top Mass for SYST " << (*sys) << " m_t=" << topmass << std::endl;
+    
+    // Subtract the estimated background from the data:
+    TH1D * data = getSignalHistogram(topmass,datafile);
+    TH1D * mc = getSimulationHistogram(topmass,datafile);
+
+    masses.push_back(topmass);
+    data_hists.push_back(data);
+    mc_hists.push_back(mc);
+  }
+
+  std::vector<std::vector<Double_t> > separated_data = splitBins(data_hists);
+  std::vector<std::vector<Double_t> > separated_mc = splitBins(mc_hists);
+
+  TFile output("massfit_bins.root","update");
+  gDirectory->pwd();
+
+  for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
+    plotMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin));
+  }
+
+  TF1 * fit = getChiSquare(channel,masses,data_hists,mc_hists);
+  std::cout << channel << ": minimum Chi2 @ m_t=" << getTopMass(fit) << std::endl;
+
+  //getChiSquareFitted(channel,masses,data_hists,mc_hists);
+
+  std::cout << "Done." << std::endl;
+}
+
+
+void extract() {
+
+  std::vector<TString> channels;
+  channels.push_back("ee");
+  channels.push_back("emu");
+  channels.push_back("mumu");
+  channels.push_back("combined");
+
+  std::vector<TString> systematics;
+  systematics.push_back("MASS_DOWN_6GEV");
+  systematics.push_back("MASS_DOWN_3GEV");
+  systematics.push_back("MASS_DOWN_1GEV");
+  systematics.push_back("Nominal");
+  systematics.push_back("MASS_UP_1GEV");
+  systematics.push_back("MASS_UP_3GEV");
+  systematics.push_back("MASS_UP_6GEV");
+
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+    extract_mass(*ch,systematics);
+  }
+
+}
