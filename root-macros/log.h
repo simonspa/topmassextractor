@@ -33,7 +33,7 @@ typedef unsigned int uint32_t;
 namespace unilog {
 
   enum TLogLevel {
-    logQUIET,
+    logRESULT,
     logCRITICAL,
     logERROR,
     logWARNING,
@@ -107,7 +107,7 @@ namespace unilog {
     os << std::setw(8) << ToString(level) << ": ";
     
     // For debug levels we want also function name and line number printed:
-    if (level != logINFO && level != logQUIET && level != logWARNING)
+    if (level != logINFO && level != logRESULT && level != logWARNING)
       os << "<" << file << "/" << function << ":L" << line << "> ";
 
     return os;
@@ -127,7 +127,7 @@ namespace unilog {
 
   template <typename T>
     std::string uniLog<T>::ToString(TLogLevel level) {
-    static const char* const buffer[] = {"QUIET","CRITICAL","ERROR", "WARNING", "INFO", "DEBUG", "DEBUG2", "DEBUG3", "DEBUG4", "DEBUG5"};
+    static const char* const buffer[] = {"RESULT","CRITICAL","ERROR", "WARNING", "INFO", "DEBUG", "DEBUG2", "DEBUG3", "DEBUG4", "DEBUG5"};
     return buffer[level];
   }
 
@@ -151,8 +151,8 @@ namespace unilog {
       return logERROR;
     if (level == "CRITICAL")
       return logCRITICAL;
-    if (level == "QUIET")
-      return logQUIET;
+    if (level == "RESULT")
+      return logRESULT;
     uniLog<T>().Get(logWARNING) << "Unknown logging level '" << level << "'. Using WARNING level as default.";
     return logWARNING;
   }
