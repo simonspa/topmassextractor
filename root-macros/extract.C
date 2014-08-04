@@ -282,8 +282,11 @@ Double_t extractor::getTopMass() {
   std::vector<std::vector<Double_t> > separated_data = splitBins(data_hists);
   std::vector<std::vector<Double_t> > separated_mc = splitBins(mc_hists);
 
-  TFile output("massfit_bins.root","update");
-  gDirectory->pwd();
+  TFile output;
+  if(storeHistograms) {
+    output.Open("massfit_bins.root","update");
+    gDirectory->pwd();
+  }
 
   std::vector<std::vector<TF1*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
