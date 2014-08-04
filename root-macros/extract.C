@@ -344,6 +344,8 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
     LOG(logDEBUG2) << "Diffs bin " << bin << " drec=" << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
   }
 
+  nominalfile->Close();
+  systematicsfile->Close();
 }
 
 
@@ -392,7 +394,8 @@ void extract() {
   syst_on_nominal.push_back("SCALE_DOWN");
 
   std::vector<TString> systematics;
-  systematics.push_back("JES_UP");/* systematics.push_back("JES_DOWN");
+  //systematics.push_back("JES_UP");
+  /* systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
   systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
   systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
@@ -405,38 +408,41 @@ void extract() {
   systematics.push_back("BTAG_LFET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
   systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
 				  */
+
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
     extractor * mass_samples = new extractor(*ch,"Nominal",true);
     Double_t topmass = mass_samples->getTopMass();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
 
+    Double_t total_syst = 0;
+    Double_t total_stat = 0;
+
+    // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
-
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-
       extractorMatchScale * matchscale_samples = new extractorMatchScale(*ch,"Nominal",false,"Nominal",(*syst));
-
       Double_t topmass_variation = matchscale_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
       LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
+      total_syst += (topmass-topmass_variation)*(topmass-topmass_variation);
     }
 
+    // Systematic Variations produced by varying nominal samples:
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
-
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-
       extractor * variation_samples = new extractor(*ch,*syst,false);
-
       Double_t topmass_variation = variation_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
       LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
+      total_syst += (topmass-topmass_variation)*(topmass-topmass_variation);
     }
+
+    total_syst = sqrt(total_syst);
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +- " << total_stat << " +- " << total_syst << " GeV";
   }
+
+  return;
 }
-
-
-
-
 
 template<class t>
 bool extractor::isApprox(t a, t b, double eps) {
