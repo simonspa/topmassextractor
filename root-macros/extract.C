@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <string>
+#include "Riostream.h"
 #include <TH1D.h>
 #include <TFile.h>
 #include <TF1.h>
@@ -67,6 +69,11 @@ class extractTopMass {
 private:
   virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
   virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+  
+  virtual Double_t getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+  virtual Double_t getReco(Double_t mass, Double_t reco);
+
   std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms);
   std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc);
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
@@ -75,35 +82,69 @@ private:
   Double_t extracted_mass;
   TString channel;
   std::vector<TString> samples;
+
+  bool storeHistograms;
 public:
   Double_t getTopMass();
-  extractTopMass(TString channel, std::vector<TString> systematics);
+  extractTopMass(TString channel, std::vector<TString> systematics, bool storeHistos);
 };
 
 class extractTopMassMatchScale : public extractTopMass {
 
 private:
-  TH1D * getSignalHistogram(Double_t mass, TFile * histos);
-  TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+  Double_t getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+  Double_t getReco(Double_t mass, Double_t reco);
 
   Double_t deltaNevents;
 public:
-  extractTopMassMatchScale(TString channel, std::vector<TString> systematics, Double_t deltaN) : deltaNevents(deltaN), extractTopMass(channel, systematics) {
+  extractTopMassMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, Double_t deltaN) : deltaNevents(deltaN), extractTopMass(channel, systematics, storeHistos) {
     LOG(logINFO) << "Running for Match/Scale systematics.";
   };
 
 };
 
-TH1D * extractTopMassMatchScale::getSignalHistogram(Double_t mass, TFile * histos) {
+Double_t extractTopMassMatchScale::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  LOG(logERROR) << "NOT IMPLEMENTED!";
-  throw 1;
+  // Subtract the difference in event count for the nominal mass bin and systematics
+  // variation for every mass sample:
+  reco -= deltaNevents;
+
+  // Call parent class signal calculation function:
+  return extractTopMass::getSignal(mass, data, reco, bgr, ttbgr);
 }
 
-TH1D * extractTopMassMatchScale::getSimulationHistogram(Double_t mass, TFile * histos) {
+Double_t extractTopMass::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  LOG(logERROR) << "NOT IMPLEMENTED!";
-  throw 1;
+  LOG(logDEBUG2) << "Calculation signal event count...";
+
+  // Calculate the signal fraction from reconstructed events and TT background:
+  Double_t fsignal = reco/(reco+ttbgr);
+
+  // Correct the TTBgr for different TTBar Cross sections (mass dependent):
+  Double_t corr_ttbgr = ttbgr*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+
+  // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+  Double_t signal = (data - (bgr - corr_ttbgr))*fsignal;
+
+  return signal;
+}
+
+Double_t extractTopMass::getReco(Double_t mass, Double_t reco) {
+
+  LOG(logDEBUG2) << "Calculation reco event count...";
+
+  // Return the reco event count corrected by the ttbar Xsec at given mass:
+  return reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+}
+
+Double_t extractTopMassMatchScale::getReco(Double_t mass, Double_t reco) {
+
+  // Subtract the difference in event count for the nominal mass bin and systematics
+  //variation for every bin:
+  reco -= deltaNevents;
+
+  // Call parent class signal calculation function:
+  return extractTopMass::getReco(mass, reco);
 }
 
 TH1D * extractTopMass::getSignalHistogram(Double_t mass, TFile * histos) {
@@ -121,14 +162,14 @@ TH1D * extractTopMass::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Iterate over all bins:
   for(Int_t bin = 1; bin <= nbins; bin++) {
-    // Calculate the signal fraction from reconstructed events and TT background:
-    Double_t fsignal = aRecHist->GetBinContent(bin)/(aRecHist->GetBinContent(bin)+aTtBgrHist->GetBinContent(bin));
-    // Correct the TTBgr for different TTBar Cross sections (mass dependent):
-    Double_t corr_ttbgr = aTtBgrHist->GetBinContent(bin)*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
 
-    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
-    Double_t signal = (aDataHist->GetBinContent(bin) - (aBgrHist->GetBinContent(bin) - corr_ttbgr))*fsignal;
-    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " fsig=" << fsignal << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin);
+    // Get signal corrected by ttbar background:
+    Double_t signal = getSignal(mass, aDataHist->GetBinContent(bin),
+				aRecHist->GetBinContent(bin),
+				aBgrHist->GetBinContent(bin),
+				aTtBgrHist->GetBinContent(bin));
+
+    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin);
     
     // Write background subtrated signal:
     aDataHist->SetBinContent(bin,signal);
@@ -149,7 +190,8 @@ TH1D * extractTopMass::getSimulationHistogram(Double_t mass, TFile * histos) {
   // Iterate over all bins:
   for(Int_t bin = 1; bin <= nbins; bin++) {
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = aRecHist->GetBinContent(bin)*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+    Double_t corr_reco = getReco(mass,aRecHist->GetBinContent(bin));
+
     LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco;
     
     // Write corrected Reco:
@@ -193,8 +235,12 @@ std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::v
   mname.Form("mc_%i_",bin);
   dname.Form("dat_%i_",bin);
   cname.Form("dat_mc_%i_",bin);
-  TCanvas* c = new TCanvas(cname+channel,cname+channel);
-  c->cd();
+
+  TCanvas* c;
+  if(storeHistograms) {
+    c = new TCanvas(cname+channel,cname+channel);
+    c->cd();
+  }
 
   TGraphErrors * graph_mc = new TGraphErrors();
   graph_mc->SetTitle(mname+channel);
@@ -205,13 +251,15 @@ std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::v
 
   graph_mc->SetLineWidth(0);
   graph_mc->SetMarkerStyle(20);
-  graph_mc->Fit("pol2");
+  graph_mc->Fit("pol2","Q");
 
   TF1 * mcfit = graph_mc->GetFunction("pol2");
   allfits.push_back(mcfit);
 
-  graph_mc->Draw("A P E1");
-  graph_mc->Write(mname+channel);
+  if(storeHistograms) {
+    graph_mc->Draw("A P E1");
+    graph_mc->Write(mname+channel);
+  }
 
   TGraphErrors * graph = new TGraphErrors();
   graph->SetTitle(dname+channel);
@@ -223,15 +271,17 @@ std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::v
   graph->SetLineWidth(0);
   graph->SetMarkerColor(kRed);
   graph->SetMarkerStyle(20);
-  graph->Fit("pol2");
+  graph->Fit("pol2","Q");
 
   TF1 * datfit = graph->GetFunction("pol2");
   allfits.push_back(datfit);
 
-  graph->Draw("same P E1");
-  graph->Write(dname+channel);
+  if(storeHistograms) {
+    graph->Draw("same P E1");
+    graph->Write(dname+channel);
 
-  c->Write();
+    c->Write();
+  }
 
   return allfits;
 }
@@ -255,10 +305,12 @@ TF1 * extractTopMass::getChiSquare(TString channel, std::vector<Double_t> masses
     chisquare->SetPoint(point, masses.at(point), chi2);
   }
 
-  chisquare->Fit("pol2");
-  chisquare->SetMarkerStyle(20);
-  chisquare->Draw("AP");
-  chisquare->Write(name+channel);
+  chisquare->Fit("pol2","Q");
+  if(storeHistograms) {
+    chisquare->SetMarkerStyle(20);
+    chisquare->Draw("AP");
+    chisquare->Write(name+channel);
+  }
 
   return chisquare->GetFunction("pol2");
 }
@@ -297,7 +349,7 @@ Double_t extractTopMass::getTopMass() {
       else if(sys->Contains("6GEV")) topmass -= 6;
     }
 
-    LOG(logINFO) << "Top Mass for SYST " << (*sys) << " m_t=" << topmass;
+    LOG(logINFO) << "Top Mass for Sample " << (*sys) << " m_t=" << topmass;
     
     // Subtract the estimated background from the data:
     TH1D * data = getSignalHistogram(topmass,datafile);
@@ -306,6 +358,7 @@ Double_t extractTopMass::getTopMass() {
     masses.push_back(topmass);
     data_hists.push_back(data);
     mc_hists.push_back(mc);
+
   }
 
   std::vector<std::vector<Double_t> > separated_data = splitBins(data_hists);
@@ -327,8 +380,8 @@ Double_t extractTopMass::getTopMass() {
   return extracted_mass;
 }
 
-extractTopMass::extractTopMass(TString ch, std::vector<TString> samp) : channel(ch), samples(samp) {
-  LOG(logINFO) << "Initialized.";
+extractTopMass::extractTopMass(TString ch, std::vector<TString> samp, bool storeHistos) : channel(ch), samples(samp), storeHistograms(storeHistos) {
+  LOG(logDEBUG) << "Initialized.";
 }
 
 
@@ -342,36 +395,44 @@ void extract() {
   channels.push_back("mumu");
   channels.push_back("combined");
 
-  std::vector<TString> systematics;
-  systematics.push_back("MASS_DOWN_6GEV");
-  systematics.push_back("MASS_DOWN_3GEV");
-  systematics.push_back("MASS_DOWN_1GEV");
-  systematics.push_back("Nominal");
-  systematics.push_back("MASS_UP_1GEV");
-  systematics.push_back("MASS_UP_3GEV");
-  systematics.push_back("MASS_UP_6GEV");
+  std::vector<TString> samples;
+  samples.push_back("MASS_DOWN_6GEV");
+  samples.push_back("MASS_DOWN_3GEV");
+  samples.push_back("MASS_DOWN_1GEV");
+  samples.push_back("Nominal");
+  samples.push_back("MASS_UP_1GEV");
+  samples.push_back("MASS_UP_3GEV");
+  samples.push_back("MASS_UP_6GEV");
 
-  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    //extractTopMass * extract = new extractTopMass(*ch,systematics);
-    //Double_t topmass = extract->getTopMass();
-    //LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+  /*for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+    extractTopMass * extract = new extractTopMass(*ch,true,samples);
+    Double_t topmass = extract->getTopMass();
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
   }
+  */
 
+
+  // Do the same (or similar things) for the systematics uncertainties:
   std::vector<TString> uncertainties;
   uncertainties.push_back("MATCH_UP");
   uncertainties.push_back("MATCH_DOWN");
   uncertainties.push_back("SCALE_UP");
   uncertainties.push_back("SCALE_DOWN");
 
-  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    Double_t deltaNevents = 0;
-    extractTopMassMatchScale * extract = new extractTopMassMatchScale(*ch,systematics,deltaNevents);
-    Double_t topmass = extract->getTopMass();
-    //LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+  for(std::vector<TString>::iterator syst = uncertainties.begin(); syst != uncertainties.end(); ++syst) {
+
+    //LOG(logINFO) << "Getting " << syst << " variation...";
+
+    for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+      Double_t deltaNevents = 20;
+      extractTopMassMatchScale * extract = new extractTopMassMatchScale(*ch,samples,false,deltaNevents);
+      Double_t topmass = extract->getTopMass();
+      LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+    }
+
   }
 
-
-  // Do the same (or similar things) for the systematics:
+  
   
 
 }
