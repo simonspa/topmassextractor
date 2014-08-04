@@ -61,7 +61,7 @@ private:
 
 public:
  extractorMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, TString nominal, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, systematics, storeHistos) {
-    LOG(unilog::logINFO) << "Running for Match/Scale systematics: ";
+    LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
     calcDifferenceToNominal(nominal,systematic);
   };
 

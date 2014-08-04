@@ -371,12 +371,6 @@ void extract() {
   samples.push_back("MASS_UP_3GEV");
   samples.push_back("MASS_UP_6GEV");
 
-  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * mass_samples = new extractor(*ch,samples,true);
-    Double_t topmass = mass_samples->getTopMass();
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
-  }
-
   // Do the same (or similar things) for the systematics uncertainties:
   std::vector<TString> uncertainties;
   uncertainties.push_back("MATCH_UP");
@@ -384,18 +378,21 @@ void extract() {
   uncertainties.push_back("SCALE_UP");
   uncertainties.push_back("SCALE_DOWN");
 
-  for(std::vector<TString>::iterator syst = uncertainties.begin(); syst != uncertainties.end(); ++syst) {
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+    extractor * mass_samples = new extractor(*ch,samples,true);
+    Double_t topmass = mass_samples->getTopMass();
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
 
-    LOG(logINFO) << "Getting " << (*syst) << " variation...";
+    for(std::vector<TString>::iterator syst = uncertainties.begin(); syst != uncertainties.end(); ++syst) {
 
-    for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
 
       extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,"Nominal",(*syst));
 
-      Double_t topmass = extractor->getTopMass();
-      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass;
+      Double_t topmass_variation = extractor->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
     }
-
   }
 }
 
