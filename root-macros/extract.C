@@ -62,7 +62,51 @@ float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdf
     return out;
 }
 
-TH1D * getSignalHistogram(Double_t mass, TFile * histos) {
+class extractTopMass {
+
+private:
+  virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+  virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+  std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms);
+  std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc);
+  TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
+  Double_t getMinimum(TF1 * fit);
+
+  Double_t extracted_mass;
+  TString channel;
+  std::vector<TString> samples;
+public:
+  Double_t getTopMass();
+  extractTopMass(TString channel, std::vector<TString> systematics);
+};
+
+class extractTopMassMatchScale : public extractTopMass {
+
+private:
+  TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+  TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+
+  Double_t deltaNevents;
+public:
+  extractTopMassMatchScale(TString channel, std::vector<TString> systematics, Double_t deltaN) : deltaNevents(deltaN), extractTopMass(channel, systematics) {
+    LOG(logINFO) << "Running for Match/Scale systematics.";
+  };
+
+};
+
+TH1D * extractTopMassMatchScale::getSignalHistogram(Double_t mass, TFile * histos) {
+
+  LOG(logERROR) << "NOT IMPLEMENTED!";
+  throw 1;
+}
+
+TH1D * extractTopMassMatchScale::getSimulationHistogram(Double_t mass, TFile * histos) {
+
+  LOG(logERROR) << "NOT IMPLEMENTED!";
+  throw 1;
+}
+
+TH1D * extractTopMass::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing data:
   TH1D * aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
@@ -94,7 +138,7 @@ TH1D * getSignalHistogram(Double_t mass, TFile * histos) {
   return aDataHist;
 }
 
-TH1D * getSimulationHistogram(Double_t mass, TFile * histos) {
+TH1D * extractTopMass::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing reconstructed events:
   TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
@@ -117,7 +161,7 @@ TH1D * getSimulationHistogram(Double_t mass, TFile * histos) {
 }
 
 
-std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
+std::vector<std::vector<Double_t> > extractTopMass::splitBins(std::vector<TH1D*> histograms) {
 
   std::vector<std::vector<Double_t> > separated_bins;
   Int_t nbins = histograms.at(0)->GetNbinsX();
@@ -141,7 +185,7 @@ std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
   return separated_bins;
 }
 
-std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
 
   std::vector<TF1*> allfits;
 
@@ -192,7 +236,7 @@ std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> 
   return allfits;
 }
 
-TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+TF1 * extractTopMass::getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
   TString name = "chi2_";
 
@@ -219,26 +263,26 @@ TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH
   return chisquare->GetFunction("pol2");
 }
 
-Double_t getTopMass(TF1 * fit) {
+Double_t extractTopMass::getMinimum(TF1 * fit) {
   
   // For now, just return the function's minimum:
   return fit->GetMinimumX(0,330);
 }
 
-Double_t extract_mass(TString channel, std::vector<TString> systematics) {
+Double_t extractTopMass::getTopMass() {
 
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
 
-  for(std::vector<TString>::iterator sys = systematics.begin(); sys != systematics.end(); ++sys) {
+  for(std::vector<TString>::iterator sys = samples.begin(); sys != samples.end(); ++sys) {
     // Input files:
     TString filename = "preunfolded/" + (*sys) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
     TFile * datafile = new TFile(filename);
 
     if(!datafile->IsOpen()) {
       LOG(logINFO) << "Failed to access data file " << filename;
-      return 0.;
+      throw 1;
     }
 
     Double_t topmass = nominalmass;
@@ -276,12 +320,15 @@ Double_t extract_mass(TString channel, std::vector<TString> systematics) {
   }
 
   TF1 * fit = getChiSquare(channel,masses,data_hists,mc_hists);
-  Double_t extracted_mass = getTopMass(fit);
+  extracted_mass = getMinimum(fit);
 
   //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
-  LOG(logINFO) << "Done.";
   return extracted_mass;
+}
+
+extractTopMass::extractTopMass(TString ch, std::vector<TString> samp) : channel(ch), samples(samp) {
+  LOG(logINFO) << "Initialized.";
 }
 
 
@@ -305,8 +352,26 @@ void extract() {
   systematics.push_back("MASS_UP_6GEV");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    Double_t topmass = extract_mass(*ch,systematics);
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+    //extractTopMass * extract = new extractTopMass(*ch,systematics);
+    //Double_t topmass = extract->getTopMass();
+    //LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
   }
+
+  std::vector<TString> uncertainties;
+  uncertainties.push_back("MATCH_UP");
+  uncertainties.push_back("MATCH_DOWN");
+  uncertainties.push_back("SCALE_UP");
+  uncertainties.push_back("SCALE_DOWN");
+
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+    Double_t deltaNevents = 0;
+    extractTopMassMatchScale * extract = new extractTopMassMatchScale(*ch,systematics,deltaNevents);
+    Double_t topmass = extract->getTopMass();
+    //LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+  }
+
+
+  // Do the same (or similar things) for the systematics:
+  
 
 }
