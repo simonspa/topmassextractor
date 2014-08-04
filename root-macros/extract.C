@@ -6,8 +6,11 @@
 #include <TString.h>
 #include <TCanvas.h>
 #include <TGraphErrors.h>
+#include "log.h"
 
 Double_t nominalmass = 172.5;
+
+using namespace unilog;
 
 template<class t>
 bool isApprox(t a, t b, double eps = 0.01) {
@@ -70,7 +73,7 @@ TH1D * getSignalHistogram(Double_t mass, TFile * histos) {
   TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
   Int_t nbins = aDataHist->GetNbinsX();
-  std::cout << "Data hist has " << nbins << " bins." << std::endl;
+  LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
 
   // Iterate over all bins:
   for(Int_t bin = 1; bin <= nbins; bin++) {
@@ -81,7 +84,7 @@ TH1D * getSignalHistogram(Double_t mass, TFile * histos) {
 
     // Calculate signal by subtracting backround from data, multiplied by signal fraction.
     Double_t signal = (aDataHist->GetBinContent(bin) - (aBgrHist->GetBinContent(bin) - corr_ttbgr))*fsignal;
-    std::cout << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " fsig=" << fsignal << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin) << std::endl;
+    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " fsig=" << fsignal << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin);
     
     // Write background subtrated signal:
     aDataHist->SetBinContent(bin,signal);
@@ -97,13 +100,13 @@ TH1D * getSimulationHistogram(Double_t mass, TFile * histos) {
   TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
 
   Int_t nbins = aRecHist->GetNbinsX();
-  std::cout << "Reco hist has " << nbins << " bins." << std::endl;
+  LOG(logDEBUG) << "Reco hist has " << nbins << " bins.";
 
   // Iterate over all bins:
   for(Int_t bin = 1; bin <= nbins; bin++) {
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
     Double_t corr_reco = aRecHist->GetBinContent(bin)*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-    std::cout << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco << std::endl;
+    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco;
     
     // Write corrected Reco:
     aRecHist->SetBinContent(bin,corr_reco);
@@ -122,7 +125,7 @@ std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
   // For every bin, prepare a new histogram containing all mass points:
   for(Int_t bin = 1; bin <= nbins; bin++) {
 
-    std::cout << "Filling bin " << bin << " mass points ";
+    LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
  
     // Prepare new vector for this bin:
     std::vector<Double_t> thisbin;
@@ -130,9 +133,7 @@ std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms) {
     for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
       // Set the corresponding bin in output vector:
       thisbin.push_back((*hist)->GetBinContent(bin));
-      std::cout << (hist - histograms.begin()) << " ";
     }
-    std::cout << std::endl;
 
     separated_bins.push_back(thisbin);
   }
@@ -236,7 +237,7 @@ Double_t extract_mass(TString channel, std::vector<TString> systematics) {
     TFile * datafile = new TFile(filename);
 
     if(!datafile->IsOpen()) {
-      std::cout << "Failed to access data file " << filename << std::endl;
+      LOG(logINFO) << "Failed to access data file " << filename;
       return 0.;
     }
 
@@ -252,7 +253,7 @@ Double_t extract_mass(TString channel, std::vector<TString> systematics) {
       else if(sys->Contains("6GEV")) topmass -= 6;
     }
 
-    std::cout << "Top Mass for SYST " << (*sys) << " m_t=" << topmass << std::endl;
+    LOG(logINFO) << "Top Mass for SYST " << (*sys) << " m_t=" << topmass;
     
     // Subtract the estimated background from the data:
     TH1D * data = getSignalHistogram(topmass,datafile);
@@ -279,12 +280,14 @@ Double_t extract_mass(TString channel, std::vector<TString> systematics) {
 
   //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
-  std::cout << "Done." << std::endl;
+  LOG(logINFO) << "Done.";
   return extracted_mass;
 }
 
 
 void extract() {
+
+  Log::ReportingLevel() = Log::FromString("INFO");
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -303,7 +306,7 @@ void extract() {
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
     Double_t topmass = extract_mass(*ch,systematics);
-    std::cout << *ch << ": minimum Chi2 @ m_t=" << topmass << std::endl;
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
   }
 
 }
