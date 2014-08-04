@@ -16,17 +16,19 @@ Double_t nominalmass = 172.5;
 using namespace unilog;
 
 
-Double_t extractorMatchScale::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorMatchScale::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
-  // variation for every mass sample:
-  reco -= deltaNevents;
+  // variation for every mass sample in the current bin:
+  reco -= deltaRec.at(bin-1);
+  bgr -= deltaBgr.at(bin-1);
+  ttbgr -= deltaTtbgr.at(bin-1);
 
   // Call parent class signal calculation function:
-  return extractor::getSignal(mass, data, reco, bgr, ttbgr);
+  return extractor::getSignal(bin, mass, data, reco, bgr, ttbgr);
 }
 
-Double_t extractor::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   LOG(logDEBUG2) << "Calculation signal event count...";
 
@@ -39,25 +41,30 @@ Double_t extractor::getSignal(Double_t mass, Double_t data, Double_t reco, Doubl
   // Calculate signal by subtracting backround from data, multiplied by signal fraction.
   Double_t signal = (data - (bgr - corr_ttbgr))*fsignal;
 
+  LOG(logDEBUG2) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+
   return signal;
 }
 
-Double_t extractor::getReco(Double_t mass, Double_t reco) {
+Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
   LOG(logDEBUG2) << "Calculation reco event count...";
 
+  Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+  LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+
   // Return the reco event count corrected by the ttbar Xsec at given mass:
-  return reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+  return corr_reco;
 }
 
-Double_t extractorMatchScale::getReco(Double_t mass, Double_t reco) {
+Double_t extractorMatchScale::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   //variation for every bin:
-  reco -= deltaNevents;
+  reco -= deltaRec.at(bin-1);
 
   // Call parent class signal calculation function:
-  return extractor::getReco(mass, reco);
+  return extractor::getReco(bin, mass, reco);
 }
 
 TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
@@ -77,12 +84,10 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
   for(Int_t bin = 1; bin <= nbins; bin++) {
 
     // Get signal corrected by ttbar background:
-    Double_t signal = getSignal(mass, aDataHist->GetBinContent(bin),
+    Double_t signal = getSignal(bin, mass, aDataHist->GetBinContent(bin),
 				aRecHist->GetBinContent(bin),
 				aBgrHist->GetBinContent(bin),
 				aTtBgrHist->GetBinContent(bin));
-
-    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDataHist->GetBinContent(bin) << " sig=" << signal << " mc=" << aRecHist->GetBinContent(bin);
     
     // Write background subtrated signal:
     aDataHist->SetBinContent(bin,signal);
@@ -102,8 +107,9 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Iterate over all bins:
   for(Int_t bin = 1; bin <= nbins; bin++) {
+
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = getReco(mass,aRecHist->GetBinContent(bin));
+    Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin));
 
     LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco;
     
@@ -114,7 +120,6 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   // Return reco histogram:
   return aRecHist;
 }
-
 
 std::vector<std::vector<Double_t> > extractor::splitBins(std::vector<TH1D*> histograms) {
 
@@ -293,6 +298,52 @@ Double_t extractor::getTopMass() {
   return extracted_mass;
 }
 
+void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString systematics) {
+
+  // Input files:
+  TString nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString sfilename = "preunfolded/" + systematics + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+
+  TFile * nominalfile = new TFile(nfilename);
+  TFile * systematicsfile = new TFile(sfilename);
+
+  LOG(logDEBUG2) << nfilename;
+  LOG(logDEBUG2) << sfilename;
+
+  if(!nominalfile->IsOpen() || !systematicsfile->IsOpen()) {
+    LOG(logINFO) << "Failed to access file";
+    throw 1;
+  }
+
+  // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
+  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
+  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist"));
+
+  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist"));
+  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist"));
+
+  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist"));
+  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist"));
+
+  LOG(logDEBUG2) << nfilename;
+  LOG(logDEBUG2) << sfilename;
+
+  for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
+    Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
+    deltaRec.push_back(rec);
+    
+    Double_t bgr = nominalBgr->GetBinContent(bin) - varBgr->GetBinContent(bin);
+    deltaBgr.push_back(bgr);
+
+    Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
+    deltaTtbgr.push_back(ttbgr);
+
+    LOG(logDEBUG2) << "Diffs bin " << bin << " drec=" << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
+  }
+
+}
+
+
 extractor::extractor(TString ch, std::vector<TString> samp, bool storeHistos) : channel(ch), samples(samp), storeHistograms(storeHistos) {
   LOG(logDEBUG) << "Initialized.";
 }
@@ -300,7 +351,7 @@ extractor::extractor(TString ch, std::vector<TString> samp, bool storeHistos) : 
 
 void extract() {
 
-  Log::ReportingLevel() = Log::FromString("INFO");
+  Log::ReportingLevel() = Log::FromString("DEBUG2");
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -334,11 +385,12 @@ void extract() {
 
   for(std::vector<TString>::iterator syst = uncertainties.begin(); syst != uncertainties.end(); ++syst) {
 
-    //LOG(logINFO) << "Getting " << syst << " variation...";
+    LOG(logINFO) << "Getting " << (*syst) << " variation...";
 
     for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-      Double_t deltaNevents = 20;
-      extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,deltaNevents);
+
+      extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,"Nominal",(*syst));
+
       Double_t topmass = extractor->getTopMass();
       LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
     }

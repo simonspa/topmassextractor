@@ -17,9 +17,9 @@ private:
   virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
   virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   
-  virtual Double_t getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+  virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
 
-  virtual Double_t getReco(Double_t mass, Double_t reco);
+  virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco);
 
   std::vector<std::vector<Double_t> > splitBins(std::vector<TH1D*> histograms);
   std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc);
@@ -50,13 +50,19 @@ public:
 class extractorMatchScale : public extractor {
 
 private:
-  Double_t getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
-  Double_t getReco(Double_t mass, Double_t reco);
+  Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+  Double_t getReco(Int_t bin, Double_t mass, Double_t reco);
 
-  Double_t deltaNevents;
+  void calcDifferenceToNominal(TString nominal, TString systematics);
+
+  std::vector<Double_t> deltaRec;
+  std::vector<Double_t> deltaBgr;
+  std::vector<Double_t> deltaTtbgr;
+
 public:
-  extractorMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, Double_t deltaN) : deltaNevents(deltaN), extractor(channel, systematics, storeHistos) {
-    LOG(unilog::logINFO) << "Running for Match/Scale systematics.";
+ extractorMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, TString nominal, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, systematics, storeHistos) {
+    LOG(unilog::logINFO) << "Running for Match/Scale systematics: ";
+    calcDifferenceToNominal(nominal,systematic);
   };
 
 };
