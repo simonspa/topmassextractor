@@ -43,7 +43,7 @@ private:
 
 public:
   Double_t getTopMass();
-  extractor(TString channel, std::vector<TString> systematics, bool storeHistos);
+  extractor(TString channel, TString sample, bool storeHistos);
 };
 
 
@@ -60,7 +60,7 @@ private:
   std::vector<Double_t> deltaTtbgr;
 
 public:
- extractorMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, TString nominal, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, systematics, storeHistos) {
+ extractorMatchScale(TString channel, TString sample, bool storeHistos, TString nominal, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, sample, storeHistos) {
     LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
     calcDifferenceToNominal(nominal,systematic);
   };

@@ -347,7 +347,29 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
 }
 
 
-extractor::extractor(TString ch, std::vector<TString> samp, bool storeHistos) : channel(ch), samples(samp), storeHistograms(storeHistos) {
+extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), storeHistograms(storeHistos) {
+
+  // This is our nominal mass variation sample:
+  if(sample == "Nominal") {
+    samples.push_back("MASS_DOWN_6GEV");
+    samples.push_back("MASS_DOWN_3GEV");
+    samples.push_back("MASS_DOWN_1GEV");
+    samples.push_back("Nominal");
+    samples.push_back("MASS_UP_1GEV");
+    samples.push_back("MASS_UP_3GEV");
+    samples.push_back("MASS_UP_6GEV");
+  }
+  // We are looking at a systematic uncertainty sample here:
+  else {
+    samples.push_back(sample+"_6NEG");
+    samples.push_back(sample+"_3NEG");
+    samples.push_back(sample+"_1NEG");
+    samples.push_back(sample);
+    samples.push_back(sample+"_1POS");
+    samples.push_back(sample+"_3POS");
+    samples.push_back(sample+"_6POS");
+  }
+  
   LOG(logDEBUG) << "Initialized.";
 }
 
@@ -362,34 +384,50 @@ void extract() {
   channels.push_back("mumu");
   channels.push_back("combined");
 
-  std::vector<TString> samples;
-  samples.push_back("MASS_DOWN_6GEV");
-  samples.push_back("MASS_DOWN_3GEV");
-  samples.push_back("MASS_DOWN_1GEV");
-  samples.push_back("Nominal");
-  samples.push_back("MASS_UP_1GEV");
-  samples.push_back("MASS_UP_3GEV");
-  samples.push_back("MASS_UP_6GEV");
-
   // Do the same (or similar things) for the systematics uncertainties:
-  std::vector<TString> uncertainties;
-  uncertainties.push_back("MATCH_UP");
-  uncertainties.push_back("MATCH_DOWN");
-  uncertainties.push_back("SCALE_UP");
-  uncertainties.push_back("SCALE_DOWN");
+  std::vector<TString> syst_on_nominal;
+  syst_on_nominal.push_back("MATCH_UP");
+  syst_on_nominal.push_back("MATCH_DOWN");
+  syst_on_nominal.push_back("SCALE_UP");
+  syst_on_nominal.push_back("SCALE_DOWN");
 
+  std::vector<TString> systematics;
+  systematics.push_back("JES_UP");/* systematics.push_back("JES_DOWN");
+  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
+  systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
+  systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
+  systematics.push_back("KIN_UP"); systematics.push_back("KIN_DOWN");
+  systematics.push_back("LEPT_UP"); systematics.push_back("LEPT_DOWN");
+  systematics.push_back("BTAG_UP"); systematics.push_back("BTAG_DOWN");
+  systematics.push_back("BTAG_LJET_UP"); systematics.push_back("BTAG_LJET_DOWN");
+  systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
+  systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
+  systematics.push_back("BTAG_LFET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
+  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
+				  */
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * mass_samples = new extractor(*ch,samples,true);
+    extractor * mass_samples = new extractor(*ch,"Nominal",true);
     Double_t topmass = mass_samples->getTopMass();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
 
-    for(std::vector<TString>::iterator syst = uncertainties.begin(); syst != uncertainties.end(); ++syst) {
+    for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
 
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
 
-      extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,"Nominal",(*syst));
+      extractorMatchScale * matchscale_samples = new extractorMatchScale(*ch,"Nominal",false,"Nominal",(*syst));
 
-      Double_t topmass_variation = extractor->getTopMass();
+      Double_t topmass_variation = matchscale_samples->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
+    }
+
+    for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
+
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+
+      extractor * variation_samples = new extractor(*ch,*syst,false);
+
+      Double_t topmass_variation = variation_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
       LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
     }
