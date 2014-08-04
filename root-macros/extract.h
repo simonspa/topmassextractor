@@ -11,7 +11,7 @@
 #ifndef EXTRACT_H
 #define EXTRACT_H
 
-class extractTopMass {
+class extractor {
 
 private:
   virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
@@ -31,13 +31,23 @@ private:
   std::vector<TString> samples;
 
   bool storeHistograms;
+
+  // Helper functions:
+  template<class t>
+    bool isApprox(t a, t b, double eps = 0.01);
+  /**
+   * following numbers and mass dependence provided in NNLO paper arXiv:1303.6254
+   * errors are NOT returned in % (so e.g. 0.026)
+   */
+  float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0);
+
 public:
   Double_t getTopMass();
-  extractTopMass(TString channel, std::vector<TString> systematics, bool storeHistos);
+  extractor(TString channel, std::vector<TString> systematics, bool storeHistos);
 };
 
 
-class extractTopMassMatchScale : public extractTopMass {
+class extractorMatchScale : public extractor {
 
 private:
   Double_t getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
@@ -45,7 +55,7 @@ private:
 
   Double_t deltaNevents;
 public:
-  extractTopMassMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, Double_t deltaN) : deltaNevents(deltaN), extractTopMass(channel, systematics, storeHistos) {
+  extractorMatchScale(TString channel, std::vector<TString> systematics, bool storeHistos, Double_t deltaN) : deltaNevents(deltaN), extractor(channel, systematics, storeHistos) {
     LOG(unilog::logINFO) << "Running for Match/Scale systematics.";
   };
 

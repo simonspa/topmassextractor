@@ -15,67 +15,18 @@ Double_t nominalmass = 172.5;
 
 using namespace unilog;
 
-template<class t>
-bool isApprox(t a, t b, double eps = 0.01) {
-    if (fabs(a - b) < eps)
-        return true;
-    else
-        return false;
-}
 
-/**
- * following numbers and mass dependence provided in NNLO paper arXiv:1303.6254
- * errors are NOT returned in % (so e.g. 0.026)
- */
-float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0){
-    /*
-     * all numbers following arxiv 1303.6254
-     *
-     */
-    float mref=173.3;
-    float referencexsec=0;
-    float deltam=topmass-mref;
-
-
-    float a1=0,a2=0;
-
-    if(isApprox(energy,8.f,0.01)){
-        a1=-1.1125;
-        a2=0.070778;
-        referencexsec=245.8;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.026;
-    }
-    else if(isApprox(energy,7.f,0.01)){
-        a1=-1.24243;
-        a2=0.890776;
-        referencexsec=172.0;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.028;
-    }
-
-    float reldm=mref/(mref+deltam);
-
-    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
-
-    return out;
-}
-
-Double_t extractTopMassMatchScale::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorMatchScale::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   // variation for every mass sample:
   reco -= deltaNevents;
 
   // Call parent class signal calculation function:
-  return extractTopMass::getSignal(mass, data, reco, bgr, ttbgr);
+  return extractor::getSignal(mass, data, reco, bgr, ttbgr);
 }
 
-Double_t extractTopMass::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractor::getSignal(Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   LOG(logDEBUG2) << "Calculation signal event count...";
 
@@ -91,7 +42,7 @@ Double_t extractTopMass::getSignal(Double_t mass, Double_t data, Double_t reco, 
   return signal;
 }
 
-Double_t extractTopMass::getReco(Double_t mass, Double_t reco) {
+Double_t extractor::getReco(Double_t mass, Double_t reco) {
 
   LOG(logDEBUG2) << "Calculation reco event count...";
 
@@ -99,17 +50,17 @@ Double_t extractTopMass::getReco(Double_t mass, Double_t reco) {
   return reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
 }
 
-Double_t extractTopMassMatchScale::getReco(Double_t mass, Double_t reco) {
+Double_t extractorMatchScale::getReco(Double_t mass, Double_t reco) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   //variation for every bin:
   reco -= deltaNevents;
 
   // Call parent class signal calculation function:
-  return extractTopMass::getReco(mass, reco);
+  return extractor::getReco(mass, reco);
 }
 
-TH1D * extractTopMass::getSignalHistogram(Double_t mass, TFile * histos) {
+TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing data:
   TH1D * aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
@@ -141,7 +92,7 @@ TH1D * extractTopMass::getSignalHistogram(Double_t mass, TFile * histos) {
   return aDataHist;
 }
 
-TH1D * extractTopMass::getSimulationHistogram(Double_t mass, TFile * histos) {
+TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing reconstructed events:
   TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
@@ -165,7 +116,7 @@ TH1D * extractTopMass::getSimulationHistogram(Double_t mass, TFile * histos) {
 }
 
 
-std::vector<std::vector<Double_t> > extractTopMass::splitBins(std::vector<TH1D*> histograms) {
+std::vector<std::vector<Double_t> > extractor::splitBins(std::vector<TH1D*> histograms) {
 
   std::vector<std::vector<Double_t> > separated_bins;
   Int_t nbins = histograms.at(0)->GetNbinsX();
@@ -189,7 +140,7 @@ std::vector<std::vector<Double_t> > extractTopMass::splitBins(std::vector<TH1D*>
   return separated_bins;
 }
 
-std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
 
   std::vector<TF1*> allfits;
 
@@ -248,7 +199,7 @@ std::vector<TF1*> extractTopMass::fitMassBins(TString channel, Int_t bin, std::v
   return allfits;
 }
 
-TF1 * extractTopMass::getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
   TString name = "chi2_";
 
@@ -277,13 +228,13 @@ TF1 * extractTopMass::getChiSquare(TString channel, std::vector<Double_t> masses
   return chisquare->GetFunction("pol2");
 }
 
-Double_t extractTopMass::getMinimum(TF1 * fit) {
+Double_t extractor::getMinimum(TF1 * fit) {
   
   // For now, just return the function's minimum:
   return fit->GetMinimumX(0,330);
 }
 
-Double_t extractTopMass::getTopMass() {
+Double_t extractor::getTopMass() {
 
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
@@ -342,7 +293,7 @@ Double_t extractTopMass::getTopMass() {
   return extracted_mass;
 }
 
-extractTopMass::extractTopMass(TString ch, std::vector<TString> samp, bool storeHistos) : channel(ch), samples(samp), storeHistograms(storeHistos) {
+extractor::extractor(TString ch, std::vector<TString> samp, bool storeHistos) : channel(ch), samples(samp), storeHistograms(storeHistos) {
   LOG(logDEBUG) << "Initialized.";
 }
 
@@ -367,8 +318,8 @@ void extract() {
   samples.push_back("MASS_UP_6GEV");
 
   /*for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractTopMass * extract = new extractTopMass(*ch,true,samples);
-    Double_t topmass = extract->getTopMass();
+    extractor * extractor = new extractor(*ch,true,samples);
+    Double_t topmass = extractor->getTopMass();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
   }
   */
@@ -387,14 +338,59 @@ void extract() {
 
     for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
       Double_t deltaNevents = 20;
-      extractTopMassMatchScale * extract = new extractTopMassMatchScale(*ch,samples,false,deltaNevents);
-      Double_t topmass = extract->getTopMass();
+      extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,deltaNevents);
+      Double_t topmass = extractor->getTopMass();
       LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
     }
 
   }
-
-  
-  
-
 }
+
+
+
+
+
+template<class t>
+bool extractor::isApprox(t a, t b, double eps) {
+  if (fabs(a - b) < eps) { return true; }
+  else { return false; }
+}
+
+float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
+    /*
+     * all numbers following arxiv 1303.6254
+     *
+     */
+    float mref=173.3;
+    float referencexsec=0;
+    float deltam=topmass-mref;
+
+
+    float a1=0,a2=0;
+
+    if(isApprox(energy,8.f,0.01)){
+        a1=-1.1125;
+        a2=0.070778;
+        referencexsec=245.8;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.026;
+    }
+    else if(isApprox(energy,7.f,0.01)){
+        a1=-1.24243;
+        a2=0.890776;
+        referencexsec=172.0;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.028;
+    }
+
+    float reldm=mref/(mref+deltam);
+
+    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
+
+    return out;
+}
+
