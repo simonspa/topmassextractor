@@ -267,7 +267,7 @@ Double_t extractor::getTopMass() {
       else if(sys->Contains("6GEV")) topmass -= 6;
     }
 
-    LOG(logINFO) << "Top Mass for Sample " << (*sys) << " m_t=" << topmass;
+    LOG(logDEBUG) << "Top Mass for Sample " << (*sys) << " m_t=" << topmass;
     
     // Subtract the estimated background from the data:
     TH1D * data = getSignalHistogram(topmass,datafile);
@@ -351,7 +351,7 @@ extractor::extractor(TString ch, std::vector<TString> samp, bool storeHistos) : 
 
 void extract() {
 
-  Log::ReportingLevel() = Log::FromString("DEBUG2");
+  Log::ReportingLevel() = Log::FromString("INFO");
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -368,13 +368,11 @@ void extract() {
   samples.push_back("MASS_UP_3GEV");
   samples.push_back("MASS_UP_6GEV");
 
-  /*for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * extractor = new extractor(*ch,true,samples);
-    Double_t topmass = extractor->getTopMass();
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+    extractor * mass_samples = new extractor(*ch,samples,true);
+    Double_t topmass = mass_samples->getTopMass();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
   }
-  */
-
 
   // Do the same (or similar things) for the systematics uncertainties:
   std::vector<TString> uncertainties;
@@ -392,7 +390,7 @@ void extract() {
       extractorMatchScale * extractor = new extractorMatchScale(*ch,samples,false,"Nominal",(*syst));
 
       Double_t topmass = extractor->getTopMass();
-      LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass;
     }
 
   }
