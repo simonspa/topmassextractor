@@ -236,7 +236,24 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
 Double_t extractor::getMinimum(TF1 * fit) {
   
   // For now, just return the function's minimum:
-  return fit->GetMinimumX(0,330);
+  Double_t chi2min = fit->GetMinimum(0,330);
+  Double_t x_chi2min = fit->GetMinimumX(0,330);
+
+  // Statictical error: vary chi2 by +-1 (going up the curve left and right by dChi2 = 1):
+  Double_t x_left = x_chi2min - fit->GetX(chi2min+1,0,x_chi2min);
+  Double_t x_right = fit->GetX(chi2min+1, x_chi2min,330) - x_chi2min;
+
+  LOG(logDEBUG) << "Minimum Chi2 is " << chi2min << " at " << x_chi2min << " +" << x_right << "-" << x_left;
+  
+  // Store the averaged statistical error:
+  statError = (x_right+x_left)/2;
+  return x_chi2min;
+}
+
+Double_t extractor::getStatError() {
+
+  // Just return the statistical error calculated from chi2:
+  return statError;
 }
 
 Double_t extractor::getTopMass() {
@@ -294,11 +311,11 @@ Double_t extractor::getTopMass() {
   }
 
   TF1 * fit = getChiSquare(channel,masses,data_hists,mc_hists);
-  extracted_mass = getMinimum(fit);
+  extractedMass = getMinimum(fit);
 
   //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
-  return extracted_mass;
+  return extractedMass;
 }
 
 void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString systematics) {
@@ -349,7 +366,7 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
 }
 
 
-extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), storeHistograms(storeHistos) {
+extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), extractedMass(0), statError(0), storeHistograms(storeHistos) {
 
   // This is our nominal mass variation sample:
   if(sample == "Nominal") {
@@ -378,7 +395,7 @@ extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch)
 
 void extract() {
 
-  Log::ReportingLevel() = Log::FromString("INFO");
+  Log::ReportingLevel() = Log::FromString("DEBUG");
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -410,12 +427,12 @@ void extract() {
 				  */
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * mass_samples = new extractor(*ch,"Nominal",true);
+    extractor * mass_samples = new extractor(*ch,"Nominal",false);
     Double_t topmass = mass_samples->getTopMass();
+    Double_t total_stat = mass_samples->getStatError();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
 
     Double_t total_syst = 0;
-    Double_t total_stat = 0;
 
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {

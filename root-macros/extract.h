@@ -26,7 +26,9 @@ private:
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
   Double_t getMinimum(TF1 * fit);
 
-  Double_t extracted_mass;
+  Double_t extractedMass;
+  Double_t statError;
+
   TString channel;
   std::vector<TString> samples;
 
@@ -43,6 +45,7 @@ private:
 
 public:
   Double_t getTopMass();
+  Double_t getStatError();
   extractor(TString channel, TString sample, bool storeHistos);
 };
 
