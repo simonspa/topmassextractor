@@ -100,7 +100,7 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist")->Clone());
 
   Int_t nbins = aRecHist->GetNbinsX();
   LOG(logDEBUG) << "Reco hist has " << nbins << " bins.";
@@ -262,9 +262,9 @@ Double_t extractor::getTopMass() {
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
 
-  for(std::vector<TString>::iterator sys = samples.begin(); sys != samples.end(); ++sys) {
+  for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
     // Input files:
-    TString filename = "preunfolded/" + (*sys) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    TString filename = "preunfolded/" + (*sample) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
     TFile * datafile = new TFile(filename);
 
     if(!datafile->IsOpen()) {
@@ -273,27 +273,31 @@ Double_t extractor::getTopMass() {
     }
 
     Double_t topmass = nominalmass;
-    if(sys->Contains("UP")) {
-      if(sys->Contains("1GEV")) topmass += 1;
-      else if(sys->Contains("3GEV")) topmass += 3;
-      else if(sys->Contains("6GEV")) topmass += 6;
+    if(sample->Contains("UP")) {
+      if(sample->Contains("1GEV")) topmass += 1;
+      else if(sample->Contains("3GEV")) topmass += 3;
+      else if(sample->Contains("6GEV")) topmass += 6;
     }
-    else if(sys->Contains("DOWN")) {
-      if(sys->Contains("1GEV")) topmass -= 1;
-      else if(sys->Contains("3GEV")) topmass -= 3;
-      else if(sys->Contains("6GEV")) topmass -= 6;
+    else if(sample->Contains("DOWN")) {
+      if(sample->Contains("1GEV")) topmass -= 1;
+      else if(sample->Contains("3GEV")) topmass -= 3;
+      else if(sample->Contains("6GEV")) topmass -= 6;
     }
 
-    LOG(logDEBUG) << "Top Mass for Sample " << (*sys) << " m_t=" << topmass;
-    
+    LOG(logDEBUG) << "Top Mass for Sample " << (*sample) << " m_t=" << topmass;
+
     // Subtract the estimated background from the data:
     TH1D * data = getSignalHistogram(topmass,datafile);
+    data->SetDirectory(0);
+    // Also get the MC sample:
     TH1D * mc = getSimulationHistogram(topmass,datafile);
+    mc->SetDirectory(0);
 
     masses.push_back(topmass);
     data_hists.push_back(data);
     mc_hists.push_back(mc);
 
+    datafile->Close();
   }
 
   std::vector<std::vector<Double_t> > separated_data = splitBins(data_hists);
@@ -336,14 +340,14 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
   }
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
-  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
-  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist"));
+  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist")->Clone());
+  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist")->Clone());
 
-  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist"));
-  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist"));
+  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist")->Clone());
+  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist")->Clone());
 
-  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist"));
-  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist"));
+  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist")->Clone());
+  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist")->Clone());
 
   LOG(logDEBUG2) << nfilename;
   LOG(logDEBUG2) << sfilename;
