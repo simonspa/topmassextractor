@@ -32,7 +32,12 @@ private:
   TString channel;
   std::vector<TString> samples;
 
+  // Whether to produce and write out histograms or not
   bool storeHistograms;
+
+  // Do Closure test (i.e. replace signal sample with nominal mc)
+  bool doClosure;
+  TH1D * pseudoData;
 
   // Helper functions:
   template<class t>
@@ -43,9 +48,12 @@ private:
    */
   float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0);
 
+  Double_t getMassFromSample(TString sample);
+
 public:
   Double_t getTopMass();
   Double_t getStatError();
+  void setClosureSample(TString closure);
   extractor(TString channel, TString sample, bool storeHistos);
 };
 

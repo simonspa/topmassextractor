@@ -70,12 +70,15 @@ Double_t extractorMatchScale::getReco(Int_t bin, Double_t mass, Double_t reco) {
 TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing data:
-  TH1D * aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
+  TH1D * aDataHist;
+  if(!doClosure) aDataHist = static_cast<TH1D*>(histos->Get("aDataHist")->Clone());
+  else aDataHist = static_cast<TH1D*>(pseudoData->Clone());
+
   // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist")->Clone());
   // Histograms containing the background:
-  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
-  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
+  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist")->Clone());
+  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist")->Clone());
 
   Int_t nbins = aDataHist->GetNbinsX();
   LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
@@ -92,7 +95,6 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
     // Write background subtrated signal:
     aDataHist->SetBinContent(bin,signal);
   }
-
   // Return signal-only histogram:
   return aDataHist;
 }
@@ -272,17 +274,7 @@ Double_t extractor::getTopMass() {
       throw 1;
     }
 
-    Double_t topmass = nominalmass;
-    if(sample->Contains("UP")) {
-      if(sample->Contains("1GEV")) topmass += 1;
-      else if(sample->Contains("3GEV")) topmass += 3;
-      else if(sample->Contains("6GEV")) topmass += 6;
-    }
-    else if(sample->Contains("DOWN")) {
-      if(sample->Contains("1GEV")) topmass -= 1;
-      else if(sample->Contains("3GEV")) topmass -= 3;
-      else if(sample->Contains("6GEV")) topmass -= 6;
-    }
+    Double_t topmass = getMassFromSample(*sample);
 
     LOG(logDEBUG) << "Top Mass for Sample " << (*sample) << " m_t=" << topmass;
 
@@ -369,8 +361,59 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
   systematicsfile->Close();
 }
 
+Double_t extractor::getMassFromSample(TString sample) {
 
-extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), extractedMass(0), statError(0), storeHistograms(storeHistos) {
+  Double_t topmass = nominalmass;
+  if(sample.Contains("UP")) {
+    if(sample.Contains("1GEV")) topmass += 1;
+    else if(sample.Contains("3GEV")) topmass += 3;
+    else if(sample.Contains("6GEV")) topmass += 6;
+  }
+  else if(sample.Contains("DOWN")) {
+    if(sample.Contains("1GEV")) topmass -= 1;
+    else if(sample.Contains("3GEV")) topmass -= 3;
+    else if(sample.Contains("6GEV")) topmass -= 6;
+  }
+
+  return topmass;
+}
+
+void extractor::setClosureSample(TString closure) {
+
+  // Enable closure test:
+  doClosure = true;
+
+  // Input file:
+  TString filename = "preunfolded/" + closure + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TFile * closureFile = new TFile(filename);
+
+  // Build a pseudo data set from the closure sample:
+  pseudoData = static_cast<TH1D*>(closureFile->Get("aRecHist")->Clone());
+  pseudoData->SetDirectory(0);
+  Double_t mass = getMassFromSample(closure);
+
+  LOG(logINFO) << "Running Closure test. Pseudo data taken from " << filename;
+  LOG(logINFO) << "Pseudo data mass = " << mass;
+
+  // Histograms containing the background:
+  TH1D * aTtBgrHist = static_cast<TH1D*>(closureFile->Get("aTtBgrHist")->Clone());
+  TH1D * aBgrHist = static_cast<TH1D*>(closureFile->Get("aBgrHist")->Clone());
+
+  for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
+    
+    Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+    Double_t signal = (pseudoData->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + aBgrHist->GetBinContent(bin);
+
+    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << pseudoData->GetBinContent(bin) << " pdat=" << signal;
+    // Write pseudo data with background:
+    pseudoData->SetBinContent(bin,signal);
+  }
+
+  closureFile->Close();
+  delete closureFile;
+}
+
+extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), extractedMass(0), statError(0), storeHistograms(storeHistos), doClosure(false) {
 
   // This is our nominal mass variation sample:
   if(sample == "Nominal") {
@@ -399,13 +442,14 @@ extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch)
 
 void extract() {
 
-  Log::ReportingLevel() = Log::FromString("DEBUG");
+  Log::ReportingLevel() = Log::FromString("DEBUG3");
+  bool closure = true;
 
   std::vector<TString> channels;
-  channels.push_back("ee");
+  //channels.push_back("ee");
   channels.push_back("emu");
-  channels.push_back("mumu");
-  channels.push_back("combined");
+  //channels.push_back("mumu");
+  //channels.push_back("combined");
 
   // Do the same (or similar things) for the systematics uncertainties:
   std::vector<TString> syst_on_nominal;
@@ -431,17 +475,22 @@ void extract() {
 				  */
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * mass_samples = new extractor(*ch,"Nominal",false);
+    extractor * mass_samples = new extractor(*ch,"Nominal",true);//false);
+    if(closure) mass_samples->setClosureSample("MASS_DOWN_6GEV");
+
     Double_t topmass = mass_samples->getTopMass();
     Double_t total_stat = mass_samples->getStatError();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
 
-    Double_t total_syst = 0;
 
+    Double_t total_syst = 0;
+    /*
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
       extractorMatchScale * matchscale_samples = new extractorMatchScale(*ch,"Nominal",false,"Nominal",(*syst));
+      if(closure) matchscale_samples->setClosureSample("Nominal");
+
       Double_t topmass_variation = matchscale_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
       LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
@@ -452,12 +501,14 @@ void extract() {
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
       extractor * variation_samples = new extractor(*ch,*syst,false);
+      if(closure) variation_samples->setClosureSample("Nominal");
+
       Double_t topmass_variation = variation_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
       LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
       total_syst += (topmass-topmass_variation)*(topmass-topmass_variation);
     }
-
+    */
     total_syst = sqrt(total_syst);
     LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +- " << total_stat << " +- " << total_syst << " GeV";
   }
