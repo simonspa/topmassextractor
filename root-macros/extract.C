@@ -33,11 +33,11 @@ Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t 
   // Calculate the signal fraction from reconstructed events and TT background:
   Double_t fsignal = reco/(reco+ttbgr);
 
-  // Correct the TTBgr for different TTBar Cross sections (mass dependent):
-  Double_t corr_ttbgr = ttbgr*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+  Double_t bgr_other = bgr - ttbgr;
 
   // Calculate signal by subtracting backround from data, multiplied by signal fraction.
-  Double_t signal = (data - (bgr - corr_ttbgr))*fsignal;
+  Double_t signal = (data - bgr_other)*fsignal;
 
   LOG(logDEBUG2) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
 
@@ -46,6 +46,7 @@ Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t 
 
 Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
+  // Scale the reco accoring to the different TTBar Cross sections (mass dependent):
   Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
   LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
 
@@ -398,11 +399,15 @@ void extractor::setClosureSample(TString closure) {
   for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
     
     Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-    Double_t signal = (aRecHist->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + aBgrHist->GetBinContent(bin);
 
-    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << signal;
+    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+    Double_t bgr_other = aBgrHist->GetBinContent(bin) - aTtBgrHist->GetBinContent(bin);
+
+    Double_t pdata = (aRecHist->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + bgr_other;
+
+    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << pdata;
     // Write pseudo data with background:
-    pseudoData->SetBinContent(bin,signal);
+    pseudoData->SetBinContent(bin,pdata);
   }
 
   closureFile->Close();
