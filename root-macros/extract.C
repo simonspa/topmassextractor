@@ -449,7 +449,9 @@ extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch)
 void extract() {
 
   Log::ReportingLevel() = Log::FromString("DEBUG3");
+
   bool closure = true;
+  TString closure_sample = "Nominal";
 
   std::vector<TString> channels;
   //channels.push_back("ee");
@@ -481,8 +483,8 @@ void extract() {
 				  */
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
-    extractor * mass_samples = new extractor(*ch,"Nominal",true);//false);
-    if(closure) mass_samples->setClosureSample("MASS_DOWN_6GEV");
+    extractor * mass_samples = new extractor(*ch,"Nominal",false);
+    if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
     Double_t total_stat = mass_samples->getStatError();
@@ -495,7 +497,7 @@ void extract() {
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
       extractorMatchScale * matchscale_samples = new extractorMatchScale(*ch,"Nominal",false,"Nominal",(*syst));
-      if(closure) matchscale_samples->setClosureSample("Nominal");
+      if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
@@ -506,8 +508,8 @@ void extract() {
     // Systematic Variations produced by varying nominal samples:
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractor * variation_samples = new extractor(*ch,*syst,false);
-      if(closure) variation_samples->setClosureSample("Nominal");
+      extractor * variation_samples = new extractor(*ch,*syst,true);
+      if(closure) variation_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = variation_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
