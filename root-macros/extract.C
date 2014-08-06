@@ -319,26 +319,20 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
   TFile * nominalfile = new TFile(nfilename);
   TFile * systematicsfile = new TFile(sfilename);
 
-  LOG(logDEBUG2) << nfilename;
-  LOG(logDEBUG2) << sfilename;
-
   if(!nominalfile->IsOpen() || !systematicsfile->IsOpen()) {
     LOG(logINFO) << "Failed to access file";
     throw 1;
   }
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
-  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist")->Clone());
-  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist")->Clone());
+  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
+  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist"));
 
-  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist")->Clone());
-  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist")->Clone());
+  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist"));
+  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist"));
 
-  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist")->Clone());
-  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist")->Clone());
-
-  LOG(logDEBUG2) << nfilename;
-  LOG(logDEBUG2) << sfilename;
+  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist"));
+  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist"));
 
   for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
     Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
@@ -350,7 +344,7 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
     Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
     deltaTtbgr.push_back(ttbgr);
 
-    LOG(logDEBUG2) << "Diffs bin " << bin << " drec=" << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
+    LOG(logDEBUG2) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
   }
 
   nominalfile->Close();
