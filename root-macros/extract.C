@@ -480,9 +480,15 @@ void extract() {
   systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
   systematics.push_back("BTAG_LFET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
   systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
-				  */
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+
+    std::ofstream SystOutputFile("MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    SystOutputFile << "Top Mass, Channel: " << *ch << endl;
+    SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
+    SystOutputFile << "\\hline" << std::endl;
+
+
     extractor * mass_samples = new extractor(*ch,"Nominal",false);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
@@ -504,6 +510,8 @@ void extract() {
       LOG(logINFO) << *syst << ": delta = " << delta;
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
+
+      SystOutputFile << (*syst) << " & " << setprecision(5) << delta << endl;
     }
 
     // Systematic Variations produced by varying nominal samples:
@@ -518,11 +526,16 @@ void extract() {
       LOG(logINFO) << *syst << ": delta = " << delta;
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
+
+      SystOutputFile << (*syst) << " & " << setprecision(5) << delta << endl;
     }
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
     LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+
+    SystOutputFile << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+    SystOutputFile.close();
   }
 
   return;
