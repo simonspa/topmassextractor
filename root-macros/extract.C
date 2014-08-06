@@ -30,8 +30,6 @@ Double_t extractorMatchScale::getSignal(Int_t bin, Double_t mass, Double_t data,
 
 Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  LOG(logDEBUG2) << "Calculation signal event count...";
-
   // Calculate the signal fraction from reconstructed events and TT background:
   Double_t fsignal = reco/(reco+ttbgr);
 
@@ -47,8 +45,6 @@ Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t 
 }
 
 Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
-
-  LOG(logDEBUG2) << "Calculation reco event count...";
 
   Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
   LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
@@ -75,10 +71,10 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
   else aDataHist = static_cast<TH1D*>(pseudoData->Clone());
 
   // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist")->Clone());
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
   // Histograms containing the background:
-  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist")->Clone());
-  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist")->Clone());
+  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
+  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
   Int_t nbins = aDataHist->GetNbinsX();
   LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
@@ -95,6 +91,7 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
     // Write background subtrated signal:
     aDataHist->SetBinContent(bin,signal);
   }
+
   // Return signal-only histogram:
   return aDataHist;
 }
@@ -113,8 +110,6 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
     Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin));
 
-    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aRecHist->GetBinContent(bin) << " corr=" << corr_reco;
-    
     // Write corrected Reco:
     aRecHist->SetBinContent(bin,corr_reco);
   }
