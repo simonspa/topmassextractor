@@ -488,11 +488,10 @@ void extract() {
 
     Double_t topmass = mass_samples->getTopMass();
     Double_t total_stat = mass_samples->getStatError();
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass;
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +- " << total_stat;
+    Double_t total_syst_pos = 0;
+    Double_t total_syst_neg = 0;
 
-
-    Double_t total_syst = 0;
-    /*
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
@@ -501,8 +500,10 @@ void extract() {
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
-      LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
-      total_syst += (topmass-topmass_variation)*(topmass-topmass_variation);
+      Double_t delta = (Double_t)topmass-topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) total_syst_pos += delta*delta;
+      else total_syst_neg += delta*delta;
     }
 
     // Systematic Variations produced by varying nominal samples:
@@ -513,12 +514,15 @@ void extract() {
 
       Double_t topmass_variation = variation_samples->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
-      LOG(logINFO) << *syst << ": delta = " << (Double_t)topmass-topmass_variation;
-      total_syst += (topmass-topmass_variation)*(topmass-topmass_variation);
+      Double_t delta = (Double_t)topmass-topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) total_syst_pos += delta*delta;
+      else total_syst_neg += delta*delta;
     }
-    */
-    total_syst = sqrt(total_syst);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +- " << total_stat << " +- " << total_syst << " GeV";
+
+    total_syst_pos = sqrt(total_syst_pos);
+    total_syst_neg = sqrt(total_syst_neg);
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
   }
 
   return;
