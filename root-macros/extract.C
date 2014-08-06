@@ -354,15 +354,26 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
 Double_t extractor::getMassFromSample(TString sample) {
 
   Double_t topmass = nominalmass;
-  if(sample.Contains("UP")) {
-    if(sample.Contains("1GEV")) topmass += 1;
-    else if(sample.Contains("3GEV")) topmass += 3;
-    else if(sample.Contains("6GEV")) topmass += 6;
+  // The mass samples:
+  if(sample.Contains("MASS")) {
+    if(sample.Contains("UP")) {
+      if(sample.Contains("1GEV")) topmass += 1;
+      else if(sample.Contains("3GEV")) topmass += 3;
+      else if(sample.Contains("6GEV")) topmass += 6;
+    }
+    else if(sample.Contains("DOWN")) {
+      if(sample.Contains("1")) topmass -= 1;
+      else if(sample.Contains("3GEV")) topmass -= 3;
+      else if(sample.Contains("6GEV")) topmass -= 6;
+    }
   }
-  else if(sample.Contains("DOWN")) {
-    if(sample.Contains("1GEV")) topmass -= 1;
-    else if(sample.Contains("3GEV")) topmass -= 3;
-    else if(sample.Contains("6GEV")) topmass -= 6;
+  else {
+    if(sample.Contains("1POS")) topmass += 1;
+    else if(sample.Contains("3POS")) topmass += 3;
+    else if(sample.Contains("6POS")) topmass += 6;
+    else if(sample.Contains("1NEG")) topmass -= 1;
+    else if(sample.Contains("3NEG")) topmass -= 3;
+    else if(sample.Contains("6NEG")) topmass -= 6;
   }
 
   return topmass;
