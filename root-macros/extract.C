@@ -448,16 +448,16 @@ extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch)
 
 void extract() {
 
-  Log::ReportingLevel() = Log::FromString("DEBUG3");
+  Log::ReportingLevel() = Log::FromString("INFO");
 
   bool closure = true;
   TString closure_sample = "Nominal";
 
   std::vector<TString> channels;
-  //channels.push_back("ee");
+  channels.push_back("ee");
   channels.push_back("emu");
-  //channels.push_back("mumu");
-  //channels.push_back("combined");
+  channels.push_back("mumu");
+  channels.push_back("combined");
 
   // Do the same (or similar things) for the systematics uncertainties:
   std::vector<TString> syst_on_nominal;
@@ -467,8 +467,8 @@ void extract() {
   syst_on_nominal.push_back("SCALE_DOWN");
 
   std::vector<TString> systematics;
-  //systematics.push_back("JES_UP");
-  /* systematics.push_back("JES_DOWN");
+  systematics.push_back("JES_UP");
+  systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
   systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
   systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
@@ -517,7 +517,7 @@ void extract() {
     // Systematic Variations produced by varying nominal samples:
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractor * variation_samples = new extractor(*ch,*syst,true);
+      extractor * variation_samples = new extractor(*ch,*syst,false);
       if(closure) variation_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = variation_samples->getTopMass();
