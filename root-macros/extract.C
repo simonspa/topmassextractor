@@ -382,24 +382,25 @@ void extractor::setClosureSample(TString closure) {
   TString filename = "preunfolded/" + closure + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   TFile * closureFile = new TFile(filename);
 
+  // Histograms containing the background:
+  TH1D * aRecHist = static_cast<TH1D*>(closureFile->Get("aRecHist"));
+  TH1D * aTtBgrHist = static_cast<TH1D*>(closureFile->Get("aTtBgrHist"));
+  TH1D * aBgrHist = static_cast<TH1D*>(closureFile->Get("aBgrHist"));
+
   // Build a pseudo data set from the closure sample:
-  pseudoData = static_cast<TH1D*>(closureFile->Get("aRecHist")->Clone());
+  pseudoData = new TH1D("pseudodata","pseudodata",aRecHist->GetNbinsX(),0,100);
   pseudoData->SetDirectory(0);
   Double_t mass = getMassFromSample(closure);
 
   LOG(logINFO) << "Running Closure test. Pseudo data taken from " << filename;
   LOG(logINFO) << "Pseudo data mass = " << mass;
 
-  // Histograms containing the background:
-  TH1D * aTtBgrHist = static_cast<TH1D*>(closureFile->Get("aTtBgrHist")->Clone());
-  TH1D * aBgrHist = static_cast<TH1D*>(closureFile->Get("aBgrHist")->Clone());
-
   for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
     
     Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-    Double_t signal = (pseudoData->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + aBgrHist->GetBinContent(bin);
+    Double_t signal = (aRecHist->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + aBgrHist->GetBinContent(bin);
 
-    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << pseudoData->GetBinContent(bin) << " pdat=" << signal;
+    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << signal;
     // Write pseudo data with background:
     pseudoData->SetBinContent(bin,signal);
   }
