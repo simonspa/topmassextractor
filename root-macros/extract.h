@@ -3,6 +3,7 @@
 #include "Riostream.h"
 #include <TH1D.h>
 #include <TFile.h>
+#include <TStyle.h>
 #include <TF1.h>
 #include <TString.h>
 #include <TCanvas.h>
@@ -47,8 +48,15 @@ private:
    * errors are NOT returned in % (so e.g. 0.026)
    */
   float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0);
+  void setHHStyle(TStyle& HHStyle);
+  void DrawDecayChLabel(TString decaychannel="", double textSize=0.04);
+  void DrawCMSLabels(int cmsprelim=true, double energy=8, double textSize=0.04);
+  void setStyle(TGraphErrors *hist);
+  void setStyleAndFillLegend(TGraphErrors* histo, TString name, TLegend *leg);
+  void setLegendStyle(TLegend *leg);
 
   Double_t getMassFromSample(TString sample);
+  TString getChannelLabel(TString channel);
 
 public:
   Double_t getTopMass();

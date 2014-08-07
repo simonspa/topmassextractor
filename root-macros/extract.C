@@ -1,17 +1,22 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "Riostream.h"
+#include <Riostream.h>
 #include <TH1D.h>
 #include <TFile.h>
+#include <TStyle.h>
+#include <TLegend.h>
 #include <TF1.h>
 #include <TString.h>
 #include <TCanvas.h>
+#include <TROOT.h>
+#include <TPaveText.h>
 #include <TGraphErrors.h>
 #include "log.h"
 #include "extract.h"
 
 Double_t nominalmass = 172.5;
+Double_t lumi = 19712;
 
 using namespace unilog;
 
@@ -160,42 +165,53 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
 
   TGraphErrors * graph_mc = new TGraphErrors();
   graph_mc->SetTitle(mname+channel);
+
   for(UInt_t point = 0; point < masses.size(); ++point) {
     graph_mc->SetPoint(point, masses.at(point), mc.at(point));
     //graph_mc->SetPointError(point,0,sqrt(mc.at(point)));
   }
 
-  graph_mc->SetLineWidth(0);
-  graph_mc->SetMarkerStyle(20);
-  graph_mc->Fit("pol2","Q");
+  //graph_mc->Fit("pol2","Q");
 
   TF1 * mcfit = graph_mc->GetFunction("pol2");
   allfits.push_back(mcfit);
 
+  TLegend *leg = new TLegend();
+  setLegendStyle(leg);
+
   if(storeHistograms) {
-    graph_mc->Draw("A P E1");
+    graph_mc->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+    graph_mc->GetYaxis()->SetTitle("Events");
+
+    setStyleAndFillLegend(graph_mc,"madgraph",leg);
+    graph_mc->Draw("A L P E1");
     graph_mc->Write(mname+channel);
   }
 
   TGraphErrors * graph = new TGraphErrors();
   graph->SetTitle(dname+channel);
+
   for(UInt_t point = 0; point < masses.size(); ++point) {
     graph->SetPoint(point, masses.at(point), data.at(point));
     graph->SetPointError(point,0,sqrt(data.at(point)));
   }
 
-  graph->SetLineWidth(0);
-  graph->SetMarkerColor(kRed);
-  graph->SetMarkerStyle(20);
-  graph->Fit("pol2","Q");
+  //graph->Fit("pol2","Q");
 
   TF1 * datfit = graph->GetFunction("pol2");
   allfits.push_back(datfit);
 
   if(storeHistograms) {
-    graph->Draw("same P E1");
-    graph->Write(dname+channel);
+    setStyleAndFillLegend(graph,"data",leg);
 
+    graph->Draw("SAME P E1");
+    DrawDecayChLabel(getChannelLabel(channel));
+    DrawCMSLabels();
+
+    // Also draw legend:
+    leg->Draw();
+
+    graph->Write(dname+channel);
     c->Write();
   }
 
@@ -230,7 +246,11 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
   chisquare->Fit("pol2","Q");
   if(storeHistograms) {
     chisquare->SetMarkerStyle(20);
+    chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chisquare->GetYaxis()->SetTitle("#chi^{2}");
     chisquare->Draw("AP");
+    DrawDecayChLabel(getChannelLabel(channel));
+    DrawCMSLabels();
     chisquare->Write(name+channel);
   }
 
@@ -427,6 +447,8 @@ void extractor::setClosureSample(TString closure) {
 
 extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), extractedMass(0), statError(0), storeHistograms(storeHistos), doClosure(false) {
 
+  setHHStyle(*gStyle);
+
   // This is our nominal mass variation sample:
   if(sample == "Nominal") {
     samples.push_back("MASS_DOWN_6GEV");
@@ -449,6 +471,356 @@ extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch)
   }
   
   LOG(logDEBUG) << "Initialized.";
+}
+
+template<class t>
+bool extractor::isApprox(t a, t b, double eps) {
+  if (fabs(a - b) < eps) { return true; }
+  else { return false; }
+}
+
+float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
+    /*
+     * all numbers following arxiv 1303.6254
+     *
+     */
+    float mref=173.3;
+    float referencexsec=0;
+    float deltam=topmass-mref;
+
+
+    float a1=0,a2=0;
+
+    if(isApprox(energy,8.f,0.01)){
+        a1=-1.1125;
+        a2=0.070778;
+        referencexsec=245.8;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.026;
+    }
+    else if(isApprox(energy,7.f,0.01)){
+        a1=-1.24243;
+        a2=0.890776;
+        referencexsec=172.0;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.028;
+    }
+
+    float reldm=mref/(mref+deltam);
+
+    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
+
+    return out;
+}
+
+void extractor::setHHStyle(TStyle& HHStyle)
+{
+    const int fontstyle=42;
+    HHStyle.SetPalette(1);
+        
+    // ==============
+    //  Canvas
+    // ==============
+            
+    HHStyle.SetCanvasBorderMode(0);
+    HHStyle.SetCanvasColor(kWhite);
+    HHStyle.SetCanvasDefH(600); //Height of canvas
+    HHStyle.SetCanvasDefW(600); //Width of canvas
+    HHStyle.SetCanvasDefX(0);   //Position on screen
+    HHStyle.SetCanvasDefY(0);
+            
+    // ==============
+    //  Pad
+    // ==============
+            
+    HHStyle.SetPadBorderMode(0);
+    // HHStyle.SetPadBorderSize(Width_t size = 1);
+    HHStyle.SetPadColor(kWhite);
+    HHStyle.SetPadGridX(false);
+    HHStyle.SetPadGridY(false);
+    HHStyle.SetGridColor(kGray);
+    HHStyle.SetGridStyle(3);
+    HHStyle.SetGridWidth(1);
+            
+    // ==============
+    //  Frame
+    // ==============
+            
+    HHStyle.SetFrameBorderMode(0);
+    HHStyle.SetFrameBorderSize(1);
+    HHStyle.SetFrameFillColor(0);
+    HHStyle.SetFrameFillStyle(0);
+    HHStyle.SetFrameLineColor(1);
+    HHStyle.SetFrameLineStyle(1);
+    HHStyle.SetFrameLineWidth(1);
+            
+    // ==============
+    //  Histo
+    // ==============
+
+    HHStyle.SetErrorX(0.0);
+    HHStyle.SetEndErrorSize(8);
+            
+    // HHStyle.SetHistFillColor(1);
+    // HHStyle.SetHistFillStyle(0);
+    // HHStyle.SetHistLineColor(1);
+    HHStyle.SetHistLineStyle(0);
+    HHStyle.SetHistLineWidth(1);
+    // HHStyle.SetLegoInnerR(Float_t rad = 0.5);
+    // HHStyle.SetNumberContours(Int_t number = 20);
+
+    // HHStyle.SetErrorMarker(20);
+            
+    HHStyle.SetMarkerStyle(20);
+            
+    // ==============
+    //  Fit/function
+    // ==============
+            
+    HHStyle.SetOptFit(1);
+    HHStyle.SetFitFormat("5.4g");
+    HHStyle.SetFuncColor(2);
+    HHStyle.SetFuncStyle(1);
+    HHStyle.SetFuncWidth(1);
+            
+    // ==============
+    //  Date
+    // ============== 
+            
+    HHStyle.SetOptDate(0);
+    // HHStyle.SetDateX(Float_t x = 0.01);
+    // HHStyle.SetDateY(Float_t y = 0.01);
+            
+    // =====================
+    //  Statistics Box
+    // =====================
+            
+    HHStyle.SetOptFile(0);
+    HHStyle.SetOptStat(0); // To display the mean and RMS:   SetOptStat("mr");
+    HHStyle.SetStatColor(kWhite);
+    HHStyle.SetStatFont(fontstyle);
+    HHStyle.SetStatFontSize(0.025);
+    HHStyle.SetStatTextColor(1);
+    HHStyle.SetStatFormat("6.4g");
+    HHStyle.SetStatBorderSize(1);
+    HHStyle.SetStatH(0.1);
+    HHStyle.SetStatW(0.15);
+    // HHStyle.SetStatStyle(Style_t style = 1001);
+    // HHStyle.SetStatX(Float_t x = 0);
+    // HHStyle.SetStatY(Float_t y = 0);
+            
+    // ==============
+    //  Margins
+    // ==============
+
+    HHStyle.SetPadTopMargin(0.1);
+    HHStyle.SetPadBottomMargin(0.15);
+    HHStyle.SetPadLeftMargin(0.20);
+    HHStyle.SetPadRightMargin(0.05);
+            
+    // ==============
+    //  Global Title
+    // ==============
+            
+    HHStyle.SetOptTitle(0);
+    HHStyle.SetTitleFont(fontstyle);
+    HHStyle.SetTitleColor(1);
+    HHStyle.SetTitleTextColor(1);
+    HHStyle.SetTitleFillColor(10);
+    HHStyle.SetTitleFontSize(0.05);
+    // HHStyle.SetTitleH(0); // Set the height of the title box
+    // HHStyle.SetTitleW(0); // Set the width of the title box
+    // HHStyle.SetTitleX(0); // Set the position of the title box
+    // HHStyle.SetTitleY(0.985); // Set the position of the title box
+    // HHStyle.SetTitleStyle(Style_t style = 1001);
+    // HHStyle.SetTitleBorderSize(2);
+            
+    // ==============
+    //  Axis titles
+    // ==============
+            
+    HHStyle.SetTitleColor(1, "XYZ");
+    HHStyle.SetTitleFont(fontstyle, "XYZ");
+    HHStyle.SetTitleSize(0.05, "XYZ");
+    // HHStyle.SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
+    // HHStyle.SetTitleYSize(Float_t size = 0.02);
+    HHStyle.SetTitleXOffset(1.0);
+    HHStyle.SetTitleYOffset(1.7);
+    // HHStyle.SetTitleOffset(1.1, "Y"); // Another way to set the Offset
+            
+    // ==============
+    //  Axis Label
+    // ==============
+            
+    //HHStyle.SetLabelColor(1, "XYZ");
+    HHStyle.SetLabelFont(fontstyle, "XYZ");
+    HHStyle.SetLabelOffset(0.007, "XYZ");
+    HHStyle.SetLabelSize(0.04, "XYZ");
+            
+    // ==============
+    //  Axis
+    // ==============
+            
+    HHStyle.SetAxisColor(1, "XYZ");
+    HHStyle.SetStripDecimals(kTRUE);
+    HHStyle.SetTickLength(0.03, "XYZ");
+    HHStyle.SetNdivisions(510, "XYZ");
+    HHStyle.SetPadTickX(1);  // To get tick marks on the opposite side of the frame
+    HHStyle.SetPadTickY(1);
+            
+    // Change for log plots:
+    HHStyle.SetOptLogx(0);
+    HHStyle.SetOptLogy(0);
+    HHStyle.SetOptLogz(0);
+            
+    // ==============
+    //  Text
+    // ==============
+            
+    HHStyle.SetTextAlign(11);
+    HHStyle.SetTextAngle(0);
+    HHStyle.SetTextColor(1);
+    HHStyle.SetTextFont(fontstyle);
+    HHStyle.SetTextSize(0.05);
+            
+    // =====================
+    //  Postscript options:
+    // =====================
+            
+    HHStyle.SetPaperSize(20.,20.);
+    // HHStyle.SetLineScalePS(Float_t scale = 3);
+    // HHStyle.SetLineStyleString(Int_t i, const char* text);
+    // HHStyle.SetHeaderPS(const char* header);
+    // HHStyle.SetTitlePS(const char* pstitle);
+            
+    // HHStyle.SetBarOffset(Float_t baroff = 0.5);
+    // HHStyle.SetBarWidth(Float_t barwidth = 0.5);
+    // HHStyle.SetPaintTextFormat(const char* format = "g");
+    // HHStyle.SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
+    // HHStyle.SetTimeOffset(Double_t toffset);
+    // HHStyle.SetHistMinimumZero(kTRUE);
+}
+
+
+// Draw label for Decay Channel in upper left corner of plot
+void extractor::DrawDecayChLabel(TString decaychannel, double textSize) {
+
+    TPaveText *decch = new TPaveText();
+
+    decch->AddText(decaychannel);
+
+    decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+    decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+    decch->SetX2NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength() + 0.15 );
+    decch->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength()        );
+
+    decch->SetFillStyle(0);
+    decch->SetBorderSize(0);
+    if (textSize!=0) decch->SetTextSize(textSize);
+    decch->SetTextAlign(12);
+    decch->Draw("same");
+}
+
+// Draw official labels (CMS Preliminary, luminosity and CM energy) above plot
+void extractor::DrawCMSLabels(int cmsprelim, double energy, double textSize) {
+
+    const char *text;
+    if(cmsprelim ==2 ) {//Private work for PhDs students
+        text = "Private Work, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+    } else if (cmsprelim==1) {//CMS preliminary label
+        text = "CMS Preliminary, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+    } else {//CMS label
+        text = "CMS, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+    }
+    
+    TPaveText *label = new TPaveText();
+    label->SetX1NDC(gStyle->GetPadLeftMargin());
+    label->SetY1NDC(1.0-gStyle->GetPadTopMargin());
+    label->SetX2NDC(1.0-gStyle->GetPadRightMargin());
+    label->SetY2NDC(1.0);
+    label->SetTextFont(42);
+    label->AddText(Form(text, lumi/1000, energy));
+    label->SetFillStyle(0);
+    label->SetBorderSize(0);
+    if (textSize!=0) label->SetTextSize(textSize);
+    label->SetTextAlign(32);
+    label->Draw("same");
+}
+
+TString extractor::getChannelLabel(TString channel) {
+ 
+  TString label = "";
+  if(channel =="ee") { label = "ee"; }
+  if(channel =="mumu"){ label = "#mu#mu"; }
+  if(channel =="emu"){ label = "e#mu"; }
+  if(channel =="combined"){ label = "Dilepton Combined"; }
+
+  return label;
+}
+
+void extractor::setStyle(TGraphErrors *hist)
+{
+  hist->SetLineWidth(1);
+  hist->GetXaxis()->SetLabelFont(42);
+  hist->GetYaxis()->SetLabelFont(42);
+  hist->GetXaxis()->SetTitleFont(42);
+  hist->GetYaxis()->SetTitleFont(42);
+  hist->GetXaxis()->SetTitleSize(0.05);
+  hist->GetYaxis()->SetTitleSize(0.05);
+  hist->GetXaxis()->SetTitleOffset(1.08);
+  hist->GetYaxis()->SetTitleOffset(1.7);
+  hist->GetXaxis()->SetLabelOffset(0.007);
+  hist->GetYaxis()->SetLabelOffset(0.007);
+
+  hist->SetMarkerStyle(20);
+  hist->SetMarkerSize(1.2);
+  hist->SetLineWidth(2);
+  
+  hist->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+  //hist->GetYaxis()->SetTitle("#frac{1}{#sigma} #frac{d#sigma}{d"+XAxis+"}"+" #left[GeV^{-1}#right]"); 
+}
+
+
+void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg) {
+
+  setStyle(hist);
+
+  if(name == "data"){
+    hist->SetLineWidth(0);
+    if(leg) leg->AddEntry(hist, "Data",  "p");
+  }
+
+  if(name != "data") {
+    hist->SetMarkerStyle(1);
+    hist->SetMarkerSize(0);
+  }
+  
+  if(name == "madgraph") {
+    hist->SetLineColor(kRed+1);
+    hist->SetLineStyle(1);
+    if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "l");
+  }
+}
+
+void extractor::setLegendStyle(TLegend *leg)
+{
+    double x1 = 0.560, y1 = 0.755;
+    double height = 0.075, width = 0.275;
+
+    leg->SetX1NDC(x1);
+    leg->SetY1NDC(y1);
+    leg->SetX2NDC(x1 + width);
+    leg->SetY2NDC(y1 + height);
+
+    leg->SetTextFont(42);
+    leg->SetTextAlign(12);
+    leg->SetTextSize(0.04);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
 }
 
 
@@ -546,48 +918,3 @@ void extract() {
 
   return;
 }
-
-template<class t>
-bool extractor::isApprox(t a, t b, double eps) {
-  if (fabs(a - b) < eps) { return true; }
-  else { return false; }
-}
-
-float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
-    /*
-     * all numbers following arxiv 1303.6254
-     *
-     */
-    float mref=173.3;
-    float referencexsec=0;
-    float deltam=topmass-mref;
-
-
-    float a1=0,a2=0;
-
-    if(isApprox(energy,8.f,0.01)){
-        a1=-1.1125;
-        a2=0.070778;
-        referencexsec=245.8;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.026;
-    }
-    else if(isApprox(energy,7.f,0.01)){
-        a1=-1.24243;
-        a2=0.890776;
-        referencexsec=172.0;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.028;
-    }
-
-    float reldm=mref/(mref+deltam);
-
-    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
-
-    return out;
-}
-
