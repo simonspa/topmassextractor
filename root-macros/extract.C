@@ -206,6 +206,12 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
 
   TString name = "chi2_";
 
+  TCanvas* c;
+  if(storeHistograms) {
+    c = new TCanvas(name+channel,name+channel);
+    c->cd();
+  }
+
   TGraphErrors * chisquare = new TGraphErrors();
   chisquare->SetTitle(name+channel);
 
@@ -489,7 +495,7 @@ void extract() {
     SystOutputFile << "\\hline" << std::endl;
 
 
-    extractor * mass_samples = new extractor(*ch,"Nominal",false);
+    extractor * mass_samples = new extractor(*ch,"Nominal",true);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
