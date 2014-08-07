@@ -972,6 +972,7 @@ void extract() {
     }
 
     // Systematic Variations produced by varying nominal samples:
+    Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
       extractor * variation_samples = new extractor(*ch,*syst,false);
@@ -984,15 +985,23 @@ void extract() {
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
 
-      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{+" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
-      else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      if(syst->Contains("BTAG")) {
+	if(delta > 0) btag_syst_pos += delta*delta;
+	else btag_syst_neg += delta*delta;
+      }
+      else {
+	if(syst->Contains("UP")) SystOutputFile << variation_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+	else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      }
     }
+    SystOutputFile << mass_samples->getSampleLabel("BTAG") << " & $^{+" << setprecision(3) <<  sqrt(btag_syst_pos) << "}_{"
+		   << setprecision(3) << sqrt(btag_syst_neg) << "}$ \\\\" << endl;
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
     LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
 
-    SystOutputFile << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+    SystOutputFile << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
     SystOutputFile.close();
   }
 
