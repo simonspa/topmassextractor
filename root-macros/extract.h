@@ -61,6 +61,7 @@ private:
 public:
   Double_t getTopMass();
   Double_t getStatError();
+  TString getSampleLabel(TString systematic);
   void setClosureSample(TString closure);
   extractor(TString channel, TString sample, bool storeHistos);
 };

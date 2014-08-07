@@ -789,6 +789,26 @@ TString extractor::getChannelLabel(TString channel) {
   return label;
 }
 
+TString extractor::getSampleLabel(TString systematic) {
+
+  TString label = "";
+  if(systematic.Contains("Nominal") || systematic.Contains("MASS")) { label = "Nominal"; }
+  else if(systematic.Contains("BTAG")) { label = "B-Tagging"; }
+  else if(systematic.Contains("JER")) { label = "Jet Energy Resolution"; }
+  else if(systematic.Contains("JES")) { label = "Jet Energy Scale"; }
+  else if(systematic.Contains("PU")) { label = "Pile-Up"; }
+  else if(systematic.Contains("TRIG")) { label = "Trigger"; }
+  else if(systematic.Contains("LEPT")) { label = "Lepton"; }
+  else if(systematic.Contains("BG")) { label = "Background"; }
+  else if(systematic.Contains("DY")) { label = "Drell-Yan"; }
+  else if(systematic.Contains("KIN")) { label = "Kinematic Reconstruction"; }
+  else if(systematic.Contains("MATCH")) { label = "Matching"; }
+  else if(systematic.Contains("SCALE")) { label = "Scale"; }
+  else if(systematic.Contains("HAD")) { label = "Hadronization"; }
+
+  return label;
+}
+
 void extractor::setStyle(TGraphErrors *hist)
 {
   hist->SetLineWidth(1);
@@ -929,7 +949,7 @@ void extract() {
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
 
-      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
+      if(syst->Contains("UP")) SystOutputFile << matchscale_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
       else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
     }
 
@@ -947,7 +967,7 @@ void extract() {
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
       
-      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
+      if(syst->Contains("UP")) SystOutputFile << bg_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
       else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
     }
 
