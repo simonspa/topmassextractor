@@ -49,6 +49,25 @@ Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t 
   return signal;
 }
 
+Double_t extractorBackground::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  // Calculate the signal fraction from reconstructed events and TT background:
+  Double_t fsignal = reco/(reco+ttbgr);
+
+  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+  Double_t bgr_other = bgr - ttbgr;
+
+  // Scale with DY or BG scale factor:
+  bgr_other *= scaleFactor;
+
+  // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+  Double_t signal = (data - bgr_other)*fsignal;
+
+  LOG(logDEBUG2) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+
+  return signal;
+}
+
 Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
   // Scale the reco accoring to the different TTBar Cross sections (mass dependent):
@@ -826,6 +845,14 @@ void extractor::setLegendStyle(TLegend *leg)
     leg->SetBorderSize(0);
 }
 
+void extractorBackground::prepareScaleFactor(TString systematic) {
+
+  if(systematic.Contains("BG") || systematic.Contains("DY")) {
+
+    if(systematic.Contains("UP")) { scaleFactor = 1.3; }
+    if(systematic.Contains("DOWN")) { scaleFactor = 0.7; }
+  }
+}
 
 void extract() {
 

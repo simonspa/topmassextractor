@@ -86,4 +86,19 @@ public:
 
 };
 
+class extractorBackground : public extractor {
+
+private:
+  Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+  void prepareScaleFactor(TString systematic);
+  Double_t scaleFactor;
+
+public:
+ extractorBackground(TString channel, TString sample, bool storeHistos, TString systematic) : scaleFactor(1), extractor(channel, sample, storeHistos) {
+    LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
+    prepareScaleFactor(systematic);
+  };
+};
+
 #endif /* EXTRACT_H */
