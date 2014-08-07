@@ -185,7 +185,7 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
     graph_mc->GetYaxis()->SetTitle("Events");
 
     setStyleAndFillLegend(graph_mc,"madgraph",leg);
-    graph_mc->Draw("A L P E1");
+    graph_mc->Draw("A P E1");
     graph_mc->Write(mname+channel);
   }
 
@@ -321,7 +321,7 @@ Double_t extractor::getTopMass() {
 
   TFile output;
   if(storeHistograms) {
-    output.Open("massfit_bins.root","update");
+    output.Open("MassFitRates.root","update");
     gDirectory->pwd();
   }
 
@@ -794,18 +794,18 @@ void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend 
 
   if(name == "data"){
     hist->SetLineWidth(0);
-    if(leg) leg->AddEntry(hist, "Data",  "p");
+    if(leg && doClosure) leg->AddEntry(hist, "Pseudo Data",  "p");
+    else if(leg) leg->AddEntry(hist, "Data",  "p");
   }
 
-  if(name != "data") {
+  /*  if(name != "data") {
     hist->SetMarkerStyle(1);
     hist->SetMarkerSize(0);
-  }
+    }*/
   
   if(name == "madgraph") {
-    hist->SetLineColor(kRed+1);
-    hist->SetLineStyle(1);
-    if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "l");
+    hist->SetMarkerColor(kRed+1);
+    if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
   }
 }
 
@@ -848,8 +848,7 @@ void extract() {
   syst_on_nominal.push_back("SCALE_DOWN");
 
   std::vector<TString> systematics;
-  systematics.push_back("JES_UP");
-  systematics.push_back("JES_DOWN");
+  systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
   systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
   systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
