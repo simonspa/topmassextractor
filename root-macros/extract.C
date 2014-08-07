@@ -874,6 +874,10 @@ void extract() {
   syst_on_nominal.push_back("SCALE_UP");
   syst_on_nominal.push_back("SCALE_DOWN");
 
+  std::vector<TString> syst_bg;
+  syst_bg.push_back("BG_UP");
+  syst_bg.push_back("BG_DOWN");
+
   std::vector<TString> systematics;
   systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
@@ -918,7 +922,26 @@ void extract() {
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
 
-      SystOutputFile << (*syst) << " & " << setprecision(5) << delta << endl;
+      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
+      else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+    }
+
+
+    // Getting DrellYan/Background variations:
+    for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",false,(*syst));
+      if(closure) bg_samples->setClosureSample(closure_sample);
+
+      Double_t topmass_variation = bg_samples->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
+      Double_t delta = (Double_t)topmass-topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) total_syst_pos += delta*delta;
+      else total_syst_neg += delta*delta;
+      
+      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
+      else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
     }
 
     // Systematic Variations produced by varying nominal samples:
@@ -934,7 +957,8 @@ void extract() {
       if(delta > 0) total_syst_pos += delta*delta;
       else total_syst_neg += delta*delta;
 
-      SystOutputFile << (*syst) << " & " << setprecision(5) << delta << endl;
+      if(syst->Contains("UP")) SystOutputFile << (*syst) << " & $^{+" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+      else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
     }
 
     total_syst_pos = sqrt(total_syst_pos);
