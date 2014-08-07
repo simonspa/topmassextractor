@@ -180,6 +180,7 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
   setLegendStyle(leg);
 
   if(storeHistograms) {
+    graph_mc->SetTitle("");
     graph_mc->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
     graph_mc->GetYaxis()->SetTitle("Events");
 
@@ -224,7 +225,7 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
 
   TCanvas* c;
   if(storeHistograms) {
-    c = new TCanvas(name+channel,name+channel);
+    c = new TCanvas(name+channel+"_c",name+channel+"_c");
     c->cd();
   }
 
@@ -252,6 +253,7 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
     DrawDecayChLabel(getChannelLabel(channel));
     DrawCMSLabels();
     chisquare->Write(name+channel);
+    c->Write();
   }
 
   return chisquare->GetFunction("pol2");
@@ -333,6 +335,7 @@ Double_t extractor::getTopMass() {
 
   //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
+  output.Close();
   return extractedMass;
 }
 
@@ -581,7 +584,7 @@ void extractor::setHHStyle(TStyle& HHStyle)
     //  Fit/function
     // ==============
             
-    HHStyle.SetOptFit(1);
+    HHStyle.SetOptFit(0);
     HHStyle.SetFitFormat("5.4g");
     HHStyle.SetFuncColor(2);
     HHStyle.SetFuncStyle(1);
