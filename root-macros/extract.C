@@ -484,7 +484,7 @@ void extract() {
   systematics.push_back("BTAG_LJET_UP"); systematics.push_back("BTAG_LJET_DOWN");
   systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
   systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
-  systematics.push_back("BTAG_LFET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
+  systematics.push_back("BTAG_LJET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
   systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
