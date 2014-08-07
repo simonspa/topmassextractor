@@ -66,7 +66,7 @@ public:
 };
 
 
-class extractorMatchScale : public extractor {
+class extractorOtherSamples : public extractor {
 
 private:
   Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
@@ -79,11 +79,10 @@ private:
   std::vector<Double_t> deltaTtbgr;
 
 public:
- extractorMatchScale(TString channel, TString sample, bool storeHistos, TString nominal, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, sample, storeHistos) {
+ extractorOtherSamples(TString channel, TString sample, bool storeHistos, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, sample, storeHistos) {
     LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
-    calcDifferenceToNominal(nominal,systematic);
+    calcDifferenceToNominal(sample,systematic);
   };
-
 };
 
 class extractorBackground : public extractor {

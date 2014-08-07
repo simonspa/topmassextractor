@@ -21,7 +21,7 @@ Double_t lumi = 19712;
 using namespace unilog;
 
 
-Double_t extractorMatchScale::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   // variation for every mass sample in the current bin:
@@ -78,7 +78,7 @@ Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
   return corr_reco;
 }
 
-Double_t extractorMatchScale::getReco(Int_t bin, Double_t mass, Double_t reco) {
+Double_t extractorOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   //variation for every bin:
@@ -358,29 +358,34 @@ Double_t extractor::getTopMass() {
   return extractedMass;
 }
 
-void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString systematics) {
+void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
+
+  if(systematic.Contains("HAD")) {
+    if(systematic.Contains("UP")) { systematic = "MCATNLO"; }
+    else if(systematic.Contains("DOWN")) { systematic = "POWHEG"; }
+  }
 
   // Input files:
   TString nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TString sfilename = "preunfolded/" + systematics + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString sfilename = "preunfolded/" + systematic + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
 
   TFile * nominalfile = new TFile(nfilename);
-  TFile * systematicsfile = new TFile(sfilename);
+  TFile * systematicfile = new TFile(sfilename);
 
-  if(!nominalfile->IsOpen() || !systematicsfile->IsOpen()) {
+  if(!nominalfile->IsOpen() || !systematicfile->IsOpen()) {
     LOG(logINFO) << "Failed to access file";
     throw 1;
   }
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
   TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
-  TH1D * varReco = static_cast<TH1D*>(systematicsfile->Get("aRecHist"));
+  TH1D * varReco = static_cast<TH1D*>(systematicfile->Get("aRecHist"));
 
   TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist"));
-  TH1D * varBgr = static_cast<TH1D*>(systematicsfile->Get("aBgrHist"));
+  TH1D * varBgr = static_cast<TH1D*>(systematicfile->Get("aBgrHist"));
 
   TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist"));
-  TH1D * varTtbgr = static_cast<TH1D*>(systematicsfile->Get("aTtBgrHist"));
+  TH1D * varTtbgr = static_cast<TH1D*>(systematicfile->Get("aTtBgrHist"));
 
   for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
     Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
@@ -396,7 +401,7 @@ void extractorMatchScale::calcDifferenceToNominal(TString nominal, TString syste
   }
 
   nominalfile->Close();
-  systematicsfile->Close();
+  systematicfile->Close();
 }
 
 Double_t extractor::getMassFromSample(TString sample) {
@@ -867,12 +872,14 @@ void extract() {
   channels.push_back("mumu");
   channels.push_back("combined");
 
-  // Do the same (or similar things) for the systematics uncertainties:
+  // Do the same (or similar things) for the systematic uncertainties:
   std::vector<TString> syst_on_nominal;
   syst_on_nominal.push_back("MATCH_UP");
   syst_on_nominal.push_back("MATCH_DOWN");
   syst_on_nominal.push_back("SCALE_UP");
   syst_on_nominal.push_back("SCALE_DOWN");
+  syst_on_nominal.push_back("HAD_UP");
+  syst_on_nominal.push_back("HAD_DOWN");
 
   std::vector<TString> syst_bg;
   syst_bg.push_back("BG_UP");
@@ -912,7 +919,7 @@ void extract() {
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorMatchScale * matchscale_samples = new extractorMatchScale(*ch,"Nominal",false,"Nominal",(*syst));
+      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal",false,(*syst));
       if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
