@@ -302,6 +302,17 @@ Double_t extractor::getStatError() {
   return statError;
 }
 
+TFile * extractor::selectInputFile(TString sample, TString channel) {
+  // Input files for Total Yield mass extraction: preunfolded histograms:
+  TString filename = "preunfolded/" + sample + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TFile * input = new TFile(filename);
+  if(!input->IsOpen()) {
+    LOG(logCRITICAL) << "Failed to access data file " << filename;
+    throw 1;
+  }
+  return input;
+}
+
 Double_t extractor::getTopMass() {
 
   std::vector<TH1D*> data_hists;
@@ -309,15 +320,8 @@ Double_t extractor::getTopMass() {
   std::vector<Double_t> masses;
 
   for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
-    // Input files:
-    TString filename = "preunfolded/" + (*sample) + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    TFile * datafile = new TFile(filename);
 
-    if(!datafile->IsOpen()) {
-      LOG(logINFO) << "Failed to access data file " << filename;
-      throw 1;
-    }
-
+    TFile * datafile = selectInputFile(*sample,channel);
     Double_t topmass = getMassFromSample(*sample);
 
     LOG(logDEBUG) << "Top Mass for Sample " << (*sample) << " m_t=" << topmass;
