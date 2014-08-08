@@ -144,9 +144,9 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   return aRecHist;
 }
 
-std::vector<std::vector<Double_t> > extractor::splitBins(std::vector<TH1D*> histograms) {
+std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
 
-  std::vector<std::vector<Double_t> > separated_bins;
+  std::vector<TH1D* > separated_bins;
   Int_t nbins = histograms.at(0)->GetNbinsX();
 
   // For every bin, prepare a new histogram containing all mass points:
@@ -155,11 +155,14 @@ std::vector<std::vector<Double_t> > extractor::splitBins(std::vector<TH1D*> hist
     LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
  
     // Prepare new vector for this bin:
-    std::vector<Double_t> thisbin;
+    TH1D* thisbin = new TH1D("masses_bin"+bin,"masses_"+bin,histograms.size(),0,histograms.size());
 
+    Int_t newbin = 1;
     for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
       // Set the corresponding bin in output vector:
-      thisbin.push_back((*hist)->GetBinContent(bin));
+      thisbin->SetBinContent(newbin,(*hist)->GetBinContent(bin));
+      thisbin->SetBinError(newbin,(*hist)->GetBinError(bin));
+      newbin++;
     }
 
     separated_bins.push_back(thisbin);
@@ -168,7 +171,7 @@ std::vector<std::vector<Double_t> > extractor::splitBins(std::vector<TH1D*> hist
   return separated_bins;
 }
 
-std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, std::vector<Double_t> data, std::vector<Double_t> mc) {
+std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
 
   std::vector<TF1*> allfits;
 
@@ -187,8 +190,8 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
   graph_mc->SetTitle(mname+channel);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
-    graph_mc->SetPoint(point, masses.at(point), mc.at(point));
-    //graph_mc->SetPointError(point,0,sqrt(mc.at(point)));
+    graph_mc->SetPoint(point, masses.at(point), mc->GetBinContent(point+1));
+    //graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
   }
 
   //graph_mc->Fit("pol2","Q");
@@ -213,8 +216,8 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
   graph->SetTitle(dname+channel);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
-    graph->SetPoint(point, masses.at(point), data.at(point));
-    graph->SetPointError(point,0,sqrt(data.at(point)));
+    graph->SetPoint(point, masses.at(point), data->GetBinContent(point+1));
+    graph->SetPointError(point,0,data->GetBinError(point+1));
   }
 
   //graph->Fit("pol2","Q");
@@ -340,8 +343,8 @@ Double_t extractor::getTopMass() {
     datafile->Close();
   }
 
-  std::vector<std::vector<Double_t> > separated_data = splitBins(data_hists);
-  std::vector<std::vector<Double_t> > separated_mc = splitBins(mc_hists);
+  std::vector<TH1D*> separated_data = splitBins(data_hists);
+  std::vector<TH1D*> separated_mc = splitBins(mc_hists);
 
   TFile output;
   if(storeHistograms) {
