@@ -12,6 +12,7 @@
 #include <TROOT.h>
 #include <TPaveText.h>
 #include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
 #include "log.h"
 #include "extract.h"
 
@@ -879,8 +880,80 @@ void extractorBackground::prepareScaleFactor(TString systematic) {
   }
 }
 
-void extract() {
+TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
+  return new TH1D;
+}
 
+TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
+  return new TH1D;
+}
+
+void extractorDiffXSec::readDiffXSec(TString systematic) {
+
+  std::vector<Double_t> XAxisbinCenters;
+  std::vector<Double_t> DiffXSecPlot;
+  std::vector<Double_t> GenDiffXSecPlot;
+  std::vector<Double_t> DiffXSecStatErrorPlot;
+
+  TString Channel = "emu";
+  TString name = "HypTTBar1stJetMass";
+
+  TString Dummy;
+
+  //Read central and absolute statistical uncertainty values from Nominal
+  TString filename = "UnfoldingResults/" + systematic + "/" + Channel + "/" + name + "Results.txt";
+  std::ifstream ResultsList(filename);
+  if(!ResultsList.is_open()) {
+    LOG(logERROR) << "Could not find " << filename;
+    return;
+  }
+
+  Int_t bin = 0;
+  // Read first word:
+  ResultsList >> Dummy;
+
+  while(!ResultsList.eof()) {
+    Double_t DiffXS, DiffXSErr, GenDiffXS;
+    Double_t BinCenter, BinLow, BinHigh;
+    ResultsList >> BinCenter >> Dummy >> BinLow >> Dummy >> BinHigh 
+		>> Dummy >> DiffXS >> Dummy >> DiffXSErr >> Dummy >> GenDiffXS;
+
+    LOG(logDEBUG) << "[" << BinLow << " - " << BinCenter << " - " << BinHigh << "] DiffXS="
+		  << DiffXS << " Stat=" << DiffXSErr << " Gen=" << GenDiffXS;
+
+    XAxisbinCenters.push_back(BinCenter);
+    DiffXSecPlot.push_back(DiffXS);
+    GenDiffXSecPlot.push_back(GenDiffXS);
+    DiffXSecStatErrorPlot.push_back(DiffXSErr);
+    bin++;
+
+    // Read beginning of next line:
+    ResultsList >> Dummy;
+  }
+
+  TCanvas * c = new TCanvas("DiffXS","DiffXS");
+
+  Double_t mexl[XAxisbinCenters.size()];
+  Double_t mexh[XAxisbinCenters.size()];
+  Double_t binCenters[XAxisbinCenters.size()];
+
+  for (unsigned int j=0; j<XAxisbinCenters.size();j++){mexl[j]=0;mexh[j]=0;}
+
+  TGraphAsymmErrors *tga_DiffXSecPlot = new TGraphAsymmErrors(XAxisbinCenters.size(), &XAxisbinCenters.front(), &DiffXSecPlot.front(), mexl, mexh, &DiffXSecStatErrorPlot.front(), &DiffXSecStatErrorPlot.front());
+
+  tga_DiffXSecPlot->SetMarkerStyle(1);
+  tga_DiffXSecPlot->SetMarkerColor(kBlack);
+  tga_DiffXSecPlot->SetMarkerSize(1);
+  tga_DiffXSecPlot->SetLineWidth(2);
+  tga_DiffXSecPlot->SetLineColor(kBlack);
+
+  gStyle->SetEndErrorSize(10);
+  tga_DiffXSecPlot->Draw("a, p, SAME");
+
+}
+
+
+void extract() {
   Log::ReportingLevel() = Log::FromString("INFO");
 
   bool closure = true;

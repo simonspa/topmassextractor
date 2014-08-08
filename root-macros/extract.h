@@ -104,4 +104,22 @@ public:
   };
 };
 
+class extractorDiffXSec : public extractor {
+
+ private:
+  TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+  TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+
+  void readDiffXSec(TString systematic);
+
+ protected:
+  inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}} #left[GeV^{-1}#right]"; }
+
+public:
+ extractorDiffXSec(TString channel, TString sample, bool storeHistos, TString systematic) : extractor(channel, sample, storeHistos) {
+    LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section, systematics: " << systematic;
+    readDiffXSec(systematic);
+  };
+
+};
 #endif /* EXTRACT_H */
