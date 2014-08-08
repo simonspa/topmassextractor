@@ -58,7 +58,10 @@ private:
   Double_t getMassFromSample(TString sample);
   TString getChannelLabel(TString channel);
 
-public:
+ protected:
+  virtual inline TString getQuantity() { return "Events"; }
+
+ public:
   Double_t getTopMass();
   Double_t getStatError();
   TString getSampleLabel(TString systematic);

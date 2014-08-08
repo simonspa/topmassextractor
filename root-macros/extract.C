@@ -201,7 +201,7 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
   if(storeHistograms) {
     graph_mc->SetTitle("");
     graph_mc->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
-    graph_mc->GetYaxis()->SetTitle("Events");
+    graph_mc->GetYaxis()->SetTitle(getQuantity());
 
     setStyleAndFillLegend(graph_mc,"madgraph",leg);
     graph_mc->Draw("A P E1");
