@@ -258,7 +258,7 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
 
     // Iterate over all bins:
     for(Int_t bin = 1; bin <= data.at(point)->GetNbinsX(); bin++) {
-      Double_t chi = (data.at(point)->GetBinContent(bin) - mc.at(point)->GetBinContent(bin))/getBinError(data.at(point),bin);
+      Double_t chi = (data.at(point)->GetBinContent(bin) - mc.at(point)->GetBinContent(bin))/data.at(point)->GetBinError(bin);
       chi2 += chi*chi;
     }
     chisquare->SetPoint(point, masses.at(point), chi2);
