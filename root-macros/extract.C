@@ -885,77 +885,95 @@ void extractorBackground::prepareScaleFactor(TString systematic) {
 }
 
 TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
-  return new TH1D;
+
+  // Histogram containing differential cross section from data:
+  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
+  //FIXME if(!doClosure) aDiffXSecHist = static_cast<TH1D*>(histos->Get("aDataHist")->Clone());
+  // else
+
+  Int_t nbins = aDiffXSecHist->GetNbinsX();
+  LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
+
+  // Return DiffXSec histogram:
+  return aDiffXSecHist;
 }
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
-  return new TH1D;
-}
 
-void extractorDiffXSec::readDiffXSec(TString systematic) {
+  std::vector<TString> filenames;
+  TString generator = "MADGRAPH", filename;
 
-  std::vector<Double_t> XAxisbinCenters;
-  std::vector<Double_t> DiffXSecPlot;
-  std::vector<Double_t> GenDiffXSecPlot;
-  std::vector<Double_t> DiffXSecStatErrorPlot;
+  if(generator == "MADGRAPH") {
+    generator = "Nominal"; //FIXME
+    filename = "_ttbarsignalplustau.root";
+  }
+  else if(generator == "PWHGBOX") {
 
-  TString Channel = "emu";
-  TString name = "HypTTBar1stJetMass";
-
-  TString Dummy;
-
-  //Read central and absolute statistical uncertainty values from Nominal
-  TString filename = "UnfoldingResults/" + systematic + "/" + Channel + "/" + name + "Results.txt";
-  std::ifstream ResultsList(filename);
-  if(!ResultsList.is_open()) {
-    LOG(logERROR) << "Could not find " << filename;
-    return;
   }
 
-  Int_t bin = 0;
-  // Read first word:
-  ResultsList >> Dummy;
+  LOG(logDEBUG) << "Looking matches: selectionRoot/" << generator << "/CHANNEL/CHANNEL" + filename;
+  if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/ee/ee" + filename); }
+  if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/emu/emu" + filename); }
+  if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/mumu/mumu" + filename); }
+  LOG(logDEBUG) << "Found " << filenames.size() << " files to be opened.";
 
-  while(!ResultsList.eof()) {
-    Double_t DiffXS, DiffXSErr, GenDiffXS;
-    Double_t BinCenter, BinLow, BinHigh;
-    ResultsList >> BinCenter >> Dummy >> BinLow >> Dummy >> BinHigh 
-		>> Dummy >> DiffXS >> Dummy >> DiffXSErr >> Dummy >> GenDiffXS;
-
-    LOG(logDEBUG) << "[" << BinLow << " - " << BinCenter << " - " << BinHigh << "] DiffXS="
-		  << DiffXS << " Stat=" << DiffXSErr << " Gen=" << GenDiffXS;
-
-    XAxisbinCenters.push_back(BinCenter);
-    DiffXSecPlot.push_back(DiffXS);
-    GenDiffXSecPlot.push_back(GenDiffXS);
-    DiffXSecStatErrorPlot.push_back(DiffXSErr);
-    bin++;
-
-    // Read beginning of next line:
-    ResultsList >> Dummy;
+  TH1D* aMcHist;
+  TFile * input = new TFile(filenames.front());
+  if(!input->IsOpen()) {
+    LOG(logCRITICAL) << "Failed to access data file " << filename;
+    throw 1;
   }
 
-  TCanvas * c = new TCanvas("DiffXS","DiffXS");
+  LOG(logDEBUG) << "Getting NLO curve from " << filenames.front();
+  aMcHist = static_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass"));
+  //delete input;
+  for(std::vector<TString>::iterator file = filenames.begin()+1; file != filenames.end(); ++file) {
+    LOG(logDEBUG) << "Getting NLO curve from " << *file;
+    TFile * input2 = new TFile(*file);
+    if(!input2->IsOpen()) {
+      LOG(logCRITICAL) << "Failed to access data file " << filename;
+      throw 1;
+    }
+    aMcHist->Add(static_cast<TH1D*>(histos->Get("VisGenTTBar1stJetMass")));
+    delete input2;
+  }
 
-  Double_t mexl[XAxisbinCenters.size()];
-  Double_t mexh[XAxisbinCenters.size()];
-  Double_t binCenters[XAxisbinCenters.size()];
 
-  for (unsigned int j=0; j<XAxisbinCenters.size();j++){mexl[j]=0;mexh[j]=0;}
+  TH1D* aMcBinned;
 
-  TGraphAsymmErrors *tga_DiffXSecPlot = new TGraphAsymmErrors(XAxisbinCenters.size(), &XAxisbinCenters.front(), &DiffXSecPlot.front(), mexl, mexh, &DiffXSecStatErrorPlot.front(), &DiffXSecStatErrorPlot.front());
+  //FIXME get from histos->unfoldedHistNorm
+  Int_t bins = 5;
+  Double_t Xbins[bins+1];
+  Xbins[0] = 0;
+  Xbins[1] = 0.2;
+  Xbins[2] = 0.3;
+  Xbins[3] = 0.45;
+  Xbins[4] = 0.65;
+  Xbins[5] = 1;
+  
+  aMcHist->Scale(1./aMcHist->Integral("width"));
+  aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(bins,"madgraphplot",Xbins));
+  for (Int_t bin=0; bin < bins; bin++) {
+    aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
+  }
+  aMcBinned->Scale(1./aMcBinned->Integral("width"));
 
-  tga_DiffXSecPlot->SetMarkerStyle(1);
-  tga_DiffXSecPlot->SetMarkerColor(kBlack);
-  tga_DiffXSecPlot->SetMarkerSize(1);
-  tga_DiffXSecPlot->SetLineWidth(2);
-  tga_DiffXSecPlot->SetLineColor(kBlack);
 
-  gStyle->SetEndErrorSize(10);
-  tga_DiffXSecPlot->Draw("a, p, SAME");
-
+  LOG(logDEBUG) << "Returning Simulation histogram now.";
+  return static_cast<TH1D*>(aMcBinned);
 }
 
+TFile * extractorDiffXSec::selectInputFile(TString sample, TString channel) {
+
+  // Input files for Differential Cross section mass extraction: unfolded distributions
+  TString filename = "UnfoldingResults/" + sample + "/" + channel + "/HypTTBar1stJetMassResults.root";
+  TFile * input = new TFile(filename);
+  if(!input->IsOpen()) {
+    LOG(logCRITICAL) << "Failed to access data file " << filename;
+    throw 1;
+  }
+  return input;
+}
 
 void extract() {
   Log::ReportingLevel() = Log::FromString("INFO");
