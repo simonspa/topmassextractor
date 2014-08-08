@@ -906,24 +906,26 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   std::vector<TString> filenames;
   TString generator = "MADGRAPH", filename;
 
-  if(generator == "MADGRAPH") {
-    generator = "Nominal"; //FIXME
-    filename = "_ttbarsignalplustau.root";
-  }
-  else if(generator == "PWHGBOX") {
+  TString sample;
 
-  }
+  if(mass < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
+  else if(mass < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
+  else if(mass < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
+  else if(mass < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
+  else if(mass < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
+  else if(mass < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
+  else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
 
-  LOG(logDEBUG) << "Looking matches: selectionRoot/" << generator << "/CHANNEL/CHANNEL" + filename;
-  if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/ee/ee" + filename); }
-  if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/emu/emu" + filename); }
-  if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + generator + "/mumu/mumu" + filename); }
+  LOG(logDEBUG) << "Looking matches: selectionRoot/" << sample << "/CHANNEL/CHANNEL" + filename;
+  if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
+  if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
+  if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
   LOG(logDEBUG) << "Found " << filenames.size() << " files to be opened.";
 
   TH1D* aMcHist;
   TFile * input = new TFile(filenames.front());
   if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access data file " << filename;
+    LOG(logCRITICAL) << "Failed to access data file " << filenames.front();
     throw 1;
   }
 
@@ -934,10 +936,10 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     LOG(logDEBUG) << "Getting NLO curve from " << *file;
     TFile * input2 = new TFile(*file);
     if(!input2->IsOpen()) {
-      LOG(logCRITICAL) << "Failed to access data file " << filename;
+      LOG(logCRITICAL) << "Failed to access data file " << *file;
       throw 1;
     }
-    aMcHist->Add(static_cast<TH1D*>(histos->Get("VisGenTTBar1stJetMass")));
+    aMcHist->Add(static_cast<TH1D*>(datafile->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
 
