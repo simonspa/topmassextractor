@@ -60,6 +60,8 @@ private:
 
  protected:
   virtual inline TString getQuantity() { return "Events"; }
+  virtual inline Double_t getBinError(TH1D* hist, Int_t bin) { return sqrt(hist->GetBinContent(bin)); };
+  virtual TFile * selectInputFile(TString sample, TString channel);
 
  public:
   Double_t getTopMass();
