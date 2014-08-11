@@ -441,6 +441,10 @@ Double_t extractor::getMassFromSample(TString sample) {
   return topmass;
 }
 
+void extractorDiffXSec::setClosureSample(TString closure) {
+  LOG(logERROR) << "Can't set closure sample - use unfolding step to prepare closure data!";
+}
+
 void extractor::setClosureSample(TString closure) {
 
   // Enable closure test:
