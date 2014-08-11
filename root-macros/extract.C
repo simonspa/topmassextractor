@@ -155,7 +155,7 @@ std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
     LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
  
     // Prepare new vector for this bin:
-    TString hname = Form("masses_bin%i",bin);
+    TString hname = channel + Form("_masses_bin%i",bin);
     TH1D* thisbin = new TH1D(hname,hname,histograms.size(),0,histograms.size());
 
     Int_t newbin = 1;
@@ -314,6 +314,7 @@ TFile * extractor::selectInputFile(TString sample, TString channel) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
     throw 1;
   }
+  LOG(logDEBUG) << "Successfully opened file " << filename;
   return input;
 }
 
@@ -381,10 +382,16 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
   TFile * nominalfile = new TFile(nfilename);
   TFile * systematicfile = new TFile(sfilename);
 
-  if(!nominalfile->IsOpen() || !systematicfile->IsOpen()) {
-    LOG(logINFO) << "Failed to access file";
+  if(!nominalfile->IsOpen()) {
+    LOG(logINFO) << "Failed to access file " << nfilename;
     throw 1;
   }
+  if(!systematicfile->IsOpen()) {
+    LOG(logINFO) << "Failed to access file " << sfilename;
+    throw 1;
+  }
+
+  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
   TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
@@ -896,8 +903,6 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing differential cross section from data:
   TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
-  //FIXME if(!doClosure) aDiffXSecHist = static_cast<TH1D*>(histos->Get("aDataHist")->Clone());
-  // else
 
   Int_t nbins = aDiffXSecHist->GetNbinsX();
   LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
@@ -982,6 +987,7 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString channel) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
     throw 1;
   }
+  LOG(logDEBUG) << "Successfully opened file " << filename;
   return input;
 }
 
@@ -1104,9 +1110,9 @@ void extract() {
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
 
-    SystOutputFile << "Channel " << *ch << ": m_t = " << topmass << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
+    SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
     SystOutputFile.close();
   }
 
