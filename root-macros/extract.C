@@ -155,7 +155,8 @@ std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
     LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
  
     // Prepare new vector for this bin:
-    TH1D* thisbin = new TH1D("masses_bin"+bin,"masses_"+bin,histograms.size(),0,histograms.size());
+    TString hname = Form("masses_bin%i",bin);
+    TH1D* thisbin = new TH1D(hname,hname,histograms.size(),0,histograms.size());
 
     Int_t newbin = 1;
     for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
@@ -939,7 +940,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
       LOG(logCRITICAL) << "Failed to access data file " << *file;
       throw 1;
     }
-    aMcHist->Add(static_cast<TH1D*>(datafile->Get("VisGenTTBar1stJetMass")));
+    aMcHist->Add(static_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
 
