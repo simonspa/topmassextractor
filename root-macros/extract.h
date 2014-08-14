@@ -26,8 +26,8 @@ private:
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
   Double_t getMinimum(TF1 * fit);
 
-  Double_t extractedMass;
   Double_t statError;
+  Double_t extractedMass;
 
   TString channel;
   std::vector<TString> samples;
@@ -83,7 +83,7 @@ private:
   std::vector<Double_t> deltaTtbgr;
 
 public:
- extractorOtherSamples(TString channel, TString sample, bool storeHistos, TString systematic) : deltaRec(), deltaBgr(), deltaTtbgr(), extractor(channel, sample, storeHistos) {
+ extractorOtherSamples(TString ch, TString sample, bool storeHistos, TString systematic) : extractor(ch, sample, storeHistos), deltaRec(), deltaBgr(), deltaTtbgr() {
     LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
     calcDifferenceToNominal(sample,systematic);
   };
@@ -98,7 +98,7 @@ private:
   Double_t scaleFactor;
 
 public:
- extractorBackground(TString channel, TString sample, bool storeHistos, TString systematic) : scaleFactor(1), extractor(channel, sample, storeHistos) {
+ extractorBackground(TString ch, TString sample, bool storeHistos, TString systematic) : extractor(ch, sample, storeHistos), scaleFactor(1) {
     LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
     prepareScaleFactor(systematic);
   };

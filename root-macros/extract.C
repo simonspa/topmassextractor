@@ -34,7 +34,7 @@ Double_t extractorOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t dat
   return extractor::getSignal(bin, mass, data, reco, bgr, ttbgr);
 }
 
-Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractor::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Calculate the signal fraction from reconstructed events and TT background:
   Double_t fsignal = reco/(reco+ttbgr);
@@ -50,7 +50,7 @@ Double_t extractor::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t 
   return signal;
 }
 
-Double_t extractorBackground::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Calculate the signal fraction from reconstructed events and TT background:
   Double_t fsignal = reco/(reco+ttbgr);
@@ -172,7 +172,7 @@ std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
   return separated_bins;
 }
 
-std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
+std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
 
   std::vector<TF1*> allfits;
 
@@ -183,12 +183,12 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
 
   TCanvas* c;
   if(storeHistograms) {
-    c = new TCanvas(cname+channel,cname+channel);
+    c = new TCanvas(cname+ch,cname+ch);
     c->cd();
   }
 
   TGraphErrors * graph_mc = new TGraphErrors();
-  graph_mc->SetTitle(mname+channel);
+  graph_mc->SetTitle(mname+ch);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
     graph_mc->SetPoint(point, masses.at(point), mc->GetBinContent(point+1));
@@ -210,11 +210,11 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
 
     setStyleAndFillLegend(graph_mc,"madgraph",leg);
     graph_mc->Draw("A P E1");
-    graph_mc->Write(mname+channel);
+    graph_mc->Write(mname+ch);
   }
 
   TGraphErrors * graph = new TGraphErrors();
-  graph->SetTitle(dname+channel);
+  graph->SetTitle(dname+ch);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
     graph->SetPoint(point, masses.at(point), data->GetBinContent(point+1));
@@ -230,31 +230,31 @@ std::vector<TF1*> extractor::fitMassBins(TString channel, Int_t bin, std::vector
     setStyleAndFillLegend(graph,"data",leg);
 
     graph->Draw("SAME P E1");
-    DrawDecayChLabel(getChannelLabel(channel));
+    DrawDecayChLabel(getChannelLabel(ch));
     DrawCMSLabels();
 
     // Also draw legend:
     leg->Draw();
 
-    graph->Write(dname+channel);
+    graph->Write(dname+ch);
     c->Write();
   }
 
   return allfits;
 }
 
-TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
   TString name = "chi2_";
 
   TCanvas* c;
   if(storeHistograms) {
-    c = new TCanvas(name+channel+"_c",name+channel+"_c");
+    c = new TCanvas(name+ch+"_c",name+ch+"_c");
     c->cd();
   }
 
   TGraphErrors * chisquare = new TGraphErrors();
-  chisquare->SetTitle(name+channel);
+  chisquare->SetTitle(name+ch);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
 
@@ -274,9 +274,9 @@ TF1 * extractor::getChiSquare(TString channel, std::vector<Double_t> masses, std
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
     chisquare->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(channel));
+    DrawDecayChLabel(getChannelLabel(ch));
     DrawCMSLabels();
-    chisquare->Write(name+channel);
+    chisquare->Write(name+ch);
     c->Write();
   }
 
@@ -306,9 +306,9 @@ Double_t extractor::getStatError() {
   return statError;
 }
 
-TFile * extractor::selectInputFile(TString sample, TString channel) {
+TFile * extractor::selectInputFile(TString sample, TString ch) {
   // Input files for Total Yield mass extraction: preunfolded histograms:
-  TString filename = "preunfolded/" + sample + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString filename = "preunfolded/" + sample + "/" + ch + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   TFile * input = new TFile(filename);
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
@@ -457,7 +457,7 @@ Double_t extractor::getMassFromSample(TString sample) {
   return topmass;
 }
 
-void extractorDiffXSec::setClosureSample(TString closure) {
+void extractorDiffXSec::setClosureSample(TString /*closure*/) {
   LOG(logERROR) << "Can't set closure sample - use unfolding step to prepare closure data!";
 }
 
@@ -807,13 +807,13 @@ void extractor::DrawCMSLabels(int cmsprelim, double energy, double textSize) {
     label->Draw("same");
 }
 
-TString extractor::getChannelLabel(TString channel) {
+TString extractor::getChannelLabel(TString ch) {
  
   TString label = "";
-  if(channel =="ee") { label = "ee"; }
-  if(channel =="mumu"){ label = "#mu#mu"; }
-  if(channel =="emu"){ label = "e#mu"; }
-  if(channel =="combined"){ label = "Dilepton Combined"; }
+  if(ch =="ee") { label = "ee"; }
+  if(ch =="mumu"){ label = "#mu#mu"; }
+  if(ch =="emu"){ label = "e#mu"; }
+  if(ch =="combined"){ label = "Dilepton Combined"; }
 
   return label;
 }
@@ -908,7 +908,7 @@ void extractorBackground::prepareScaleFactor(TString systematic) {
   }
 }
 
-TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
+TH1D * extractorDiffXSec::getSignalHistogram(Double_t /*mass*/, TFile * histos) {
 
   // Histogram containing differential cross section from data:
   TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
@@ -987,10 +987,10 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   return static_cast<TH1D*>(aMcBinned);
 }
 
-TFile * extractorDiffXSec::selectInputFile(TString sample, TString channel) {
+TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "UnfoldingResults/" + sample + "/" + channel + "/HypTTBar1stJetMassResults.root";
+  TString filename = "UnfoldingResults/" + sample + "/" + ch + "/HypTTBar1stJetMassResults.root";
   TFile * input = new TFile(filename);
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
