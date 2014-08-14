@@ -231,11 +231,11 @@ void DrawCMSLabels(int cmsprelim=1, double energy=8, double textSize=0.04) {
 
     const char *text;
     if(cmsprelim ==2 ) {//Private work for PhDs students
-        text = "Private Work, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+        text = "Private Work, Simulation at #sqrt{s} = %2.f TeV";
     } else if (cmsprelim==1) {//CMS preliminary label
-        text = "CMS Preliminary, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+        text = "CMS Preliminary, Simulation at #sqrt{s} = %2.f TeV";
     } else {//CMS label
-        text = "CMS, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
+        text = "CMS, Simulation at #sqrt{s} = %2.f TeV";
     }
     
     TPaveText *label = new TPaveText();
@@ -244,7 +244,7 @@ void DrawCMSLabels(int cmsprelim=1, double energy=8, double textSize=0.04) {
     label->SetX2NDC(1.0-gStyle->GetPadRightMargin());
     label->SetY2NDC(1.0);
     label->SetTextFont(42);
-    label->AddText(Form(text, lumi/1000, energy));
+    label->AddText(Form(text, energy));
     label->SetFillStyle(0);
     label->SetBorderSize(0);
     if (textSize!=0) label->SetTextSize(textSize);
