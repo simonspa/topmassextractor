@@ -370,10 +370,7 @@ Double_t extractor::getTopMass() {
 
 void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
 
-  if(systematic.Contains("HAD")) {
-    if(systematic.Contains("UP")) { systematic = "MCATNLO"; }
-    else if(systematic.Contains("DOWN")) { systematic = "POWHEG"; }
-  }
+  if(systematic.Contains("HAD")) { systematic = "MCATNLO"; nominal = "POWHEG"; }
 
   // Input files:
   TString nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
@@ -405,12 +402,24 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
 
   for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
     Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
+    if(systematic.Contains("MCATNLO")) { 
+      rec = abs(rec)/2;
+      if(systematic.Contains("UP")) { rec *= -1; }
+    }
     deltaRec.push_back(rec);
     
     Double_t bgr = nominalBgr->GetBinContent(bin) - varBgr->GetBinContent(bin);
+    if(systematic.Contains("MCATNLO")) {
+      bgr = abs(bgr)/2;
+      if(systematic.Contains("UP")) { bgr *= -1; }
+    }
     deltaBgr.push_back(bgr);
 
     Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
+    if(systematic.Contains("MCATNLO")) {
+      ttbgr = abs(ttbgr)/2;
+      if(systematic.Contains("UP")) { ttbgr *= -1; }
+    }
     deltaTtbgr.push_back(ttbgr);
 
     LOG(logDEBUG2) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
