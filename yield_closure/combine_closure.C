@@ -413,25 +413,25 @@ void combine_closure() {
       infile.close();
     }
 
-    gStyle->SetOptFit(0001);
-
     graphtotal->GetXaxis()->SetTitle("input m_{t} #left[GeV#right]");
     graphtotal->GetYaxis()->SetTitle("output m_{t} #left[GeV#right]");
+
+    Double_t m_min = 156, m_max = 188;
+    graphtotal->GetXaxis()->SetLimits(m_min,m_max);
+    graphtotal->GetYaxis()->SetRangeUser(m_min,m_max);
 
     graph->SetLineColor(kGray+1);
     graph->SetMarkerStyle(20);
     graphtotal->SetLineColor(kOrange-4);
 
-    // Linear regression for mass variation diff. cross sections:
-    TF1 *fB = new TF1("linear","[0]+x*[1]",166,179);
-    fB->SetLineColor(kBlue+1);
-    fB->SetLineStyle(1);
-    fB->SetLineWidth(2);
-    fB->SetParNames("intercept","slope");
-    graphtotal->Fit(fB,"","",166.5,178.5);
+    TLine *l = new TLine(m_min,m_min,m_max,m_max);
+    l->SetLineColor(kGray+1);
+    l->SetLineStyle(7);
+    l->SetLineWidth(2);
 
     graphtotal->Draw("a p e1");
     graph->Draw("same e1");
+    l->Draw();
 
     DrawCMSLabels();
   }
