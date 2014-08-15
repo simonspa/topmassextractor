@@ -999,6 +999,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
     signalHist->SetBinContent(bin+1-startbin,aDiffXSecHist->GetBinContent(bin));
+    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin));
   }
 
   // Return DiffXSec signal histogram:
@@ -1078,6 +1079,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aMcBinned->GetBinContent(bin);
     simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
+    simulationHist->SetBinError(bin+1-startbin,aMcBinned->GetBinError(bin));
   }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
