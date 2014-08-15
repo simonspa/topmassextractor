@@ -605,8 +605,15 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : chann
     samples.push_back(sample+"_3POS");
     samples.push_back(sample+"_6POS");
   }
-  
-  LOG(logDEBUG) << "Initialized.";
+
+  std::stringstream s;
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0 ) { s << "FLAG_STORE_HISTOGRAMS "; }
+  if((flags & FLAG_NORMALIZE_YIELD) != 0 ) { s << "FLAG_NORMALIZE_YIELD "; }
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0 ) { s << "FLAG_LASTBIN_EXTRACTION "; }
+  if((flags & FLAG_UNFOLD_ALLMASSES) != 0 ) { s << "FLAG_UNFOLD_ALLMASSES "; }
+
+  LOG(logINFO) << "Flags shipped: " << s.str();
+  LOG(logINFO) << "Initialized.";
 }
 
 template<class t>
