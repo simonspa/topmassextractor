@@ -1134,12 +1134,12 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
 }
 
 void extract() {
-  Log::ReportingLevel() = Log::FromString("INFO");
+  Log::ReportingLevel() = Log::FromString("DEBUG3");
 
   bool closure = true;
   TString closure_sample = "Nominal";
 
-  const uint32_t flags = 0;//FLAG_LASTBIN_EXTRACTION;
+  const uint32_t flags = FLAG_NORMALIZE_YIELD;
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -1160,11 +1160,11 @@ void extract() {
   syst_on_nominal.push_back("UE_UP");
   syst_on_nominal.push_back("UE_DOWN");
   // If we only take one mass for unfolding, we need to add this as systematic error:
-  if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
+  /*if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
     syst_on_nominal.push_back("MASS_UP");
     syst_on_nominal.push_back("MASS_DOWN");
-  }
-
+    }*/
+  
   std::vector<TString> syst_bg;
   syst_bg.push_back("BG_UP");
   syst_bg.push_back("BG_DOWN");
@@ -1185,6 +1185,97 @@ void extract() {
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
+    std::ofstream DiffSystOutputFile("MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
+    DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
+    DiffSystOutputFile << "\\hline" << std::endl;
+
+
+    extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
+    Double_t dx_topmass = mass_diffxs->getTopMass();
+    Double_t dx_total_stat = mass_diffxs->getStatError();
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << dx_topmass << " +- " << dx_total_stat;
+
+    Double_t dx_total_syst_pos = 0;
+    Double_t dx_total_syst_neg = 0;
+    
+    // Systematic Variations with own samples:
+    for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
+      if((*syst) == "HAD_UP") (*syst) = "POWHEG";
+      if((*syst) == "HAD_DOWN") (*syst) = "MCATNLO";
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
+
+      Double_t dx_topmass_variation = variation_diffxs->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << dx_topmass_variation;
+      Double_t delta = (Double_t)dx_topmass-dx_topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) dx_total_syst_pos += delta*delta;
+      else dx_total_syst_neg += delta*delta;
+
+      if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+      else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      delete variation_diffxs;
+    }
+    /*
+    // Getting DrellYan/Background variations:
+    for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",flags,(*syst));
+      if(closure) bg_samples->setClosureSample(closure_sample);
+
+      Double_t topmass_variation = bg_samples->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
+      Double_t delta = (Double_t)topmass-topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) total_syst_pos += delta*delta;
+      else total_syst_neg += delta*delta;
+      
+      if(syst->Contains("UP")) DiffSystOutputFile << bg_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
+      else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+    }
+    */
+    /*
+    // Systematic Variations produced by varying nominal samples:
+    Double_t dx_btag_syst_pos = 0, dx_btag_syst_neg = 0;
+    for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
+
+      Double_t dx_topmass_variation = variation_diffxs->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << dx_topmass_variation;
+      Double_t delta = (Double_t)dx_topmass-dx_topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) dx_total_syst_pos += delta*delta;
+      else dx_total_syst_neg += delta*delta;
+
+      if(syst->Contains("BTAG")) {
+	if(delta > 0) dx_btag_syst_pos += delta*delta;
+	else dx_btag_syst_neg += delta*delta;
+      }
+      else {
+	if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+	else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      }
+    }
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("BTAG") << " & $^{+" << setprecision(3) <<  sqrt(dx_btag_syst_pos) << "}_{"
+		   << setprecision(3) << sqrt(dx_btag_syst_neg) << "}$ \\\\" << endl;
+
+    dx_total_syst_pos = sqrt(dx_total_syst_pos);
+    dx_total_syst_neg = sqrt(dx_total_syst_neg);
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << dx_topmass << setprecision(3) << " +-" << dx_total_stat << " +" << dx_total_syst_pos << " -" << dx_total_syst_neg << " GeV";
+
+    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << dx_topmass << setprecision(3) << " +-" << dx_total_stat << " +" << dx_total_syst_pos << " -" << dx_total_syst_neg << " GeV" << endl;
+    DiffSystOutputFile.close();
+    delete mass_diffxs;
+    */
+
+
+    // #######################################
+    // ###              YIELD              ###
+    // #######################################
+
+    /*
     std::ofstream SystOutputFile("MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
     SystOutputFile << "Top Mass, Channel: " << *ch << endl;
     SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
@@ -1219,7 +1310,6 @@ void extract() {
       else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
       delete matchscale_samples;
     }
-
 
     // Getting DrellYan/Background variations:
     for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
@@ -1270,6 +1360,7 @@ void extract() {
 
     SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
     SystOutputFile.close();
+*/
   }
 
   return;
