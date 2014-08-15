@@ -97,7 +97,7 @@ private:
   std::vector<Double_t> deltaTtbgr;
 
 public:
- extractorOtherSamples(TString ch, TString sample, bool storeHistos, TString systematic) : extractor(ch, sample, storeHistos), deltaRec(), deltaBgr(), deltaTtbgr() {
+ extractorOtherSamples(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractor(ch, sample, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
     LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
     calcDifferenceToNominal(sample,systematic);
   };

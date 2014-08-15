@@ -13,6 +13,7 @@
 #include <TPaveText.h>
 #include <TGraphErrors.h>
 #include <TGraphAsymmErrors.h>
+#include <TMath.h>
 #include "log.h"
 #include "extract.h"
 
@@ -469,10 +470,13 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
     LOG(logINFO) << "Failed to access file " << nfilename;
     throw 1;
   }
+  LOG(logDEBUG2) << "Opened " << nfilename;
+
   if(!systematicfile->IsOpen()) {
     LOG(logINFO) << "Failed to access file " << sfilename;
     throw 1;
   }
+  LOG(logDEBUG2) << "Opened " << sfilename;
 
   LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
 
@@ -492,9 +496,9 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
     Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
 
     if(splitDifference) { 
-      rec = abs(rec)/2;
-      bgr = abs(bgr)/2;
-      ttbgr = abs(ttbgr)/2;
+      rec = TMath::Abs(rec)/2;
+      bgr = TMath::Abs(bgr)/2;
+      ttbgr = TMath::Abs(ttbgr)/2;
       if(systematic.Contains("UP")) { rec *= -1; bgr *= -1; ttbgr *= -1; }
     }
 
@@ -607,10 +611,10 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : chann
   }
 
   std::stringstream s;
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0 ) { s << "FLAG_STORE_HISTOGRAMS "; }
-  if((flags & FLAG_NORMALIZE_YIELD) != 0 ) { s << "FLAG_NORMALIZE_YIELD "; }
-  if((flags & FLAG_LASTBIN_EXTRACTION) != 0 ) { s << "FLAG_LASTBIN_EXTRACTION "; }
-  if((flags & FLAG_UNFOLD_ALLMASSES) != 0 ) { s << "FLAG_UNFOLD_ALLMASSES "; }
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0 ) { s << "STORE_HISTOGRAMS "; }
+  if((flags & FLAG_NORMALIZE_YIELD) != 0 ) { s << "NORMALIZE_YIELD "; }
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0 ) { s << "LASTBIN_EXTRACTION "; }
+  if((flags & FLAG_UNFOLD_ALLMASSES) != 0 ) { s << "UNFOLD_ALLMASSES "; }
 
   LOG(logINFO) << "Flags shipped: " << s.str();
   LOG(logINFO) << "Initialized.";
@@ -1128,7 +1132,7 @@ void extract() {
   bool closure = true;
   TString closure_sample = "Nominal";
 
-  uint32_t flags = FLAG_UNFOLD_ALLMASSES | FLAG_LASTBIN_EXTRACTION;
+  const uint32_t flags = 0;//FLAG_LASTBIN_EXTRACTION;
 
   std::vector<TString> channels;
   channels.push_back("ee");
@@ -1186,13 +1190,15 @@ void extract() {
     Double_t topmass = mass_samples->getTopMass();
     Double_t total_stat = mass_samples->getStatError();
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +- " << total_stat;
+    delete mass_samples;
+
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
 
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal",flags,(*syst));
+      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal", flags,(*syst));
       if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
@@ -1204,6 +1210,7 @@ void extract() {
 
       if(syst->Contains("UP")) SystOutputFile << matchscale_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
       else SystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      delete matchscale_samples;
     }
 
 
