@@ -151,6 +151,9 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
     LOG(logDEBUG) << "Normalized Reco hist.";
   }
 
+  aRecHist->SetTitle("reco_" + channel + Form("_m%3.1f",mass));
+  aRecHist->SetName("reco_" + channel + Form("_m%3.1f",mass));
+
   // Return reco histogram:
   return aRecHist;
 }
@@ -329,6 +332,35 @@ TFile * extractor::selectInputFile(TString sample, TString ch) {
   return input;
 }
 
+void extractor::getControlPlots(std::vector<TH1D*> histograms) {
+
+  if((flags & FLAG_STORE_HISTOGRAMS) == 0) { return; }
+
+  TString canvastitle = histograms.at(0)->GetName();
+  TCanvas* c = new TCanvas(canvastitle,canvastitle);
+  c->cd();
+
+  Int_t colors[5] = {kRed+1,kMagenta+2,kBlue+1,kGreen+2,kBlack};
+  for(std::vector<TH1D*>::iterator h = histograms.begin(); h != histograms.end(); ++h) {
+    (*h)->SetFillStyle(0);
+    (*h)->SetLineWidth(2);
+    (*h)->SetLineColor(colors[h-histograms.begin()]);
+
+    if(h - histograms.begin() > 0) { (*h)->Draw("SAME"); }
+    else {
+      (*h)->GetXaxis()->SetTitle("#rho_{s}");
+      (*h)->GetYaxis()->SetTitle("Events");
+      (*h)->Draw("");
+    }
+  }
+
+  DrawDecayChLabel(getChannelLabel(channel));
+  DrawCMSLabels();
+  c->Write();
+
+  return;
+}
+
 Double_t extractor::getTopMass() {
 
   std::vector<TH1D*> data_hists;
@@ -364,6 +396,9 @@ Double_t extractor::getTopMass() {
     output.Open("MassFitRates.root","update");
     gDirectory->pwd();
   }
+
+  getControlPlots(data_hists);
+  getControlPlots(mc_hists);
 
   std::vector<std::vector<TF1*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {

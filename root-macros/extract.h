@@ -31,6 +31,8 @@ private:
   virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
   virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco);
 
+  void getControlPlots(std::vector<TH1D*> histograms);
+
   std::vector<TH1D* > splitBins(std::vector<TH1D*> histograms);
   std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
