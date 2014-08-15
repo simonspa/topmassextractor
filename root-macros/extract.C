@@ -1086,6 +1086,9 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
 TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
 
+  // Overwrite the samples unfolded with different masses with just the nominal:
+  if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { sample = "Nominal"; }
+
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "UnfoldingResults/" + sample + "/" + ch + "/HypTTBar1stJetMassResults.root";
   TFile * input = new TFile(filename);

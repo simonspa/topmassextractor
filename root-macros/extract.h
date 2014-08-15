@@ -21,6 +21,8 @@
 // Allow restriction to last bin of distributions:
 #define FLAG_LASTBIN_EXTRACTION 0x04
 
+// Use data DiffXSec distributions unfolded with different mass samples:
+#define FLAG_UNFOLD_ALLMASSES 0x08
 
 class extractor {
 
