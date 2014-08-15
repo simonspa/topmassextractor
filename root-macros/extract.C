@@ -1113,7 +1113,14 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
 
   // Overwrite the samples unfolded with different masses with just the nominal:
-  if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { sample = "Nominal"; }
+  if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { 
+    LOG(logDEBUG2) << "Overwriting: " << sample;
+    // Mass samples from Nominal:
+    if(sample.Contains("GEV")) { sample = "Nominal"; }
+    // All other mass-varied samples:
+    else if(sample.Contains("POS") || sample.Contains("NEG")) { sample.Remove(sample.Length()-5); }
+    LOG(logDEBUG2) << "with: " << sample;
+  }
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "UnfoldingResults/" + sample + "/" + ch + "/HypTTBar1stJetMassResults.root";
