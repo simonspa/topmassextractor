@@ -182,7 +182,7 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   cname.Form("dat_mc_%i_",bin);
 
   TCanvas* c;
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     c = new TCanvas(cname+ch,cname+ch);
     c->cd();
   }
@@ -203,7 +203,7 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   TLegend *leg = new TLegend();
   setLegendStyle(leg);
 
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     graph_mc->SetTitle("");
     graph_mc->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
     graph_mc->GetYaxis()->SetTitle(getQuantity());
@@ -226,7 +226,7 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   TF1 * datfit = graph->GetFunction("pol2");
   allfits.push_back(datfit);
 
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     setStyleAndFillLegend(graph,"data",leg);
 
     graph->Draw("SAME P E1");
@@ -248,7 +248,7 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
   TString name = "chi2_";
 
   TCanvas* c;
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     c = new TCanvas(name+ch+"_c",name+ch+"_c");
     c->cd();
   }
@@ -269,7 +269,7 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
   }
 
   chisquare->Fit("pol2","Q");
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     chisquare->SetMarkerStyle(20);
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
@@ -349,7 +349,7 @@ Double_t extractor::getTopMass() {
   std::vector<TH1D*> separated_mc = splitBins(mc_hists);
 
   TFile output;
-  if(storeHistograms) {
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     output.Open("MassFitRates.root","update");
     gDirectory->pwd();
   }
@@ -501,7 +501,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, bool storeHistos) : channel(ch), samples(), extractedMass(0), statError(0), storeHistograms(storeHistos), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : channel(ch), samples(), extractedMass(0), statError(0), flags(steeringFlags), doClosure(false) {
 
   setHHStyle(*gStyle);
 
@@ -1052,7 +1052,7 @@ void extract() {
     SystOutputFile << "\\hline" << std::endl;
 
 
-    extractor * mass_samples = new extractor(*ch,"Nominal",true);
+    extractor * mass_samples = new extractor(*ch,"Nominal",FLAG_STORE_HISTOGRAMS);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();

@@ -12,6 +12,16 @@
 #ifndef EXTRACT_H
 #define EXTRACT_H
 
+// Ship this flag in order to create and store histograms:
+#define FLAG_STORE_HISTOGRAMS 0x01
+
+// Set this flag to normalize the yield distributions:
+#define FLAG_NORMALIZE_YIELD 0x02
+
+// Allow restriction to last bin of distributions:
+#define FLAG_LASTBIN_EXTRACTION 0x04
+
+
 class extractor {
 
 private:
@@ -32,8 +42,8 @@ private:
   TString channel;
   std::vector<TString> samples;
 
-  // Whether to produce and write out histograms or not
-  bool storeHistograms;
+  // Stroing the settings flags:
+  uint32_t flags;
 
   // Do Closure test (i.e. replace signal sample with nominal mc)
   bool doClosure;
@@ -66,7 +76,7 @@ private:
   Double_t getStatError();
   TString getSampleLabel(TString systematic);
   virtual void setClosureSample(TString closure);
-  extractor(TString channel, TString sample, bool storeHistos);
+  extractor(TString channel, TString sample, uint32_t steeringFlags);
 };
 
 
@@ -98,7 +108,7 @@ private:
   Double_t scaleFactor;
 
 public:
- extractorBackground(TString ch, TString sample, bool storeHistos, TString systematic) : extractor(ch, sample, storeHistos), scaleFactor(1) {
+ extractorBackground(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractor(ch, sample, steeringFlags), scaleFactor(1) {
     LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
     prepareScaleFactor(systematic);
   };
@@ -115,7 +125,7 @@ class extractorDiffXSec : public extractor {
   inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}} #left[GeV^{-1}#right]"; }
 
 public:
- extractorDiffXSec(TString channel, TString sample, bool storeHistos) : extractor(channel, sample, storeHistos) {
+ extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {
     LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
   };
   void setClosureSample(TString closure);
