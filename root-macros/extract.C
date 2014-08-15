@@ -118,6 +118,12 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
     aDataHist->SetBinContent(bin,signal);
   }
 
+  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
+    aDataHist->Sumw2();
+    aDataHist->Scale(1./aDataHist->Integral());
+    LOG(logDEBUG) << "Normalized Data hist.";
+  }
+
   // Return signal-only histogram:
   return aDataHist;
 }
@@ -138,6 +144,11 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
     // Write corrected Reco:
     aRecHist->SetBinContent(bin,corr_reco);
+  }
+
+  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
+    aRecHist->Scale(1./aRecHist->Integral());
+    LOG(logDEBUG) << "Normalized Reco hist.";
   }
 
   // Return reco histogram:
