@@ -916,6 +916,10 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t /*mass*/, TFile * histos) 
   Int_t nbins = aDiffXSecHist->GetNbinsX();
   LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
 
+  for(Int_t bin = 1; bin <= nbins; bin++) {
+    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
+  }
+
   // Return DiffXSec histogram:
   return aDiffXSecHist;
 }
@@ -935,7 +939,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   else if(mass < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
   else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
 
-  LOG(logDEBUG) << "Looking matches: selectionRoot/" << sample << "/CHANNEL/CHANNEL" + filename;
+  // Check if we need to add up several histograms:
   if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
   if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
   if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
@@ -962,26 +966,27 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     delete input2;
   }
 
-
   TH1D* aMcBinned;
 
-  //FIXME get from histos->unfoldedHistNorm
-  Int_t bins = 5;
-  Double_t Xbins[bins+1];
-  Xbins[0] = 0;
-  Xbins[1] = 0.2;
-  Xbins[2] = 0.3;
-  Xbins[3] = 0.45;
-  Xbins[4] = 0.65;
-  Xbins[5] = 1;
-  
+  // Histogram containing differential cross section from data (just for the binning):
+  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
+  Int_t nbins = aDiffXSecHist->GetNbinsX();
+  Double_t Xbins[nbins+1];
+  for (Int_t bin=1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
+  Xbins[nbins] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
+  LOG(logDEBUG) << "Simulation hist has " << nbins << " bins";;
+
   aMcHist->Scale(1./aMcHist->Integral("width"));
-  aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(bins,"madgraphplot",Xbins));
-  for (Int_t bin=0; bin < bins; bin++) {
+  aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",Xbins));
+  for (Int_t bin=0; bin < nbins; bin++) {
+    // Condense matrices to arrays for plotting
     aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
   }
   aMcBinned->Scale(1./aMcBinned->Integral("width"));
 
+  for(Int_t bin = 1; bin <= nbins; bin++) {
+    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aMcBinned->GetBinContent(bin);
+  }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
   return static_cast<TH1D*>(aMcBinned);
