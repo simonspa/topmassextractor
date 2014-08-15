@@ -440,11 +440,27 @@ Double_t extractor::getTopMass() {
 
 void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
 
-  if(systematic.Contains("HAD")) { systematic = "MCATNLO"; nominal = "POWHEG"; }
-
   // Input files:
-  TString nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TString sfilename = "preunfolded/" + systematic + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString nfilename, sfilename;
+  bool splitDifference = true;
+
+  if(systematic.Contains("HAD")) {
+    nfilename = "preunfolded/POWHEG/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/MCATNLO/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  }
+  else if(systematic.Contains("CR")) {
+    nfilename = "preunfolded/PERUGIA11/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/PERUGIA11NoCR/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  }
+  else if(systematic.Contains("UE")) {
+    nfilename = "preunfolded/PERUGIA11/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/PERUGIA11mpiHi/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  }
+  else {
+    splitDifference = false;
+    nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/" + systematic + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  }
 
   TFile * nominalfile = new TFile(nfilename);
   TFile * systematicfile = new TFile(sfilename);
@@ -472,24 +488,18 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
 
   for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
     Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
-    if(systematic.Contains("MCATNLO")) { 
-      rec = abs(rec)/2;
-      if(systematic.Contains("UP")) { rec *= -1; }
-    }
-    deltaRec.push_back(rec);
-    
     Double_t bgr = nominalBgr->GetBinContent(bin) - varBgr->GetBinContent(bin);
-    if(systematic.Contains("MCATNLO")) {
-      bgr = abs(bgr)/2;
-      if(systematic.Contains("UP")) { bgr *= -1; }
-    }
-    deltaBgr.push_back(bgr);
-
     Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
-    if(systematic.Contains("MCATNLO")) {
+
+    if(splitDifference) { 
+      rec = abs(rec)/2;
+      bgr = abs(bgr)/2;
       ttbgr = abs(ttbgr)/2;
-      if(systematic.Contains("UP")) { ttbgr *= -1; }
+      if(systematic.Contains("UP")) { rec *= -1; bgr *= -1; ttbgr *= -1; }
     }
+
+    deltaRec.push_back(rec);
+    deltaBgr.push_back(bgr);
     deltaTtbgr.push_back(ttbgr);
 
     LOG(logDEBUG2) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
@@ -903,7 +913,10 @@ TString extractor::getSampleLabel(TString systematic) {
   else if(systematic.Contains("KIN")) { label = "Kinematic Reconstruction"; }
   else if(systematic.Contains("MATCH")) { label = "Matching"; }
   else if(systematic.Contains("SCALE")) { label = "Scale"; }
-  else if(systematic.Contains("HAD")) { label = "Hadronization"; }
+  else if(systematic.Contains("HAD")) { label = "Model"; } //{ label = "Hadronization"; }
+  else if(systematic.Contains("MASS")) { label = "Top Mass"; }
+  else if(systematic.Contains("CR")) { label = "Color Reconnection"; }
+  else if(systematic.Contains("UE")) { label = "Underlying Event"; }
 
   return label;
 }
@@ -1108,6 +1121,8 @@ void extract() {
   bool closure = true;
   TString closure_sample = "Nominal";
 
+  uint32_t flags = FLAG_UNFOLD_ALLMASSES | FLAG_LASTBIN_EXTRACTION;
+
   std::vector<TString> channels;
   channels.push_back("ee");
   channels.push_back("emu");
@@ -1122,6 +1137,15 @@ void extract() {
   syst_on_nominal.push_back("SCALE_DOWN");
   syst_on_nominal.push_back("HAD_UP");
   syst_on_nominal.push_back("HAD_DOWN");
+  syst_on_nominal.push_back("CR_UP");
+  syst_on_nominal.push_back("CR_DOWN");
+  syst_on_nominal.push_back("UE_UP");
+  syst_on_nominal.push_back("UE_DOWN");
+  // If we only take one mass for unfolding, we need to add this as systematic error:
+  if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
+    syst_on_nominal.push_back("MASS_UP");
+    syst_on_nominal.push_back("MASS_DOWN");
+  }
 
   std::vector<TString> syst_bg;
   syst_bg.push_back("BG_UP");
@@ -1149,7 +1173,7 @@ void extract() {
     SystOutputFile << "\\hline" << std::endl;
 
 
-    extractor * mass_samples = new extractor(*ch,"Nominal",FLAG_STORE_HISTOGRAMS);
+    extractor * mass_samples = new extractor(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
@@ -1161,7 +1185,7 @@ void extract() {
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal",false,(*syst));
+      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal",flags,(*syst));
       if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
@@ -1179,7 +1203,7 @@ void extract() {
     // Getting DrellYan/Background variations:
     for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",false,(*syst));
+      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",flags,(*syst));
       if(closure) bg_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = bg_samples->getTopMass();
@@ -1197,7 +1221,7 @@ void extract() {
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractor * variation_samples = new extractor(*ch,*syst,false);
+      extractor * variation_samples = new extractor(*ch,*syst,flags);
       if(closure) variation_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = variation_samples->getTopMass();
