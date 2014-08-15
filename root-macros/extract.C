@@ -93,8 +93,28 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing data:
   TH1D * aDataHist;
-  if(!doClosure) aDataHist = static_cast<TH1D*>(histos->Get("aDataHist")->Clone());
-  else aDataHist = static_cast<TH1D*>(pseudoData->Clone());
+  TString type = "";
+  if(!doClosure) {
+    aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
+    type = "data_";
+  }
+  else {
+    aDataHist = static_cast<TH1D*>(pseudoData);
+    type = "pseudodata_";
+  }
+
+  // Create a new histogram with the same binning:
+  Int_t nbins = aDataHist->GetNbinsX();
+  Int_t startbin = 1;
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
+  LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
+  Double_t Xbins[nbins+2-startbin];
+  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aDataHist->GetBinLowEdge(bin);
+  Xbins[nbins+1-startbin] = aDataHist->GetBinLowEdge(nbins) + aDataHist->GetBinWidth(nbins);
+  TH1D * signalHist = new TH1D(type + channel + Form("_m%3.1f",mass),
+			       type + channel + Form("_m%3.1f",mass),
+			       nbins-startbin+1,
+			       Xbins);
 
   // Histogram containing reconstructed events:
   TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
@@ -102,11 +122,8 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
   TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
   TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
-  Int_t nbins = aDataHist->GetNbinsX();
-  LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
-
   // Iterate over all bins:
-  for(Int_t bin = 1; bin <= nbins; bin++) {
+  for(Int_t bin = startbin; bin <= nbins; bin++) {
 
     // Get signal corrected by ttbar background:
     Double_t signal = getSignal(bin, mass, aDataHist->GetBinContent(bin),
@@ -115,47 +132,54 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 				aTtBgrHist->GetBinContent(bin));
     
     // Write background subtrated signal:
-    aDataHist->SetBinContent(bin,signal);
+    signalHist->SetBinContent(bin-startbin+1,signal);
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    aDataHist->Sumw2();
-    aDataHist->Scale(1./aDataHist->Integral());
+    signalHist->Sumw2();
+    signalHist->Scale(1./signalHist->Integral());
     LOG(logDEBUG) << "Normalized Data hist.";
   }
 
   // Return signal-only histogram:
-  return aDataHist;
+  return signalHist;
 }
 
 TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist")->Clone());
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
 
+  // Create a new histogram with the same binning:
   Int_t nbins = aRecHist->GetNbinsX();
-  LOG(logDEBUG) << "Reco hist has " << nbins << " bins.";
+  Int_t startbin = 1;
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
+  LOG(logDEBUG) << "Reco hist has " << nbins << " bins, using " << (nbins-startbin+1);
+  Double_t Xbins[nbins+2-startbin];
+  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin);
+  Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
+  TH1D * simulationHist = new TH1D("reco_" + channel + Form("_m%3.1f",mass),
+			       "reco_" + channel + Form("_m%3.1f",mass),
+			       nbins-startbin+1,
+			       Xbins);
 
   // Iterate over all bins:
-  for(Int_t bin = 1; bin <= nbins; bin++) {
+  for(Int_t bin = startbin; bin <= nbins; bin++) {
 
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
     Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin));
 
     // Write corrected Reco:
-    aRecHist->SetBinContent(bin,corr_reco);
+    simulationHist->SetBinContent(bin-startbin+1,corr_reco);
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    aRecHist->Scale(1./aRecHist->Integral());
+    simulationHist->Scale(1./simulationHist->Integral());
     LOG(logDEBUG) << "Normalized Reco hist.";
   }
 
-  aRecHist->SetTitle("reco_" + channel + Form("_m%3.1f",mass));
-  aRecHist->SetName("reco_" + channel + Form("_m%3.1f",mass));
-
   // Return reco histogram:
-  return aRecHist;
+  return simulationHist;
 }
 
 std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
@@ -954,20 +978,31 @@ void extractorBackground::prepareScaleFactor(TString systematic) {
   }
 }
 
-TH1D * extractorDiffXSec::getSignalHistogram(Double_t /*mass*/, TFile * histos) {
+TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing differential cross section from data:
-  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
+  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
 
+  // Create a new histogram with the same binning:
   Int_t nbins = aDiffXSecHist->GetNbinsX();
-  LOG(logDEBUG) << "Data hist has " << nbins << " bins.";
+  Int_t startbin = 1;
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
+  LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
+  Double_t Xbins[nbins+2-startbin];
+  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aDiffXSecHist->GetBinLowEdge(bin);
+  Xbins[nbins+1-startbin] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
+  TH1D * signalHist = new TH1D("diffxs_" + channel + Form("_m%3.1f",mass),
+			       "diffxs_" + channel + Form("_m%3.1f",mass),
+			       nbins-startbin+1,
+			       Xbins);
 
-  for(Int_t bin = 1; bin <= nbins; bin++) {
+  for(Int_t bin = startbin; bin <= nbins; bin++) {
     LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
+    signalHist->SetBinContent(bin+1-startbin,aDiffXSecHist->GetBinContent(bin));
   }
 
-  // Return DiffXSec histogram:
-  return aDiffXSecHist;
+  // Return DiffXSec signal histogram:
+  return signalHist;
 }
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
@@ -1015,27 +1050,38 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   TH1D* aMcBinned;
 
   // Histogram containing differential cross section from data (just for the binning):
-  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")->Clone());
+  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
   Int_t nbins = aDiffXSecHist->GetNbinsX();
   Double_t Xbins[nbins+1];
-  for (Int_t bin=1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
+  for (Int_t bin = 1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
   Xbins[nbins] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
-  LOG(logDEBUG) << "Simulation hist has " << nbins << " bins";;
 
   aMcHist->Scale(1./aMcHist->Integral("width"));
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",Xbins));
+
   for (Int_t bin=0; bin < nbins; bin++) {
     // Condense matrices to arrays for plotting
     aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
   }
   aMcBinned->Scale(1./aMcBinned->Integral("width"));
 
-  for(Int_t bin = 1; bin <= nbins; bin++) {
-    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aMcBinned->GetBinContent(bin);
+  // Create a new histogram with the reduced binning:
+  Int_t startbin = 1;
+  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
+  LOG(logDEBUG) << "Simulation hist has " << nbins << " bins, using " << (nbins-startbin+1);
+
+  TH1D * simulationHist = new TH1D("reco_" + channel + Form("_m%3.1f",mass),
+				   "reco_" + channel + Form("_m%3.1f",mass),
+				   nbins-startbin+1,
+				   &Xbins[startbin-1]);
+
+  for(Int_t bin = startbin; bin <= nbins; bin++) {
+    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aMcBinned->GetBinContent(bin);
+    simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
   }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
-  return static_cast<TH1D*>(aMcBinned);
+  return simulationHist;
 }
 
 TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
