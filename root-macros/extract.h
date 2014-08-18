@@ -24,6 +24,10 @@
 // Use data DiffXSec distributions unfolded with different mass samples:
 #define FLAG_UNFOLD_ALLMASSES 0x08
 
+// Get Chi2 distribution from already fitted bin distributions:
+#define FLAG_CHISQUARE_FROM_FITS 0x10
+
+
 class extractor {
 
 private:
@@ -38,6 +42,7 @@ private:
   std::vector<TH1D* > splitBins(TString type, std::vector<TH1D*> histograms);
   std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
+  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::vector<TF1*> > fits);
   Double_t getMinimum(TF1 * fit);
 
   Double_t statError;

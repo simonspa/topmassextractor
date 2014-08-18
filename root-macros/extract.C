@@ -280,6 +280,11 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   return allfits;
 }
 
+TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::vector<TF1*> > fits) {
+
+  return new TF1();
+}
+
 TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
   TString name = "chi2_";
@@ -428,10 +433,11 @@ Double_t extractor::getTopMass() {
     fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }
 
-  TF1 * fit = getChiSquare(channel,masses,data_hists,mc_hists);
+  TF1 * fit = 0;
+  if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(channel,masses,data_hists,mc_hists); }
+  else { fit = getFittedChiSquare(channel,masses,fits); }
+  
   extractedMass = getMinimum(fit);
-
-  //getChiSquareFitted(channel,masses,data_hists,mc_hists);
 
   output.Close();
   return extractedMass;
