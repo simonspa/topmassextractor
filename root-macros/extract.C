@@ -183,7 +183,7 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   return simulationHist;
 }
 
-std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
+std::vector<TH1D* > extractor::splitBins(TString type, std::vector<TH1D*> histograms) {
 
   std::vector<TH1D* > separated_bins;
   Int_t nbins = histograms.at(0)->GetNbinsX();
@@ -194,7 +194,7 @@ std::vector<TH1D* > extractor::splitBins(std::vector<TH1D*> histograms) {
     LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
  
     // Prepare new vector for this bin:
-    TString hname = channel + Form("_masses_bin%i",bin);
+    TString hname = type + "_" + channel + Form("_masses_bin%i",bin);
     TH1D* thisbin = new TH1D(hname,hname,histograms.size(),0,histograms.size());
 
     Int_t newbin = 1;
@@ -220,7 +220,7 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   dname.Form("dat_%i_",bin);
   cname.Form("dat_mc_%i_",bin);
 
-  TCanvas* c;
+  TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     c = new TCanvas(cname+ch,cname+ch);
     c->cd();
@@ -286,7 +286,7 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
 
   TString name = "chi2_";
 
-  TCanvas* c;
+  TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     c = new TCanvas(name+ch+"_c",name+ch+"_c");
     c->cd();
@@ -413,8 +413,8 @@ Double_t extractor::getTopMass() {
     datafile->Close();
   }
 
-  std::vector<TH1D*> separated_data = splitBins(data_hists);
-  std::vector<TH1D*> separated_mc = splitBins(mc_hists);
+  std::vector<TH1D*> separated_data = splitBins("data",data_hists);
+  std::vector<TH1D*> separated_mc = splitBins("mc",mc_hists);
 
   TFile output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
@@ -1317,7 +1317,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
-    delete var, var2;
+    delete var; delete var2;
 
     LOG(logDEBUG) << "Getting CR variation...";
     var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", flags);
@@ -1327,7 +1327,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
-    delete var, var2;
+    delete var; delete var2;
 
     LOG(logDEBUG) << "Getting UE variation...";
     var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
@@ -1337,7 +1337,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
-    delete var, var2;
+    delete var; delete var2;
 
     // Systematic Variations produced by varying nominal samples:
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
