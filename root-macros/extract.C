@@ -355,7 +355,7 @@ Double_t extractor::getStatError() {
 TFile * extractor::selectInputFile(TString sample, TString ch) {
   // Input files for Total Yield mass extraction: preunfolded histograms:
   TString filename = "preunfolded/" + sample + "/" + ch + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * input = new TFile(filename);
+  TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
     throw 1;
@@ -395,6 +395,9 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
 
 Double_t extractor::getTopMass() {
 
+  // Do not add histograms to the directory listing:
+  TH1::AddDirectory(kFALSE);
+
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
@@ -417,15 +420,15 @@ Double_t extractor::getTopMass() {
     data_hists.push_back(data);
     mc_hists.push_back(mc);
 
-    datafile->Close();
+    delete datafile;
   }
 
   std::vector<TH1D*> separated_data = splitBins("data",data_hists);
   std::vector<TH1D*> separated_mc = splitBins("mc",mc_hists);
 
-  TFile output;
+  TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    output.Open("MassFitRates.root","update");
+    output = TFile::Open("MassFitRates.root","update");
     gDirectory->pwd();
   }
 
@@ -443,7 +446,7 @@ Double_t extractor::getTopMass() {
   
   extractedMass = getMinimum(fit);
 
-  output.Close();
+  //if(output->IsOpen()) { delete output; }
   return extractedMass;
 }
 
@@ -471,8 +474,8 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
     sfilename = "preunfolded/" + systematic + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
 
-  TFile * nominalfile = new TFile(nfilename);
-  TFile * systematicfile = new TFile(sfilename);
+  TFile * nominalfile = TFile::Open(nfilename,"read");
+  TFile * systematicfile = TFile::Open(sfilename,"read");
 
   if(!nominalfile->IsOpen()) {
     LOG(logINFO) << "Failed to access file " << nfilename;
@@ -517,8 +520,8 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
     LOG(logDEBUG2) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
   }
 
-  nominalfile->Close();
-  systematicfile->Close();
+  delete nominalfile;
+  delete systematicfile;
 }
 
 Double_t extractor::getMassFromSample(TString sample) {
@@ -560,7 +563,7 @@ void extractor::setClosureSample(TString closure) {
 
   // Input file:
   TString filename = "preunfolded/" + closure + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * closureFile = new TFile(filename);
+  TFile * closureFile = TFile::Open(filename,"read");
 
   // Histograms containing the background:
   TH1D * aRecHist = static_cast<TH1D*>(closureFile->Get("aRecHist"));
@@ -589,7 +592,6 @@ void extractor::setClosureSample(TString closure) {
     pseudoData->SetBinContent(bin,pdata);
   }
 
-  closureFile->Close();
   delete closureFile;
 }
 
@@ -1060,30 +1062,31 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << filenames.size() << " to be opened.";
 
   TH1D* aMcHist;
-  TFile * input = new TFile(filenames.front());
+  TFile * input = TFile::Open(filenames.front(),"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filenames.front();
     throw 1;
   }
 
   LOG(logDEBUG) << "Getting NLO curve from " << filenames.front();
-  aMcHist = static_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass"));
-  //delete input;
+  aMcHist = dynamic_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass")->Clone());
+  delete input;
+
   for(std::vector<TString>::iterator file = filenames.begin()+1; file != filenames.end(); ++file) {
     LOG(logDEBUG) << "Getting NLO curve from " << *file;
-    TFile * input2 = new TFile(*file);
+    TFile * input2 = TFile::Open(*file,"read");
     if(!input2->IsOpen()) {
       LOG(logCRITICAL) << "Failed to access data file " << *file;
       throw 1;
     }
-    aMcHist->Add(static_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
+    aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
 
   TH1D* aMcBinned;
 
   // Histogram containing differential cross section from data (just for the binning):
-  TH1D * aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
+  TH1D * aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
   Int_t nbins = aDiffXSecHist->GetNbinsX();
   Double_t Xbins[nbins+1];
   for (Int_t bin = 1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
@@ -1132,7 +1135,7 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "UnfoldingResults/" + sample + "/" + ch + "/HypTTBar1stJetMassResults.root";
-  TFile * input = new TFile(filename);
+  TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
     throw 1;
@@ -1274,18 +1277,15 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
   std::vector<TString> systematics;
-  /*systematics.push_back("MATCH_UP");
-  systematics.push_back("MATCH_DOWN");
-  systematics.push_back("SCALE_UP");
-  systematics.push_back("SCALE_DOWN");
+  systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
+  systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
   // If we only take one mass for unfolding, we need to add this as systematic error:
   if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
-    systematics.push_back("MASS_UP");
-    systematics.push_back("MASS_DOWN");
+    systematics.push_back("MASS_UP"); systematics.push_back("MASS_DOWN");
   }
   systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
   systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
-  /*  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
+  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
   systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
   systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
   systematics.push_back("KIN_UP"); systematics.push_back("KIN_DOWN");
@@ -1295,7 +1295,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
   systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
   systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
   systematics.push_back("BTAG_LJET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
-  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");*/
+  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
@@ -1321,7 +1321,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     var = new extractorDiffXSec(*ch,"POWHEG", flags);
     var2 = new extractorDiffXSec(*ch,"MCATNLO", flags);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
-    DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm " << setprecision(3) << diff << "$ \\\\" << endl;
     LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
@@ -1331,7 +1331,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", flags);
     var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
-    DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm " << setprecision(3) << diff << "$ \\\\" << endl;
     LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
@@ -1341,7 +1341,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
     var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
-    DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm " << setprecision(3) << diff << "$ \\\\" << endl;
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
@@ -1393,9 +1393,9 @@ void extract() {
 
   std::vector<TString> channels;
   channels.push_back("ee");
-  /*  channels.push_back("emu");
+  channels.push_back("emu");
   channels.push_back("mumu");
-  channels.push_back("combined");*/
+  channels.push_back("combined");
 
   extract_diffxsec(channels,flags);
   //extract_yield(channels,closure,closure_sample,flags);
