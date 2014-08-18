@@ -516,8 +516,8 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
 Double_t extractor::getMassFromSample(TString sample) {
 
   Double_t topmass = nominalmass;
-  // The mass samples:
-  if(sample.Contains("MASS")) {
+  // The mass samples are marked with "GEV":
+  if(sample.Contains("GEV")) {
     if(sample.Contains("UP")) {
       if(sample.Contains("1")) topmass += 1;
       else if(sample.Contains("3")) topmass += 3;
