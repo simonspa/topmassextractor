@@ -1265,20 +1265,11 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 
 void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
-  // Do the same (or similar things) for the systematic uncertainties:
-  std::vector<TString> syst_on_nominal;
-  syst_on_nominal.push_back("HAD_UP");
-  syst_on_nominal.push_back("HAD_DOWN");
-  syst_on_nominal.push_back("CR_UP");
-  syst_on_nominal.push_back("CR_DOWN");
-  syst_on_nominal.push_back("UE_UP");
-  syst_on_nominal.push_back("UE_DOWN");
-
   std::vector<TString> systematics;
   /*systematics.push_back("MATCH_UP");
   systematics.push_back("MATCH_DOWN");
   systematics.push_back("SCALE_UP");
-  systematics.push_back("SCALE_DOWN");*/
+  systematics.push_back("SCALE_DOWN");
   // If we only take one mass for unfolding, we need to add this as systematic error:
   if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
     systematics.push_back("MASS_UP");
@@ -1315,15 +1306,38 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     Double_t total_syst_neg = 0;
 
     // Systematic Variations with own samples:
-    /*    if((*syst) == "HAD_UP") (*syst) = "POWHEG";
-    if((*syst) == "HAD_DOWN") (*syst) = "MCATNLO";
-    if((*syst) == "CR_UP") (*syst) = "PERUGIA11NoCR";
-    if((*syst) == "CR_DOWN") (*syst) = "PERUGIA11";
-    if((*syst) == "UE_UP") (*syst) = "PERUGIA11mpiHi";
-    if((*syst) == "UE_DOWN") (*syst) = "PERUGIA11";
-    LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-    */
+    extractorDiffXSec * var, * var2;
+    Double_t diff = 0;
 
+    LOG(logDEBUG) << "Getting HAD variation...";
+    var = new extractorDiffXSec(*ch,"POWHEG", flags);
+    var2 = new extractorDiffXSec(*ch,"MCATNLO", flags);
+    diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
+    total_syst_pos += diff*diff;
+    total_syst_neg += diff*diff;
+    delete var, var2;
+
+    LOG(logDEBUG) << "Getting CR variation...";
+    var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", flags);
+    var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
+    diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
+    total_syst_pos += diff*diff;
+    total_syst_neg += diff*diff;
+    delete var, var2;
+
+    LOG(logDEBUG) << "Getting UE variation...";
+    var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
+    var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
+    diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm" << setprecision(3) << diff << "$ \\\\" << endl;
+    LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
+    total_syst_pos += diff*diff;
+    total_syst_neg += diff*diff;
+    delete var, var2;
 
     // Systematic Variations produced by varying nominal samples:
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
@@ -1348,7 +1362,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
       }
     }
     DiffSystOutputFile << mass_diffxs->getSampleLabel("BTAG") << " & $^{+" << setprecision(3) <<  sqrt(btag_syst_pos) << "}_{"
-		   << setprecision(3) << sqrt(btag_syst_neg) << "}$ \\\\" << endl;
+		       << setprecision(3) << sqrt(btag_syst_neg) << "}$ \\\\" << endl;
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
