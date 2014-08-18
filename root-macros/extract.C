@@ -211,9 +211,9 @@ std::vector<TH1D* > extractor::splitBins(TString type, std::vector<TH1D*> histog
   return separated_bins;
 }
 
-std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
+std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
 
-  std::vector<TF1*> allfits;
+  std::pair<TF1*,TF1*> allfits;
 
   TString mname, dname, cname;
   mname.Form("mc_%i_",bin);
@@ -234,9 +234,6 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
     graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
   }
   graph_mc->Fit("pol2","Q");
-
-  TF1 * mcfit = graph_mc->GetFunction("pol2");
-  allfits.push_back(mcfit);
 
   TLegend *leg = new TLegend();
   setLegendStyle(leg);
@@ -260,9 +257,6 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
   }
   graph->Fit("pol2","Q");
 
-  TF1 * datfit = graph->GetFunction("pol2");
-  allfits.push_back(datfit);
-
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     setStyleAndFillLegend(graph,"data",leg);
 
@@ -277,10 +271,20 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
     c->Write();
   }
 
+  TF1 * datfit = graph->GetFunction("pol2");
+  TF1 * mcfit = graph_mc->GetFunction("pol2");
+  allfits = std::make_pair(datfit,mcfit);
+
   return allfits;
 }
 
-TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::vector<TF1*> > fits) {
+TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TF1*,TF1*> > fits) {
+
+  // Loop over all bins we have:
+  for(std::vector<std::pair<TF1*,TF1*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
+
+
+  }
 
   return new TF1();
 }
@@ -428,7 +432,7 @@ Double_t extractor::getTopMass() {
   getControlPlots(data_hists);
   getControlPlots(mc_hists);
 
-  std::vector<std::vector<TF1*> > fits;
+  std::vector<std::pair<TF1*,TF1*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
     fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }

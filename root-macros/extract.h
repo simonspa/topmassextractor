@@ -40,9 +40,9 @@ private:
   void getControlPlots(std::vector<TH1D*> histograms);
 
   std::vector<TH1D* > splitBins(TString type, std::vector<TH1D*> histograms);
-  std::vector<TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
+  std::pair<TF1*,TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
-  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::vector<TF1*> > fits);
+  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TF1*,TF1*> > fits);
   Double_t getMinimum(TF1 * fit);
 
   Double_t statError;
