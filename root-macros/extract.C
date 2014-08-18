@@ -231,10 +231,9 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
     graph_mc->SetPoint(point, masses.at(point), mc->GetBinContent(point+1));
-    //graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
+    graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
   }
-
-  //graph_mc->Fit("pol2","Q");
+  graph_mc->Fit("pol2","Q");
 
   TF1 * mcfit = graph_mc->GetFunction("pol2");
   allfits.push_back(mcfit);
@@ -259,8 +258,7 @@ std::vector<TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Doub
     graph->SetPoint(point, masses.at(point), data->GetBinContent(point+1));
     graph->SetPointError(point,0,data->GetBinError(point+1));
   }
-
-  //graph->Fit("pol2","Q");
+  graph->Fit("pol2","Q");
 
   TF1 * datfit = graph->GetFunction("pol2");
   allfits.push_back(datfit);
