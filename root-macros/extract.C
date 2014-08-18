@@ -519,14 +519,14 @@ Double_t extractor::getMassFromSample(TString sample) {
   // The mass samples:
   if(sample.Contains("MASS")) {
     if(sample.Contains("UP")) {
-      if(sample.Contains("1GEV")) topmass += 1;
-      else if(sample.Contains("3GEV")) topmass += 3;
-      else if(sample.Contains("6GEV")) topmass += 6;
+      if(sample.Contains("1")) topmass += 1;
+      else if(sample.Contains("3")) topmass += 3;
+      else if(sample.Contains("6")) topmass += 6;
     }
     else if(sample.Contains("DOWN")) {
       if(sample.Contains("1")) topmass -= 1;
-      else if(sample.Contains("3GEV")) topmass -= 3;
-      else if(sample.Contains("6GEV")) topmass -= 6;
+      else if(sample.Contains("3")) topmass -= 3;
+      else if(sample.Contains("6")) topmass -= 6;
     }
   }
   else {
