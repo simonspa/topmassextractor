@@ -1133,19 +1133,13 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   return input;
 }
 
-void extract() {
-  Log::ReportingLevel() = Log::FromString("DEBUG3");
 
-  bool closure = true;
-  TString closure_sample = "Nominal";
 
-  const uint32_t flags = FLAG_NORMALIZE_YIELD;
+void extract_yield(std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags) {
 
-  std::vector<TString> channels;
-  channels.push_back("ee");
-  channels.push_back("emu");
-  channels.push_back("mumu");
-  channels.push_back("combined");
+  // #######################################
+  // ###              YIELD              ###
+  // #######################################
 
   // Do the same (or similar things) for the systematic uncertainties:
   std::vector<TString> syst_on_nominal;
@@ -1159,11 +1153,6 @@ void extract() {
   syst_on_nominal.push_back("CR_DOWN");
   syst_on_nominal.push_back("UE_UP");
   syst_on_nominal.push_back("UE_DOWN");
-  // If we only take one mass for unfolding, we need to add this as systematic error:
-  /*if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
-    syst_on_nominal.push_back("MASS_UP");
-    syst_on_nominal.push_back("MASS_DOWN");
-    }*/
   
   std::vector<TString> syst_bg;
   syst_bg.push_back("BG_UP");
@@ -1185,97 +1174,6 @@ void extract() {
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
-    std::ofstream DiffSystOutputFile("MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
-    DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
-    DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
-    DiffSystOutputFile << "\\hline" << std::endl;
-
-
-    extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
-    Double_t dx_topmass = mass_diffxs->getTopMass();
-    Double_t dx_total_stat = mass_diffxs->getStatError();
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << dx_topmass << " +- " << dx_total_stat;
-
-    Double_t dx_total_syst_pos = 0;
-    Double_t dx_total_syst_neg = 0;
-    
-    // Systematic Variations with own samples:
-    for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
-      if((*syst) == "HAD_UP") (*syst) = "POWHEG";
-      if((*syst) == "HAD_DOWN") (*syst) = "MCATNLO";
-      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
-
-      Double_t dx_topmass_variation = variation_diffxs->getTopMass();
-      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << dx_topmass_variation;
-      Double_t delta = (Double_t)dx_topmass-dx_topmass_variation;
-      LOG(logINFO) << *syst << ": delta = " << delta;
-      if(delta > 0) dx_total_syst_pos += delta*delta;
-      else dx_total_syst_neg += delta*delta;
-
-      if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
-      else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
-      delete variation_diffxs;
-    }
-    /*
-    // Getting DrellYan/Background variations:
-    for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
-      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",flags,(*syst));
-      if(closure) bg_samples->setClosureSample(closure_sample);
-
-      Double_t topmass_variation = bg_samples->getTopMass();
-      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
-      Double_t delta = (Double_t)topmass-topmass_variation;
-      LOG(logINFO) << *syst << ": delta = " << delta;
-      if(delta > 0) total_syst_pos += delta*delta;
-      else total_syst_neg += delta*delta;
-      
-      if(syst->Contains("UP")) DiffSystOutputFile << bg_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(3) << (delta > 0 ? "+" : "" ) << delta << "}_{";
-      else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
-    }
-    */
-    /*
-    // Systematic Variations produced by varying nominal samples:
-    Double_t dx_btag_syst_pos = 0, dx_btag_syst_neg = 0;
-    for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
-      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
-
-      Double_t dx_topmass_variation = variation_diffxs->getTopMass();
-      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << dx_topmass_variation;
-      Double_t delta = (Double_t)dx_topmass-dx_topmass_variation;
-      LOG(logINFO) << *syst << ": delta = " << delta;
-      if(delta > 0) dx_total_syst_pos += delta*delta;
-      else dx_total_syst_neg += delta*delta;
-
-      if(syst->Contains("BTAG")) {
-	if(delta > 0) dx_btag_syst_pos += delta*delta;
-	else dx_btag_syst_neg += delta*delta;
-      }
-      else {
-	if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
-	else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
-      }
-    }
-    DiffSystOutputFile << mass_diffxs->getSampleLabel("BTAG") << " & $^{+" << setprecision(3) <<  sqrt(dx_btag_syst_pos) << "}_{"
-		   << setprecision(3) << sqrt(dx_btag_syst_neg) << "}$ \\\\" << endl;
-
-    dx_total_syst_pos = sqrt(dx_total_syst_pos);
-    dx_total_syst_neg = sqrt(dx_total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << dx_topmass << setprecision(3) << " +-" << dx_total_stat << " +" << dx_total_syst_pos << " -" << dx_total_syst_neg << " GeV";
-
-    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << dx_topmass << setprecision(3) << " +-" << dx_total_stat << " +" << dx_total_syst_pos << " -" << dx_total_syst_neg << " GeV" << endl;
-    DiffSystOutputFile.close();
-    delete mass_diffxs;
-    */
-
-
-    // #######################################
-    // ###              YIELD              ###
-    // #######################################
-
-    /*
     std::ofstream SystOutputFile("MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
     SystOutputFile << "Top Mass, Channel: " << *ch << endl;
     SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
@@ -1360,8 +1258,125 @@ void extract() {
 
     SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
     SystOutputFile.close();
-*/
   }
+  return;
+}
+
+
+void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
+
+  // Do the same (or similar things) for the systematic uncertainties:
+  std::vector<TString> syst_on_nominal;
+  syst_on_nominal.push_back("HAD_UP");
+  syst_on_nominal.push_back("HAD_DOWN");
+  syst_on_nominal.push_back("CR_UP");
+  syst_on_nominal.push_back("CR_DOWN");
+  syst_on_nominal.push_back("UE_UP");
+  syst_on_nominal.push_back("UE_DOWN");
+
+  std::vector<TString> systematics;
+  /*systematics.push_back("MATCH_UP");
+  systematics.push_back("MATCH_DOWN");
+  systematics.push_back("SCALE_UP");
+  systematics.push_back("SCALE_DOWN");*/
+  // If we only take one mass for unfolding, we need to add this as systematic error:
+  if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
+    systematics.push_back("MASS_UP");
+    systematics.push_back("MASS_DOWN");
+  }
+  systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
+  systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
+  /*  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
+  systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
+  systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
+  systematics.push_back("KIN_UP"); systematics.push_back("KIN_DOWN");
+  systematics.push_back("LEPT_UP"); systematics.push_back("LEPT_DOWN");
+  systematics.push_back("BTAG_UP"); systematics.push_back("BTAG_DOWN");
+  systematics.push_back("BTAG_LJET_UP"); systematics.push_back("BTAG_LJET_DOWN");
+  systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
+  systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
+  systematics.push_back("BTAG_LJET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
+  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");*/
+
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+
+    std::ofstream DiffSystOutputFile("MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
+    DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
+    DiffSystOutputFile << "\\hline" << std::endl;
+
+
+    extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
+    Double_t topmass = mass_diffxs->getTopMass();
+    Double_t total_stat = mass_diffxs->getStatError();
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +- " << total_stat;
+
+    Double_t total_syst_pos = 0;
+    Double_t total_syst_neg = 0;
+
+    // Systematic Variations with own samples:
+    /*    if((*syst) == "HAD_UP") (*syst) = "POWHEG";
+    if((*syst) == "HAD_DOWN") (*syst) = "MCATNLO";
+    if((*syst) == "CR_UP") (*syst) = "PERUGIA11NoCR";
+    if((*syst) == "CR_DOWN") (*syst) = "PERUGIA11";
+    if((*syst) == "UE_UP") (*syst) = "PERUGIA11mpiHi";
+    if((*syst) == "UE_DOWN") (*syst) = "PERUGIA11";
+    LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+    */
+
+
+    // Systematic Variations produced by varying nominal samples:
+    Double_t btag_syst_pos = 0, btag_syst_neg = 0;
+    for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
+      LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
+
+      Double_t topmass_variation = variation_diffxs->getTopMass();
+      LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
+      Double_t delta = (Double_t)topmass-topmass_variation;
+      LOG(logINFO) << *syst << ": delta = " << delta;
+      if(delta > 0) total_syst_pos += delta*delta;
+      else total_syst_neg += delta*delta;
+
+      if(syst->Contains("BTAG")) {
+	if(delta > 0) btag_syst_pos += delta*delta;
+	else btag_syst_neg += delta*delta;
+      }
+      else {
+	if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+	else DiffSystOutputFile << setprecision(3) <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
+      }
+    }
+    DiffSystOutputFile << mass_diffxs->getSampleLabel("BTAG") << " & $^{+" << setprecision(3) <<  sqrt(btag_syst_pos) << "}_{"
+		   << setprecision(3) << sqrt(btag_syst_neg) << "}$ \\\\" << endl;
+
+    total_syst_pos = sqrt(total_syst_pos);
+    total_syst_neg = sqrt(total_syst_neg);
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+
+    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
+    DiffSystOutputFile.close();
+    delete mass_diffxs;
+  }
+  return;
+}
+
+void extract() {
+  Log::ReportingLevel() = Log::FromString("DEBUG3");
+
+  bool closure = true;
+  TString closure_sample = "Nominal";
+
+  const uint32_t flags = FLAG_NORMALIZE_YIELD;
+
+  std::vector<TString> channels;
+  channels.push_back("ee");
+  /*  channels.push_back("emu");
+  channels.push_back("mumu");
+  channels.push_back("combined");*/
+
+  extract_diffxsec(channels,flags);
+  //extract_yield(channels,closure,closure_sample,flags);
 
   return;
 }
