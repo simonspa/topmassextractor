@@ -585,7 +585,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : channel(ch), samples(), extractedMass(0), statError(0), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statError(0), extractedMass(0), channel(ch), samples(), flags(steeringFlags), doClosure(false) {
 
   setHHStyle(*gStyle);
 
@@ -1049,7 +1049,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
   if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
   if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
-  LOG(logDEBUG) << "Found " << filenames.size() << " files to be opened.";
+  LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << filenames.size() << " to be opened.";
 
   TH1D* aMcHist;
   TFile * input = new TFile(filenames.front());
