@@ -211,9 +211,9 @@ std::vector<TH1D* > extractor::splitBins(TString type, std::vector<TH1D*> histog
   return separated_bins;
 }
 
-std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
+std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
 
-  std::pair<TF1*,TF1*> allfits;
+  std::pair<TGraphErrors*,TGraphErrors*> allfits;
 
   TString mname, dname, cname;
   mname.Form("mc_%i_",bin);
@@ -233,7 +233,6 @@ std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<D
     graph_mc->SetPoint(point, masses.at(point), mc->GetBinContent(point+1));
     graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
   }
-  graph_mc->Fit("pol2","Q");
 
   TLegend *leg = new TLegend();
   setLegendStyle(leg);
@@ -244,7 +243,7 @@ std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<D
     graph_mc->GetYaxis()->SetTitle(getQuantity());
 
     setStyleAndFillLegend(graph_mc,"madgraph",leg);
-    graph_mc->Draw("A P E1");
+    graph_mc->Draw("A P");
     graph_mc->Write(mname+ch);
   }
 
@@ -255,7 +254,6 @@ std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<D
     graph->SetPoint(point, masses.at(point), data->GetBinContent(point+1));
     graph->SetPointError(point,0,data->GetBinError(point+1));
   }
-  graph->Fit("pol2","Q");
 
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     setStyleAndFillLegend(graph,"data",leg);
@@ -271,10 +269,7 @@ std::pair<TF1*,TF1*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<D
     c->Write();
   }
 
-  TF1 * datfit = graph->GetFunction("pol2");
-  TF1 * mcfit = graph_mc->GetFunction("pol2");
-  allfits = std::make_pair(datfit,mcfit);
-
+  allfits = std::make_pair(graph,graph_mc);
   return allfits;
 }
 
@@ -287,6 +282,10 @@ TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, st
   }
 
   return new TF1();
+}
+
+Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval) {
+  return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(widthsquared);
 }
 
 TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
@@ -303,13 +302,10 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
   chisquare->SetTitle(name+ch);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
-
     Double_t chi2 = 0;
-
     // Iterate over all bins:
     for(Int_t bin = 1; bin <= data.at(point)->GetNbinsX(); bin++) {
-      Double_t chi = (data.at(point)->GetBinContent(bin) - mc.at(point)->GetBinContent(bin))/data.at(point)->GetBinError(bin);
-      chi2 += chi*chi;
+      chi2 += chiSquare(mc.at(point)->GetBinContent(bin),data.at(point)->GetBinError(bin)*data.at(point)->GetBinError(bin),data.at(point)->GetBinContent(bin));
     }
     chisquare->SetPoint(point, masses.at(point), chi2);
   }
@@ -435,7 +431,7 @@ Double_t extractor::getTopMass() {
   getControlPlots(data_hists);
   getControlPlots(mc_hists);
 
-  std::vector<std::pair<TF1*,TF1*> > fits;
+  std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
     fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }
@@ -982,6 +978,7 @@ void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend 
   
   if(name == "madgraph") {
     hist->SetMarkerColor(kRed+1);
+    hist->SetLineColor(kRed+1);
     if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
   }
 }
@@ -1099,6 +1096,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     // Condense matrices to arrays for plotting
     aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
   }
+  aMcBinned->Sumw2();
   aMcBinned->Scale(1./aMcBinned->Integral("width"));
 
   // Create a new histogram with the reduced binning:
