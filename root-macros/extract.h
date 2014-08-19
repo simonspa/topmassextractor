@@ -50,7 +50,7 @@ private:
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
 
   TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits);
-  TGraphErrors * createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits);
+  TGraphErrors * createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits, Int_t bin);
 
   Double_t getMinimum(TF1 * fit);
 

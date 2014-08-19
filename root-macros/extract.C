@@ -293,11 +293,12 @@ TGraphErrors * extractor::getShiftedGraph(TGraphErrors* ingraph, Double_t xshift
   return outgraph;
 }
 
-TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits) {
+TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits, Int_t bin) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
   TGraphErrors * chi2_tmp = new TGraphErrors();
-  chi2_graph->SetTitle("peter");
+  
+  chi2_graph->SetTitle("chi2_" + channel + Form("_bin%i",bin));
 
   size_t n = fits.first->GetN();
   Double_t xmin1,xmax1,ymin1,ymax1;
@@ -365,12 +366,19 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   else { chi2_graph = chi2_tmp; }
 
   TCanvas* c = 0;
-  c = new TCanvas("cpeter","cpeter");
-  c->cd();
-  chi2_graph->SetMarkerStyle(20);
-  chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
-  chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
-  chi2_graph->Draw("AP");
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+    TString cname = "chi2_" + channel + Form("_bin%i",bin);
+    c = new TCanvas(cname,cname);
+    c->cd();
+    chi2_graph->SetMarkerStyle(20);
+    chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
+    chi2_graph->Draw("AP");
+    DrawDecayChLabel(getChannelLabel(channel));
+    DrawCMSLabels();
+    chi2_graph->Write();
+    c->Write();
+  }
 
   return chi2_graph;
 }
@@ -378,14 +386,15 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
 TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
 
   TGraphErrors * chi2sum = new TGraphErrors();
+  chi2sum->SetTitle("chi2_" + channel + "_sum");
 
   // Loop over all bins we have:
   for(std::vector<std::pair<TGraphErrors*,TGraphErrors*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(*binfits);
+    TGraphErrors* chi2 = createIntersectionChiSquare(*binfits,1+binfits-fits.begin());
 
     // Sum them all:
-    for(size_t i = 0; i < xpoints.size(); i++) {
+    for(size_t i = 0; i < chi2->GetN(); i++) {
       Double_t xsum,ysum,x,y;
       chi2->GetPoint(i,x,y);
       chi2sum->GetPoint(i,xsum,ysum);
@@ -395,15 +404,23 @@ TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, st
   }
 
   TCanvas* c = 0;
-  c = new TCanvas("uberpeter","uberpeter");
-  c->cd();
-  chi2sum->SetMarkerStyle(20);
-  chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
-  chi2sum->GetYaxis()->SetTitle("#chi^{2}");
-  chi2sum->Draw("AP");
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+    TString cname = "chi2_" + channel + "_sum";
+    c = new TCanvas(cname,cname);
+    c->cd();
+    chi2sum->SetMarkerStyle(20);
+    chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2sum->GetYaxis()->SetTitle("#chi^{2}");
+    chi2sum->Draw("AP");
+    DrawDecayChLabel(getChannelLabel(channel));
+    DrawCMSLabels();
+    chi2sum->Write();
+    c->Write();
+  }
 
   // Fit the graph
-  return new TF1();
+  chi2sum->Fit("pol2","Q","",170,174.5);
+  return chi2sum->GetFunction("pol2");
 }
 
 Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval) {
@@ -412,16 +429,16 @@ Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared
 
 TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
-  TString name = "chi2_";
+  TString name = "chi2_" + ch;
 
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    c = new TCanvas(name+ch+"_c",name+ch+"_c");
+    c = new TCanvas(name+"_c",name+"_c");
     c->cd();
   }
 
   TGraphErrors * chisquare = new TGraphErrors();
-  chisquare->SetTitle(name+ch);
+  chisquare->SetTitle(name);
 
   for(UInt_t point = 0; point < masses.size(); ++point) {
     Double_t chi2 = 0;
@@ -440,7 +457,7 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
     chisquare->Draw("AP");
     DrawDecayChLabel(getChannelLabel(ch));
     DrawCMSLabels();
-    chisquare->Write(name+ch);
+    chisquare->Write(name);
     c->Write();
   }
 
