@@ -30,6 +30,9 @@
 // Do not shift the data & MC graphs to (0,0) before fitting:
 #define FLAG_DONT_SHIFT_GRAPHS 0x20
 
+// In addition to the root file, also write PDFs (requires FLAG_STORE_HISTOGRAMS):
+#define FLAG_STORE_PDFS 0x40
+
 
 class extractor {
 

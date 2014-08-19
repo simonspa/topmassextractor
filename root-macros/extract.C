@@ -272,6 +272,7 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
 
     graph->Write(dname+ch);
     c->Write();
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ch + ".pdf"); }
   }
 
   allfits = std::make_pair(graph,graph_mc);
@@ -379,6 +380,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     DrawCMSLabels();
     chi2_graph->Write();
     c->Write();
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ".pdf"); }
   }
 
   return chi2_graph;
@@ -417,6 +419,7 @@ TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, st
     DrawCMSLabels();
     chi2sum->Write();
     c->Write();
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ".pdf"); }
   }
 
   // Fit the graph
@@ -460,6 +463,7 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
     DrawCMSLabels();
     chisquare->Write(name);
     c->Write();
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(name + ".pdf"); }
   }
 
   return chisquare->GetFunction("pol2");
@@ -525,6 +529,7 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
   DrawDecayChLabel(getChannelLabel(channel));
   DrawCMSLabels();
   c->Write();
+  if((flags & FLAG_STORE_PDFS) != 0) { c->Print(canvastitle + ".pdf"); }
 
   return;
 }
