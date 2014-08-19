@@ -1338,9 +1338,11 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     delete var; delete var2;
 
     LOG(logDEBUG) << "Getting UE variation...";
+    extractorDiffXSec * var3;
     var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
-    var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
-    diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+    var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", flags);
+    var3 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
+    diff = (TMath::Abs(var->getTopMass() - var3->getTopMass()) + TMath::Abs(var2->getTopMass() - var3->getTopMass()))/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm " << setprecision(3) << diff << "$ \\\\" << endl;
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
