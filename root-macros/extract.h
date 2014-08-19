@@ -27,6 +27,9 @@
 // Get Chi2 distribution from already fitted bin distributions:
 #define FLAG_CHISQUARE_FROM_FITS 0x10
 
+// Do not shift the data & MC graphs to (0,0) before fitting:
+#define FLAG_DONT_SHIFT_GRAPHS 0x20
+
 
 class extractor {
 
@@ -40,9 +43,15 @@ private:
   void getControlPlots(std::vector<TH1D*> histograms);
 
   std::vector<TH1D* > splitBins(TString type, std::vector<TH1D*> histograms);
-  std::pair<TF1*,TF1*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
+  std::pair<TGraphErrors*,TGraphErrors*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
+
+  TGraphErrors * getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
+  Double_t chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval);
   TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
-  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TF1*,TF1*> > fits);
+
+  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits);
+  TGraphErrors * createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits);
+
   Double_t getMinimum(TF1 * fit);
 
   Double_t statError;

@@ -13,12 +13,16 @@
 #include <TPaveText.h>
 #include <TGraphErrors.h>
 #include <TGraphAsymmErrors.h>
+#include <TVirtualFitter.h>
 #include <TMath.h>
 #include "log.h"
 #include "extract.h"
 
 Double_t nominalmass = 172.5;
 Double_t lumi = 19712;
+
+Int_t granularity = 500;
+Double_t confidenceLevel = 0.95;
 
 using namespace unilog;
 
@@ -273,14 +277,132 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
   return allfits;
 }
 
-TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TF1*,TF1*> > fits) {
+TGraphErrors * extractor::getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift) {
 
-  // Loop over all bins we have:
-  for(std::vector<std::pair<TF1*,TF1*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
-
-
+  TGraphErrors * outgraph = new TGraphErrors();
+  
+  size_t npoints = ingraph->GetN();
+  for(size_t i = 0; i < npoints; i++) {
+    // Shift by x and y:
+    Double_t inX, inY;
+    ingraph->GetPoint(i,inX,inY);
+    outgraph->SetPoint(i,inX-xshift,inY-yshift);
+    outgraph->SetPointError(i,ingraph->GetErrorX(i),ingraph->GetErrorY(i));
   }
 
+  return outgraph;
+}
+
+TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits) {
+
+  TGraphErrors * chi2_graph = new TGraphErrors();
+  TGraphErrors * chi2_tmp = new TGraphErrors();
+  chi2_graph->SetTitle("peter");
+
+  size_t n = fits.first->GetN();
+  Double_t xmin1,xmax1,ymin1,ymax1;
+  fits.first->GetPoint(0,xmin1,ymin1);
+  fits.first->GetPoint(n-1,xmax1,ymax1);
+  Double_t xmin2,xmax2,ymin2,ymax2;
+  fits.second->GetPoint(0,xmin2,ymin2);
+  fits.second->GetPoint(n-1,xmax2,ymax2);
+
+  Double_t xmin = std::min(xmin1,xmin2);
+  Double_t xmax = std::min(xmax1,xmax2);
+  Double_t ymeana = (ymax1+ymin1)/2;
+  Double_t ymeanb = (ymax2+ymin2)/2;
+
+  Double_t xshift = (xmax+xmin)/2;
+  Double_t yshift = (ymeana+ymeanb)/2;
+
+  // Shift!
+  TGraphErrors * first, * second;
+  if((flags & FLAG_DONT_SHIFT_GRAPHS) != 0) {
+    // Use input graphs directly:
+    first = fits.first;
+    second = fits.second;
+  }
+  else {
+    // Get shifted graphs:
+    LOG(logDEBUG) << "Shift all coordinates by [" << xshift << "/" << yshift << "]";
+    first = getShiftedGraph(fits.first,xshift,yshift);
+    second = getShiftedGraph(fits.second,xshift,yshift);
+    xmin -= xshift; xmax -= xshift;
+  }
+
+  Double_t interval = (xmax-xmin)/(static_cast<Double_t>(granularity));
+  std::vector<Double_t> scanPoints(granularity+1,0);
+  std::vector<Double_t> confIntervalData(scanPoints.size(),0);  
+  std::vector<Double_t> confIntervalMC(scanPoints.size(),0);  
+
+  // Prepare scan point vector:
+  for(size_t i = 0; i < scanPoints.size(); i++) {
+    scanPoints.at(i) = xmin + static_cast<Double_t>(i)*interval;
+  }
+
+  LOG(logDEBUG2) << "Prepared for fitting, " << scanPoints.size() << " scan points in [" << xmin << "," << xmax << "]";
+
+  second->Fit("pol2","Q","",xmin,xmax);
+  TF1 * secondFit = second->GetFunction("pol2");
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
+
+  first->Fit("pol2","Q","",xmin,xmax);
+  TF1 * firstFit = first->GetFunction("pol2");
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
+  
+  for(size_t i = 0; i < scanPoints.size(); i++) {
+    Double_t a = firstFit->EvalPar(&scanPoints.at(i));
+    Double_t b = secondFit->EvalPar(&scanPoints.at(i));
+    Double_t awidth = confIntervalData.at(i);
+    Double_t bwidth = confIntervalMC.at(i);
+    Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
+    
+    LOG(logDEBUG3) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
+    chi2_tmp->SetPoint(i, scanPoints.at(i), chi2);
+  }
+
+  if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { chi2_graph = getShiftedGraph(chi2_tmp,-1*xshift,0); }
+  else { chi2_graph = chi2_tmp; }
+
+  TCanvas* c = 0;
+  c = new TCanvas("cpeter","cpeter");
+  c->cd();
+  chi2_graph->SetMarkerStyle(20);
+  chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
+  chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
+  chi2_graph->Draw("AP");
+
+  return chi2_graph;
+}
+
+TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
+
+  TGraphErrors * chi2sum = new TGraphErrors();
+
+  // Loop over all bins we have:
+  for(std::vector<std::pair<TGraphErrors*,TGraphErrors*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
+    // Get the likelihood for the two functions:
+    TGraphErrors* chi2 = createIntersectionChiSquare(*binfits);
+
+    // Sum them all:
+    for(size_t i = 0; i < xpoints.size(); i++) {
+      Double_t xsum,ysum,x,y;
+      chi2->GetPoint(i,x,y);
+      chi2sum->GetPoint(i,xsum,ysum);
+      LOG(logDEBUG3) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
+      chi2sum->SetPoint(i,x,y+ysum);
+    }
+  }
+
+  TCanvas* c = 0;
+  c = new TCanvas("uberpeter","uberpeter");
+  c->cd();
+  chi2sum->SetMarkerStyle(20);
+  chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
+  chi2sum->GetYaxis()->SetTitle("#chi^{2}");
+  chi2sum->Draw("AP");
+
+  // Fit the graph
   return new TF1();
 }
 
