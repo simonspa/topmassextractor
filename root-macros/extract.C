@@ -310,8 +310,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   fits.second->GetPoint(0,xmin2,ymin2);
   fits.second->GetPoint(n-1,xmax2,ymax2);
 
-  Double_t xmin = std::min(xmin1,xmin2);
-  Double_t xmax = std::min(xmax1,xmax2);
+  Double_t xmin = std::min(xmin1*0.95,xmin2*0.95);
+  Double_t xmax = std::min(xmax1*1.05,xmax2*1.05);
   Double_t ymeana = (ymax1+ymin1)/2;
   Double_t ymeanb = (ymax2+ymin2)/2;
 
@@ -353,14 +353,21 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   TF1 * firstFit = first->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
   
+  // Pick fixed error for data from middle point:
+  Double_t fixedError = first->GetErrorY(first->GetN()/2);
+
   for(size_t i = 0; i < scanPoints.size(); i++) {
     Double_t a = firstFit->EvalPar(&scanPoints.at(i));
     Double_t b = secondFit->EvalPar(&scanPoints.at(i));
-    Double_t awidth = confIntervalData.at(i);
+
+    // For data, do not use fitted confidence interval since all points are correlated. Use fixed error:
+    Double_t awidth = fixedError;
+    // Double_t awidth = confIntervalData.at(i);
+    // For MC, use confidence interval of the fit - all points are uncorrelated:
     Double_t bwidth = confIntervalMC.at(i);
     Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
     
-    LOG(logDEBUG3) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
+    LOG(logDEBUG3) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_tmp->SetPoint(i, scanPoints.at(i), chi2);
   }
 
