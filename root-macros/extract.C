@@ -179,6 +179,7 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
+    simulationHist->Sumw2();
     simulationHist->Scale(1./simulationHist->Integral());
     LOG(logDEBUG) << "Normalized Reco hist.";
   }
