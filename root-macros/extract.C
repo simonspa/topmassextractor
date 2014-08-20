@@ -561,17 +561,17 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
   TCanvas* c = new TCanvas(canvastitle,canvastitle);
   c->cd();
 
-  Int_t colors[5] = {kRed+1,kMagenta+2,kBlue+1,kGreen+2,kBlack};
+  Int_t colors[7] = {kRed+1,kMagenta+2,kBlue+1,kGreen+2,kBlack,kRed-1,kGreen};
   for(std::vector<TH1D*>::iterator h = histograms.begin(); h != histograms.end(); ++h) {
     (*h)->SetFillStyle(0);
     (*h)->SetLineWidth(2);
     (*h)->SetLineColor(colors[h-histograms.begin()]);
 
-    if(h - histograms.begin() > 0) { (*h)->Draw("SAME"); }
+    if(h - histograms.begin() > 0) { (*h)->Draw("HIST SAME"); }
     else {
       (*h)->GetXaxis()->SetTitle("#rho_{s}");
       (*h)->GetYaxis()->SetTitle("Events");
-      (*h)->Draw("");
+      (*h)->Draw("HIST");
     }
   }
 
