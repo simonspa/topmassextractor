@@ -108,24 +108,24 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
     type = "pseudodata_";
   }
 
+  // Histogram containing reconstructed events:
+  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+  // Histograms containing the background:
+  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
+  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
+
   // Create a new histogram with the same binning:
   Int_t nbins = aDataHist->GetNbinsX();
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
   Double_t Xbins[nbins+2-startbin];
-  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aDataHist->GetBinLowEdge(bin);
-  Xbins[nbins+1-startbin] = aDataHist->GetBinLowEdge(nbins) + aDataHist->GetBinWidth(nbins);
+  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin);
+  Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
   TH1D * signalHist = new TH1D(type + channel + Form("_m%3.1f",mass),
 			       type + channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
-
-  // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
-  // Histograms containing the background:
-  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
-  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
   // Iterate over all bins:
   for(Int_t bin = startbin; bin <= nbins; bin++) {
