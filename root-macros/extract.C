@@ -393,8 +393,9 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   return chi2_graph;
 }
 
-TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
+std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
 
+  std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
   chi2sum->SetTitle("chi2_" + channel + "_sum");
 
@@ -431,15 +432,18 @@ TF1 * extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, st
 
   // Fit the graph
   chi2sum->Fit("pol2","Q","",170,174.5);
-  return chi2sum->GetFunction("pol2");
+  
+  finalChiSquare = std::make_pair(chi2sum,chi2sum->GetFunction("pol2"));
+  return finalChiSquare;
 }
 
 Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval) {
   return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(widthsquared);
 }
 
-TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
+  std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TString name = "chi2_" + ch;
 
   TCanvas* c = 0;
@@ -473,10 +477,11 @@ TF1 * extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vec
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(name + ".pdf"); }
   }
 
-  return chisquare->GetFunction("pol2");
+  finalChiSquare = std::make_pair(chisquare,chisquare->GetFunction("pol2"));
+  return finalChiSquare;
 }
 
-Double_t extractor::getMinimum(TF1 * fit) {
+Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
   
   // For now, just return the function's minimum:
   Double_t chi2min = fit->GetMinimum(0,330);
@@ -588,7 +593,7 @@ Double_t extractor::getTopMass() {
     fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }
 
-  TF1 * fit = 0;
+  std::pair<TGraphErrors*,TF1*> fit;
   if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(channel,masses,data_hists,mc_hists); }
   else { fit = getFittedChiSquare(channel,masses,fits); }
   

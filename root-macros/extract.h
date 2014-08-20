@@ -50,12 +50,12 @@ private:
 
   TGraphErrors * getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
   Double_t chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval);
-  TF1 * getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
+  std::pair<TGraphErrors*,TF1*> getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
 
-  TF1 * getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits);
+  std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits);
   TGraphErrors * createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits, Int_t bin);
 
-  Double_t getMinimum(TF1 * fit);
+  Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 
   Double_t statError;
   Double_t extractedMass;
