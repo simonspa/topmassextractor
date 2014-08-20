@@ -33,6 +33,9 @@
 // In addition to the root file, also write PDFs (requires FLAG_STORE_HISTOGRAMS):
 #define FLAG_STORE_PDFS 0x40
 
+// Either deliver minimum of the fit to the final ChiSquare or just the TGraph's minimum:
+#define FLAG_RETURN_FITMIN 0x80
+
 
 class extractor {
 
@@ -57,7 +60,8 @@ private:
 
   Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 
-  Double_t statError;
+  Double_t statErrorPos;
+  Double_t statErrorNeg;
   Double_t extractedMass;
 
   TString channel;
@@ -94,7 +98,12 @@ private:
 
  public:
   Double_t getTopMass();
+
+  // Get symmetrized statictical error only:
   Double_t getStatError();
+  // Get both statistical error values: up and down, separately
+  Double_t getStatError(Double_t &statPos, Double_t &statNeg);
+
   TString getSampleLabel(TString systematic);
   virtual void setClosureSample(TString closure);
   extractor(TString channel, TString sample, uint32_t steeringFlags);

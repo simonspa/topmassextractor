@@ -483,25 +483,62 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Do
 
 Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
   
-  // For now, just return the function's minimum:
-  Double_t chi2min = fit->GetMinimum(0,330);
-  Double_t x_chi2min = fit->GetMinimumX(0,330);
+  Double_t chi2min, x_chi2min, x_left, x_right;
 
-  // Statictical error: vary chi2 by +-1 (going up the curve left and right by dChi2 = 1):
-  Double_t x_left = x_chi2min - fit->GetX(chi2min+1,0,x_chi2min);
-  Double_t x_right = fit->GetX(chi2min+1, x_chi2min,330) - x_chi2min;
+  if((flags & FLAG_RETURN_FITMIN) != 0) {
+    // Return the fit function's minimum:
+    TF1 * fit = finalChiSquare.second;
+    chi2min = fit->GetMinimum(0,330);
+    x_chi2min = fit->GetMinimumX(0,330);
+
+    // Statictical error: vary chi2 by +-1 (going up the curve left and right by dChi2 = 1):
+    x_left = fit->GetX(chi2min+1,0,x_chi2min);
+    x_right = fit->GetX(chi2min+1, x_chi2min,330);
+    
+    LOG(logDEBUG) << "Minimized by fitting central region w/ pol2. Interval [" << x_left << " - " << x_chi2min << " - " << x_right << "]";
+  }
+  else {
+    // Search the minimum of the TGraph:
+    TGraphErrors * graph = finalChiSquare.first;
+    double* y = graph->GetY();
+    double* x = graph->GetX();
+    Int_t locmin = TMath::LocMin(graph->GetN(),y);
+    chi2min = y[locmin];
+    x_chi2min = x[locmin];
+   
+    Double_t scanGranularity = 0.01; // GeV
+    Double_t scanDistance = 3; // GeV
+    // Get left and right bound by scanning the graph and returning the value where Chi2=Chi2Min+1:
+    for(x_left = x_chi2min; x_left > x_chi2min - scanDistance; x_left -= scanGranularity) { if(graph->Eval(x_left) >= chi2min+1) break; }
+    for(x_right = x_chi2min; x_right < x_chi2min + scanDistance; x_right += scanGranularity) { if(graph->Eval(x_right) >= chi2min+1) break; }
+
+    LOG(logDEBUG) << "Minimized by finding minimum graph point. Interval [" << x_left << " - " << x_chi2min << " - " << x_right << "]";
+  }
+
+  // Just take the difference:
+  x_left = x_chi2min - x_left;
+  x_right = x_right - x_chi2min;
 
   LOG(logDEBUG) << "Minimum Chi2 is " << chi2min << " at " << x_chi2min << " +" << x_right << "-" << x_left;
   
   // Store the averaged statistical error:
-  statError = (x_right+x_left)/2;
+  statErrorPos = x_right;
+  statErrorNeg = x_left;
   return x_chi2min;
 }
 
 Double_t extractor::getStatError() {
 
   // Just return the statistical error calculated from chi2:
-  return statError;
+  return (statErrorPos+statErrorNeg)/2;
+}
+
+Double_t extractor::getStatError(Double_t &statPos, Double_t &statNeg) {
+
+  // Just return the statistical error calculated from chi2:
+  statPos = statErrorPos;
+  statNeg = statErrorNeg;
+  return (statErrorPos+statErrorNeg)/2;
 }
 
 TFile * extractor::selectInputFile(TString sample, TString ch) {
@@ -748,7 +785,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statError(0), extractedMass(0), channel(ch), samples(), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), samples(), flags(steeringFlags), doClosure(false) {
 
   setHHStyle(*gStyle);
 
@@ -1361,8 +1398,10 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
-    Double_t total_stat = mass_samples->getStatError();
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +- " << total_stat;
+    Double_t total_stat_pos;
+    Double_t total_stat_neg;
+    mass_samples->getStatError(total_stat_pos,total_stat_neg);
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
     delete mass_samples;
 
     Double_t total_syst_pos = 0;
@@ -1431,9 +1470,9 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
 
-    SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
+    SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
     SystOutputFile.close();
   }
   return;
@@ -1473,8 +1512,10 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
     extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
     Double_t topmass = mass_diffxs->getTopMass();
-    Double_t total_stat = mass_diffxs->getStatError();
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +- " << total_stat;
+    Double_t total_stat_pos;
+    Double_t total_stat_neg;
+    mass_diffxs->getStatError(total_stat_pos,total_stat_neg);
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
@@ -1542,9 +1583,9 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV";
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
 
-    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +-" << total_stat << " +" << total_syst_pos << " -" << total_syst_neg << " GeV" << endl;
+    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
     DiffSystOutputFile.close();
     delete mass_diffxs;
   }
