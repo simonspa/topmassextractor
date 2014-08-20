@@ -768,11 +768,22 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
     samples.push_back(sample+"_6POS");
   }
 
+  if((flags & FLAG_NORMALIZE_YIELD) != 0
+     && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
+    LOG(logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
+		  << "NORMALIZE_YIELD in favor for extracting from last bin only.";
+    flags &= ~FLAG_NORMALIZE_YIELD;
+  }
+
   std::stringstream s;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0 ) { s << "STORE_HISTOGRAMS "; }
   if((flags & FLAG_NORMALIZE_YIELD) != 0 ) { s << "NORMALIZE_YIELD "; }
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0 ) { s << "LASTBIN_EXTRACTION "; }
   if((flags & FLAG_UNFOLD_ALLMASSES) != 0 ) { s << "UNFOLD_ALLMASSES "; }
+  if((flags & FLAG_CHISQUARE_FROM_FITS) != 0 ) { s << "CHISQUARE_FROM_FITS "; }
+  if((flags & FLAG_DONT_SHIFT_GRAPHS) != 0 ) { s << "DONT_SHIFT_GRAPHS "; }
+  if((flags & FLAG_STORE_PDFS) != 0 ) { s << "STORE_PDFS "; }
+  if((flags & FLAG_RETURN_FITMIN) != 0 ) { s << "RETURN_FITMIN "; }
 
   LOG(logINFO) << "Flags shipped: " << s.str();
   LOG(logINFO) << "Initialized.";
