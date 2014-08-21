@@ -24,6 +24,8 @@ Double_t lumi = 19712;
 Int_t granularity = 500;
 Double_t confidenceLevel = 0.95;
 
+TString basepath = "ExtractionResults";
+
 using namespace unilog;
 
 
@@ -270,9 +272,9 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
     // Also draw legend:
     leg->Draw();
 
-    graph->Write(dname+ch);
-    c->Write();
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ch + ".pdf"); }
+    graph->Write(dname + ch);
+    c->Write(cname + ch);
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ch + ".pdf"); }
   }
 
   allfits = std::make_pair(graph,graph_mc);
@@ -300,7 +302,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   TGraphErrors * chi2_graph = new TGraphErrors();
   TGraphErrors * chi2_tmp = new TGraphErrors();
   
-  chi2_graph->SetTitle("chi2_" + channel + Form("_bin%i",bin));
+  TString gname = "chi2_" + channel + Form("_bin%i",bin);
+  chi2_graph->SetTitle(gname);
 
   size_t n = fits.first->GetN();
   Double_t xmin1,xmax1,ymin1,ymax1;
@@ -385,9 +388,9 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     chi2_graph->Draw("AP");
     DrawDecayChLabel(getChannelLabel(channel));
     DrawCMSLabels();
-    chi2_graph->Write();
-    c->Write();
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ".pdf"); }
+    chi2_graph->Write(gname);
+    c->Write(cname);
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
   }
 
   return chi2_graph;
@@ -397,7 +400,8 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
-  chi2sum->SetTitle("chi2_" + channel + "_sum");
+  TString gname = "chi2_" + channel + "_sum";
+  chi2sum->SetTitle(gname);
 
   // Loop over all bins we have:
   for(std::vector<std::pair<TGraphErrors*,TGraphErrors*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
@@ -425,9 +429,9 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
     chi2sum->Draw("AP");
     DrawDecayChLabel(getChannelLabel(channel));
     DrawCMSLabels();
-    chi2sum->Write();
-    c->Write();
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(cname + ".pdf"); }
+    chi2sum->Write(gname);
+    c->Write(cname);
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
   }
 
   // Fit the graph
@@ -473,8 +477,8 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Do
     DrawDecayChLabel(getChannelLabel(ch));
     DrawCMSLabels();
     chisquare->Write(name);
-    c->Write();
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(name + ".pdf"); }
+    c->Write(name + "_c");
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + name + ".pdf"); }
   }
 
   finalChiSquare = std::make_pair(chisquare,chisquare->GetFunction("pol2"));
@@ -577,8 +581,8 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
 
   DrawDecayChLabel(getChannelLabel(channel));
   DrawCMSLabels();
-  c->Write();
-  if((flags & FLAG_STORE_PDFS) != 0) { c->Print(canvastitle + ".pdf"); }
+  c->Write(canvastitle);
+  if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + canvastitle + ".pdf"); }
 
   return;
 }
@@ -618,7 +622,7 @@ Double_t extractor::getTopMass() {
 
   TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    output = TFile::Open("MassFitRates.root","update");
+    output = TFile::Open(basepath + "/MassFitRates.root","update");
     gDirectory->pwd();
   }
 
@@ -1388,7 +1392,7 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
-    std::ofstream SystOutputFile("MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    std::ofstream SystOutputFile(basepath + "/MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
     SystOutputFile << "Top Mass, Channel: " << *ch << endl;
     SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
     SystOutputFile << "\\hline" << std::endl;
@@ -1402,7 +1406,6 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
     Double_t total_stat_neg;
     mass_samples->getStatError(total_stat_pos,total_stat_neg);
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
-    delete mass_samples;
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
@@ -1474,6 +1477,7 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 
     SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(6) << topmass << setprecision(3) << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
     SystOutputFile.close();
+    delete mass_samples;
   }
   return;
 }
@@ -1504,7 +1508,7 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
-    std::ofstream DiffSystOutputFile("MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    std::ofstream DiffSystOutputFile(basepath + "/MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
     DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
     DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
     DiffSystOutputFile << "\\hline" << std::endl;
