@@ -1133,13 +1133,13 @@ TString extractor::getSampleLabel(TString systematic) {
   else if(systematic.Contains("JER")) { label = "Jet Energy Resolution"; }
   else if(systematic.Contains("JES")) { label = "Jet Energy Scale"; }
   else if(systematic.Contains("PU")) { label = "Pile-Up"; }
-  else if(systematic.Contains("TRIG")) { label = "Trigger"; }
-  else if(systematic.Contains("LEPT")) { label = "Lepton"; }
+  else if(systematic.Contains("TRIG")) { label = "Trigger Eff."; }
+  else if(systematic.Contains("LEPT")) { label = "Lepton Eff."; }
   else if(systematic.Contains("BG")) { label = "Background"; }
   else if(systematic.Contains("DY")) { label = "Drell-Yan"; }
   else if(systematic.Contains("KIN")) { label = "Kinematic Reconstruction"; }
   else if(systematic.Contains("MATCH")) { label = "Matching"; }
-  else if(systematic.Contains("SCALE")) { label = "$Q^2$ Scale"; }
+  else if(systematic.Contains("SCALE")) { label = "Q$^2$ Scale"; }
   else if(systematic.Contains("HAD")) { label = "Model"; } //{ label = "Hadronization"; }
   else if(systematic.Contains("MASS")) { label = "Top Mass"; }
   else if(systematic.Contains("CR")) { label = "Color Reconnection"; }
