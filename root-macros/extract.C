@@ -266,7 +266,7 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
     setStyleAndFillLegend(graph,"data",leg);
 
     graph->Draw("SAME P E1");
-    DrawDecayChLabel(getChannelLabel(ch));
+    DrawDecayChLabel(getChannelLabel(ch),bin);
     DrawCMSLabels();
 
     // Also draw legend:
@@ -386,7 +386,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
     chi2_graph->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(channel));
+    DrawDecayChLabel(getChannelLabel(channel),bin);
     DrawCMSLabels();
     chi2_graph->Write(gname);
     c->Write(cname);
@@ -1069,11 +1069,12 @@ void extractor::setHHStyle(TStyle& HHStyle)
 
 
 // Draw label for Decay Channel in upper left corner of plot
-void extractor::DrawDecayChLabel(TString decaychannel, double textSize) {
+void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, double textSize) {
 
     TPaveText *decch = new TPaveText();
 
-    decch->AddText(decaychannel);
+    if(bin > 0) { decch->AddText(decaychannel + Form(", bin %i",bin)); }
+    else { decch->AddText(decaychannel); }
 
     decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
     decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
