@@ -1299,16 +1299,17 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   for (Int_t bin = 1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
   Xbins[nbins] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
 
-  aMcHist->Scale(1./aMcHist->Integral("width"));
+  // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
+  aMcHist->Sumw2();
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",Xbins));
 
   for (Int_t bin=0; bin < nbins; bin++) {
-    // Condense matrices to arrays for plotting
+    // Divide rebinned histogram's bin content by bin width factor (new/old):
+    aMcBinned->SetBinError(bin+1,sqrt(aMcBinned->GetBinContent(bin+1))/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
     aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
   }
-  aMcBinned->Sumw2();
   aMcBinned->Scale(1./aMcBinned->Integral("width"));
-
+  
   // Create a new histogram with the reduced binning:
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
