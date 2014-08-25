@@ -66,6 +66,7 @@ private:
 
   TString channel;
   std::vector<TString> samples;
+  std::vector<Double_t> bin_boundaries;
 
   // Stroing the settings flags:
   uint32_t flags;

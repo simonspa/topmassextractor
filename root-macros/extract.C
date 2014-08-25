@@ -122,12 +122,16 @@ TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
   Double_t Xbins[nbins+2-startbin];
-  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin);
+  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin); }
   Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
   TH1D * signalHist = new TH1D(type + channel + Form("_m%3.1f",mass),
 			       type + channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
+
+  // Store the binning for global use:
+  bin_boundaries.clear();
+  for(Int_t i = 0; i < nbins+2-startbin; i++) { bin_boundaries.push_back(Xbins[i]); }
 
   // Iterate over all bins:
   for(Int_t bin = startbin; bin <= nbins; bin++) {
@@ -789,7 +793,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), samples(), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
   setHHStyle(*gStyle);
 
@@ -1073,7 +1077,12 @@ void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, double textSiz
 
     TPaveText *decch = new TPaveText();
 
-    if(bin > 0) { decch->AddText(decaychannel + Form(", bin %i",bin)); }
+    if(bin > 0) {
+      // Lower and upper edge of the bin:
+      Double_t bin_low = bin_boundaries.at(bin-1);
+      Double_t bin_high = bin_boundaries.at(bin);
+      decch->AddText(decaychannel + Form(", %1.1f < #rho_{S} < %1.1f",bin_low,bin_high));
+    }
     else { decch->AddText(decaychannel); }
 
     decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
