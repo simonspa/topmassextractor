@@ -396,11 +396,11 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   return chi2_graph;
 }
 
-std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
+std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> /*masses*/, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
-  TString gname = "chi2_" + channel + "_sum";
+  TString gname = "chi2_" + ch + "_sum";
   chi2sum->SetTitle(gname);
 
   // Loop over all bins we have:
@@ -409,7 +409,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
     TGraphErrors* chi2 = createIntersectionChiSquare(*binfits,1+binfits-fits.begin());
 
     // Sum them all:
-    for(size_t i = 0; i < chi2->GetN(); i++) {
+    for(Int_t i = 0; i < chi2->GetN(); i++) {
       Double_t xsum,ysum,x,y;
       chi2->GetPoint(i,x,y);
       chi2sum->GetPoint(i,xsum,ysum);
@@ -420,7 +420,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
 
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    TString cname = "chi2_" + channel + "_sum";
+    TString cname = "chi2_" + ch + "_sum";
     c = new TCanvas(cname,cname);
     c->cd();
     chi2sum->SetMarkerStyle(20);
@@ -1320,9 +1320,9 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 				   &Xbins[startbin-1]);
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
-    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << aMcBinned->GetBinContent(bin);
     simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
     simulationHist->SetBinError(bin+1-startbin,aMcBinned->GetBinError(bin));
+    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << " (err=" << simulationHist->GetBinError(bin+1-startbin) << ")";
   }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
@@ -1351,8 +1351,6 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   LOG(logDEBUG) << "Successfully opened file " << filename;
   return input;
 }
-
-
 
 void extract_yield(std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags) {
 
@@ -1513,7 +1511,6 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
     DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
     DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
     DiffSystOutputFile << "\\hline" << std::endl;
-
 
     extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
     Double_t topmass = mass_diffxs->getTopMass();
