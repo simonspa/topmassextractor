@@ -217,20 +217,16 @@ std::vector<TGraphErrors* > extractor::splitBins(TString type, std::vector<Doubl
   return separated_bins;
 }
 
-TGraphErrors * extractor::getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift) {
+void extractor::shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift) {
 
-  TGraphErrors * outgraph = new TGraphErrors();
-  
   size_t npoints = ingraph->GetN();
   for(size_t i = 0; i < npoints; i++) {
     // Shift by x and y:
     Double_t inX, inY;
     ingraph->GetPoint(i,inX,inY);
-    outgraph->SetPoint(i,inX-xshift,inY-yshift);
-    outgraph->SetPointError(i,ingraph->GetErrorX(i),ingraph->GetErrorY(i));
+    ingraph->SetPoint(i,inX-xshift,inY-yshift);
+    //ingraph->SetPointError(i,ingraph->GetErrorX(i),ingraph->GetErrorY(i));
   }
-
-  return outgraph;
 }
 
 TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin) {
@@ -259,8 +255,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) {
     // Get shifted graphs:
     LOG(logDEBUG) << "Shift all coordinates by [" << xshift << "/" << yshift << "]";
-    first = getShiftedGraph(first,xshift,yshift);
-    second = getShiftedGraph(second,xshift,yshift);
+    shiftGraph(first,xshift,yshift);
+    shiftGraph(second,xshift,yshift);
     xmin -= xshift; xmax -= xshift;
   }
   // Else use input graphs directly.
@@ -311,10 +307,10 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
     // Shift all graphs back to initial position:
-    chi2_graph = getShiftedGraph(chi2_graph,-1*xshift,0);
-    secondconf = getShiftedGraph(secondconf,-1*xshift,-1*yshift);
-    second = getShiftedGraph(second,-1*xshift,-1*yshift);
-    first = getShiftedGraph(first,-1*xshift,-1*yshift);
+    shiftGraph(chi2_graph,-1*xshift,0);
+    shiftGraph(secondconf,-1*xshift,-1*yshift);
+    shiftGraph(second,-1*xshift,-1*yshift);
+    shiftGraph(first,-1*xshift,-1*yshift);
   }
 
   TCanvas* c = 0;

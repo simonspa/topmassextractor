@@ -75,8 +75,8 @@ private:
   bool doClosure;
   TH1D * pseudoData;
 
-  // Helper functions: //FIXME shiftgraph()?
-  TGraphErrors * getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
+  // Helper functions:
+  void shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
   template<class t>
     bool isApprox(t a, t b, double eps = 0.01);
   /**
