@@ -1056,46 +1056,83 @@ void extractor::setHHStyle(TStyle& HHStyle)
 
 
 // Draw label for Decay Channel in upper left corner of plot
-void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, double textSize) {
+void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, int cmsprelim, double textSize) {
 
-    TPaveText *decch = new TPaveText();
+    TPaveText *cms = new TPaveText();
+    cms->AddText("CMS");
+
+    cms->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+    cms->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+    cms->SetX2NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength() + 0.15 );
+    cms->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength()        );
+
+    cms->SetFillStyle(0);
+    cms->SetBorderSize(0);
+    if (textSize!=0) cms->SetTextSize(textSize);
+    cms->SetTextAlign(12);
+    cms->SetTextFont(61);
+    cms->Draw("same");
+
+    if(cmsprelim > 0) {
+      TPaveText *extra = new TPaveText();
+      if(cmsprelim == 2) { extra->AddText("Private Work"); }
+      else { extra->AddText("Preliminary"); }
+
+      extra->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+      extra->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.10 );
+      extra->SetX2NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength() + 0.15 );
+      extra->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+
+      extra->SetFillStyle(0);
+      extra->SetBorderSize(0);
+      if (textSize!=0) extra->SetTextSize(textSize);
+      extra->SetTextAlign(12);
+      extra->SetTextFont(52);
+      extra->Draw("same");
+    }
 
     if(bin > 0) {
+      TPaveText *bintxt = new TPaveText();
       if(!bin_boundaries.empty()) {
 	// Lower and upper edge of the bin:
 	Double_t bin_low = bin_boundaries.at(bin-1);
 	Double_t bin_high = bin_boundaries.at(bin);
-	decch->AddText(decaychannel + Form(", %1.2f < #rho_{S} < %1.2f",bin_low,bin_high));
+	bintxt->AddText(Form("%1.2f < #rho_{S} < %1.2f",bin_low,bin_high));
       }
       else {
-	decch->AddText(decaychannel + Form(", bin %i",bin));
+	bintxt->AddText(Form("bin %i",bin));
       }
+      bintxt->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+      bintxt->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.10 );
+      bintxt->SetX2NDC(1.0 - gStyle->GetPadRightMargin() - gStyle->GetTickLength()       );
+      bintxt->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+
+      bintxt->SetFillStyle(0);
+      bintxt->SetBorderSize(0);
+      if (textSize!=0) bintxt->SetTextSize(textSize);
+      bintxt->SetTextAlign(32);
+      bintxt->Draw("same");
     }
-    else { decch->AddText(decaychannel); }
+
+    TPaveText *decch = new TPaveText();
+    decch->AddText(decaychannel);
 
     decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
     decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
-    decch->SetX2NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength() + 0.15 );
+    decch->SetX2NDC(1.0 - gStyle->GetPadRightMargin() - gStyle->GetTickLength()       );
     decch->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength()        );
 
     decch->SetFillStyle(0);
     decch->SetBorderSize(0);
     if (textSize!=0) decch->SetTextSize(textSize);
-    decch->SetTextAlign(12);
+    decch->SetTextAlign(32);
     decch->Draw("same");
 }
 
 // Draw official labels (CMS Preliminary, luminosity and CM energy) above plot
-void extractor::DrawCMSLabels(int cmsprelim, double energy, double textSize) {
+void extractor::DrawCMSLabels(double energy, double textSize) {
 
-    const char *text;
-    if(cmsprelim ==2 ) {//Private work for PhDs students
-        text = "Private Work, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
-    } else if (cmsprelim==1) {//CMS preliminary label
-        text = "CMS Preliminary, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
-    } else {//CMS label
-        text = "CMS, %2.1f fb^{-1} at #sqrt{s} = %2.f TeV";
-    }
+    const char *text = "%2.1f fb^{-1} (%2.f TeV)";
     
     TPaveText *label = new TPaveText();
     label->SetX1NDC(gStyle->GetPadLeftMargin());
@@ -1192,21 +1229,22 @@ void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend 
   }
 }
 
-void extractor::setLegendStyle(TLegend *leg)
-{
-    double x1 = 0.560, y1 = 0.755;
-    double height = 0.075, width = 0.275;
+void extractor::setLegendStyle(TLegend *leg) {
 
-    leg->SetX1NDC(x1);
-    leg->SetY1NDC(y1);
-    leg->SetX2NDC(x1 + width);
-    leg->SetY2NDC(y1 + height);
+  Double_t x1 = 0.560;
+  Double_t y1 = 1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.2;
+  double height = 0.075, width = 0.275;
 
-    leg->SetTextFont(42);
-    leg->SetTextAlign(12);
-    leg->SetTextSize(0.04);
-    leg->SetFillStyle(0);
-    leg->SetBorderSize(0);
+  leg->SetX1NDC(x1);
+  leg->SetY1NDC(y1);
+  leg->SetX2NDC(x1 + width);
+  leg->SetY2NDC(y1 + height);
+
+  leg->SetTextFont(42);
+  leg->SetTextAlign(12);
+  leg->SetTextSize(0.04);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
 }
 
 void extractorBackground::prepareScaleFactor(TString systematic) {
