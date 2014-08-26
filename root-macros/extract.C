@@ -194,101 +194,27 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   return simulationHist;
 }
 
-std::vector<TH1D* > extractor::splitBins(TString type, std::vector<TH1D*> histograms) {
+std::vector<TGraphErrors* > extractor::splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms) {
 
-  std::vector<TH1D* > separated_bins;
-  Int_t nbins = histograms.at(0)->GetNbinsX();
+  std::vector<TGraphErrors* > separated_bins;
 
-  // For every bin, prepare a new histogram containing all mass points:
-  for(Int_t bin = 1; bin <= nbins; bin++) {
+  // For every bin, prepare a new TGraph containing all mass points:
+  for(Int_t bin = 1; bin <= histograms.at(0)->GetNbinsX(); bin++) {
 
-    LOG(logDEBUG) << "Filling bin " << bin << " mass points ";
+    LOG(logDEBUG2) << "Filling bin " << bin << " mass points ";
  
-    // Prepare new vector for this bin:
-    TString hname = type + "_" + channel + Form("_masses_bin%i",bin);
-    TH1D* thisbin = new TH1D(hname,hname,histograms.size(),0,histograms.size());
+    // Prepare new TGraphErrors for this bin:
+    TGraphErrors * thisbin = new TGraphErrors();
+    thisbin->SetTitle(type + "_" + channel + Form("_masses_bin%i",bin));
 
-    Int_t newbin = 1;
     for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
       // Set the corresponding bin in output vector:
-      thisbin->SetBinContent(newbin,(*hist)->GetBinContent(bin));
-      thisbin->SetBinError(newbin,(*hist)->GetBinError(bin));
-      newbin++;
+      thisbin->SetPoint(hist-histograms.begin(), masses.at(hist-histograms.begin()), (*hist)->GetBinContent(bin));
+      thisbin->SetPointError(hist-histograms.begin(),0,(*hist)->GetBinError(bin));
     }
-
     separated_bins.push_back(thisbin);
   }
-  
   return separated_bins;
-}
-
-std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc) {
-
-  std::pair<TGraphErrors*,TGraphErrors*> allfits;
-
-  LOG(logDEBUG2) << "Preparing new graphs, bin " << bin << "...";
-
-  TString mname, dname, cname;
-  mname.Form("mc_%i_",bin);
-  dname.Form("dat_%i_",bin);
-  cname.Form("dat_mc_%i_",bin);
-
-  TCanvas* c = 0;
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    c = new TCanvas(cname+ch,cname+ch);
-    c->cd();
-  }
-
-  TGraphErrors * graph_mc = new TGraphErrors();
-  graph_mc->SetTitle(mname+ch);
-
-  for(UInt_t point = 0; point < masses.size(); ++point) {
-    graph_mc->SetPoint(point, masses.at(point), mc->GetBinContent(point+1));
-    graph_mc->SetPointError(point,0,mc->GetBinError(point+1));
-  }
-
-  TLegend *leg = new TLegend();
-  setLegendStyle(leg);
-
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    graph_mc->SetTitle("");
-    graph_mc->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
-    graph_mc->GetYaxis()->SetTitle(getQuantity());
-
-    setStyleAndFillLegend(graph_mc,"madgraph",leg);
-    graph_mc->Draw("A P");
-    graph_mc->Write(mname+ch);
-  }
-
-  LOG(logDEBUG2) << "Simulation done.";
-
-  TGraphErrors * graph = new TGraphErrors();
-  graph->SetTitle(dname+ch);
-
-  for(UInt_t point = 0; point < masses.size(); ++point) {
-    graph->SetPoint(point, masses.at(point), data->GetBinContent(point+1));
-    graph->SetPointError(point,0,data->GetBinError(point+1));
-  }
-
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    setStyleAndFillLegend(graph,"data",leg);
-
-    graph->Draw("SAME L E3");
-    DrawDecayChLabel(getChannelLabel(ch),bin);
-    DrawCMSLabels();
-
-    // Also draw legend:
-    leg->Draw();
-
-    graph->Write(dname + ch);
-    c->Write(cname + ch);
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ch + ".pdf"); }
-  }
-
-  LOG(logDEBUG2) << "Data done. Returning.";
-
-  allfits = std::make_pair(graph,graph_mc);
-  return allfits;
 }
 
 TGraphErrors * extractor::getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift) {
@@ -307,21 +233,19 @@ TGraphErrors * extractor::getShiftedGraph(TGraphErrors* ingraph, Double_t xshift
   return outgraph;
 }
 
-TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits, Int_t bin) {
+TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
-  TGraphErrors * chi2_tmp = new TGraphErrors();
-  
   TString gname = "chi2_" + channel + Form("_bin%i",bin);
   chi2_graph->SetTitle(gname);
 
-  size_t n = fits.first->GetN();
+  size_t n = first->GetN();
   Double_t xmin1,xmax1,ymin1,ymax1;
-  fits.first->GetPoint(0,xmin1,ymin1);
-  fits.first->GetPoint(n-1,xmax1,ymax1);
+  first->GetPoint(0,xmin1,ymin1);
+  first->GetPoint(n-1,xmax1,ymax1);
   Double_t xmin2,xmax2,ymin2,ymax2;
-  fits.second->GetPoint(0,xmin2,ymin2);
-  fits.second->GetPoint(n-1,xmax2,ymax2);
+  second->GetPoint(0,xmin2,ymin2);
+  second->GetPoint(n-1,xmax2,ymax2);
 
   Double_t xmin = std::min(xmin1*0.95,xmin2*0.95);
   Double_t xmax = std::min(xmax1*1.05,xmax2*1.05);
@@ -331,20 +255,15 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   Double_t xshift = (xmax+xmin)/2;
   Double_t yshift = (ymeana+ymeanb)/2;
 
-  // Shift!
-  TGraphErrors * first, * second;
-  if((flags & FLAG_DONT_SHIFT_GRAPHS) != 0) {
-    // Use input graphs directly:
-    first = fits.first;
-    second = fits.second;
-  }
-  else {
+
+  if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) {
     // Get shifted graphs:
     LOG(logDEBUG) << "Shift all coordinates by [" << xshift << "/" << yshift << "]";
-    first = getShiftedGraph(fits.first,xshift,yshift);
-    second = getShiftedGraph(fits.second,xshift,yshift);
+    first = getShiftedGraph(first,xshift,yshift);
+    second = getShiftedGraph(second,xshift,yshift);
     xmin -= xshift; xmax -= xshift;
   }
+  // Else use input graphs directly.
 
   Double_t interval = (xmax-xmin)/(static_cast<Double_t>(granularity));
   std::vector<Double_t> scanPoints(granularity+1,0);
@@ -382,26 +301,31 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
 
     // For data, do not use fitted confidence interval since all points are correlated. Use fixed error:
     Double_t awidth = fixedError;
-    // Double_t awidth = confIntervalData.at(i);
     // For MC, use confidence interval of the fit - all points are uncorrelated:
     Double_t bwidth = confIntervalMC.at(i);
     Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
     
     LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
-    chi2_tmp->SetPoint(i, scanPoints.at(i), chi2);
+    chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
   }
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
-    chi2_graph = getShiftedGraph(chi2_tmp,-1*xshift,0);
+    // Shift all graphs back to initial position:
+    chi2_graph = getShiftedGraph(chi2_graph,-1*xshift,0);
     secondconf = getShiftedGraph(secondconf,-1*xshift,-1*yshift);
     second = getShiftedGraph(second,-1*xshift,-1*yshift);
     first = getShiftedGraph(first,-1*xshift,-1*yshift);
   }
-  else { chi2_graph = chi2_tmp; }
 
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+
+    // Naming:
     TString cname = "chi2_" + channel + Form("_bin%i",bin);
+    TString c2name = "inputs_" + channel + Form("_bin%i",bin);
+    TString secondname = "input_mc_" + channel + Form("_bin%i",bin);
+    TString firstname = "input_dat_" + channel + Form("_bin%i",bin);
+
     c = new TCanvas(cname,cname);
     c->cd();
     chi2_graph->SetMarkerStyle(20);
@@ -414,7 +338,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
 
-    TString c2name = "inputs_" + channel + Form("_bin%i",bin);
+
     c = new TCanvas(c2name,c2name);
     c->cd();
     TLegend *leg = new TLegend();
@@ -435,17 +359,17 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
 
     secondconf->Draw("A E3");
     second->Draw("SAME P");
+    second->Write(secondname);
 
     first->SetPoint(0,first->GetX()[0] - 1,first->GetY()[0]);
     first->SetPoint(first->GetN()-1,first->GetX()[first->GetN()-1] + 1,first->GetY()[first->GetN()-1]);
     first->Draw("SAME L E3");
+    first->Write(firstname);
 
     DrawDecayChLabel(getChannelLabel(channel),bin);
     DrawCMSLabels();
     leg->Draw();
 
-    //first->Write(dname + ch);
-    
     c->Write(c2name);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + c2name + ".pdf"); }
   }
@@ -453,17 +377,23 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   return chi2_graph;
 }
 
-std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> /*masses*/, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits) {
+std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> /*masses*/, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
   TString gname = "chi2_" + ch + "_sum";
   chi2sum->SetTitle(gname);
 
+  // Cross-check: we have the same number of rho-S bins:
+  if(data.size() != mc.size()) {
+    LOG(logCRITICAL) << "Bin numbers don't match!";
+    throw(1);
+  }
+
   // Loop over all bins we have:
-  for(std::vector<std::pair<TGraphErrors*,TGraphErrors*> >::iterator binfits = fits.begin(); binfits != fits.end(); binfits++) {
+  for(size_t bin = 0; bin < data.size(); bin++) {
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(*binfits,1+binfits-fits.begin());
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin);
 
     // Sum them all:
     for(Int_t i = 0; i < chi2->GetN(); i++) {
@@ -646,8 +576,8 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
 
 Double_t extractor::getTopMass() {
 
-  // Do not add histograms to the directory listing:
-  TH1::AddDirectory(kFALSE);
+  // Just return mass if extraction has been executed already:
+  if(extractedMass > 0) { return extractedMass; }
 
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
@@ -674,10 +604,7 @@ Double_t extractor::getTopMass() {
     delete datafile;
   }
 
-  LOG(logDEBUG2) << "Splitting histograms into bins...";
-  std::vector<TH1D*> separated_data = splitBins("data",data_hists);
-  std::vector<TH1D*> separated_mc = splitBins("mc",mc_hists);
-
+  // Store the output histograms into this file:
   TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     output = TFile::Open(basepath + "/MassFitRates.root","update");
@@ -688,16 +615,15 @@ Double_t extractor::getTopMass() {
   getControlPlots(data_hists);
   getControlPlots(mc_hists);
 
-  LOG(logDEBUG2) << "Requesting fit plots for all bins...";
-  std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits;
-  for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
-    fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
-  }
-
   LOG(logDEBUG2) << "Calculating Chi2 value...";
   std::pair<TGraphErrors*,TF1*> fit;
   if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(channel,masses,data_hists,mc_hists); }
-  else { fit = getFittedChiSquare(channel,masses,fits); }
+  else {
+    LOG(logDEBUG2) << "Splitting histograms into bins...";
+    std::vector<TGraphErrors*> data_graphs = splitBins("data",masses,data_hists);
+    std::vector<TGraphErrors*> mc_graphs = splitBins("mc",masses,mc_hists);
+    fit = getFittedChiSquare(channel,masses,data_graphs,mc_graphs);
+  }
   
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
@@ -854,6 +780,10 @@ void extractor::setClosureSample(TString closure) {
 
 extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
+  // Do not add histograms to the directory listing:
+  TH1::AddDirectory(kFALSE);
+
+  // Set the histogram styles:
   setHHStyle(*gStyle);
 
   // This is our nominal mass variation sample:

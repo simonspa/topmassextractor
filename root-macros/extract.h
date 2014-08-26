@@ -48,16 +48,16 @@ private:
 
   void getControlPlots(std::vector<TH1D*> histograms);
 
-  std::vector<TH1D* > splitBins(TString type, std::vector<TH1D*> histograms);
-  std::pair<TGraphErrors*,TGraphErrors*> fitMassBins(TString channel, Int_t bin, std::vector<Double_t> masses, TH1D* data, TH1D* mc);
-
-  TGraphErrors * getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
+  // Functions for simple summed Chi2 extraction:
   Double_t chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval);
   std::pair<TGraphErrors*,TF1*> getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
 
-  std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits);
-  TGraphErrors * createIntersectionChiSquare(std::pair<TGraphErrors*,TGraphErrors*> fits, Int_t bin);
+  // Functions for more involved fitted Chi2 extraction:
+  std::vector<TGraphErrors*> splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms);
+  TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin);
+  std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
+  // Minimization of the global Chi2 for extraction of the final mass value:
   Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 
   Double_t statErrorPos;
@@ -68,14 +68,15 @@ private:
   std::vector<TString> samples;
   std::vector<Double_t> bin_boundaries;
 
-  // Stroing the settings flags:
+  // Storing the settings flags:
   uint32_t flags;
 
   // Do Closure test (i.e. replace signal sample with nominal mc)
   bool doClosure;
   TH1D * pseudoData;
 
-  // Helper functions:
+  // Helper functions: //FIXME shiftgraph()?
+  TGraphErrors * getShiftedGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
   template<class t>
     bool isApprox(t a, t b, double eps = 0.01);
   /**
