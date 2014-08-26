@@ -52,7 +52,7 @@ Double_t extractor::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Doubl
   // Calculate signal by subtracting backround from data, multiplied by signal fraction.
   Double_t signal = (data - bgr_other)*fsignal;
 
-  LOG(logDEBUG2) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+  LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
 
   return signal;
 }
@@ -71,7 +71,7 @@ Double_t extractorBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t d
   // Calculate signal by subtracting backround from data, multiplied by signal fraction.
   Double_t signal = (data - bgr_other)*fsignal;
 
-  LOG(logDEBUG2) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+  LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
 
   return signal;
 }
@@ -80,7 +80,7 @@ Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
 
   // Scale the reco accoring to the different TTBar Cross sections (mass dependent):
   Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-  LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+  LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
 
   // Return the reco event count corrected by the ttbar Xsec at given mass:
   return corr_reco;
@@ -226,6 +226,8 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
 
   std::pair<TGraphErrors*,TGraphErrors*> allfits;
 
+  LOG(logDEBUG2) << "Preparing new graphs, bin " << bin << "...";
+
   TString mname, dname, cname;
   mname.Form("mc_%i_",bin);
   dname.Form("dat_%i_",bin);
@@ -258,6 +260,8 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
     graph_mc->Write(mname+ch);
   }
 
+  LOG(logDEBUG2) << "Simulation done.";
+
   TGraphErrors * graph = new TGraphErrors();
   graph->SetTitle(dname+ch);
 
@@ -280,6 +284,8 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
     c->Write(cname + ch);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ch + ".pdf"); }
   }
+
+  LOG(logDEBUG2) << "Data done. Returning.";
 
   allfits = std::make_pair(graph,graph_mc);
   return allfits;
@@ -374,7 +380,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     Double_t bwidth = confIntervalMC.at(i);
     Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
     
-    LOG(logDEBUG3) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
+    LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_tmp->SetPoint(i, scanPoints.at(i), chi2);
   }
 
@@ -417,7 +423,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
       Double_t xsum,ysum,x,y;
       chi2->GetPoint(i,x,y);
       chi2sum->GetPoint(i,xsum,ysum);
-      LOG(logDEBUG3) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
+      LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
       chi2sum->SetPoint(i,x,y+ysum);
     }
   }
@@ -621,6 +627,7 @@ Double_t extractor::getTopMass() {
     delete datafile;
   }
 
+  LOG(logDEBUG2) << "Splitting histograms into bins...";
   std::vector<TH1D*> separated_data = splitBins("data",data_hists);
   std::vector<TH1D*> separated_mc = splitBins("mc",mc_hists);
 
@@ -630,18 +637,22 @@ Double_t extractor::getTopMass() {
     gDirectory->pwd();
   }
 
+  LOG(logDEBUG2) << "Requesting control plots...";
   getControlPlots(data_hists);
   getControlPlots(mc_hists);
 
+  LOG(logDEBUG2) << "Requesting fit plots for all bins...";
   std::vector<std::pair<TGraphErrors*,TGraphErrors*> > fits;
   for(UInt_t bin = 0; bin < separated_data.size(); ++bin) {
     fits.push_back(fitMassBins(channel,bin+1,masses,separated_data.at(bin),separated_mc.at(bin)));
   }
 
+  LOG(logDEBUG2) << "Calculating Chi2 value...";
   std::pair<TGraphErrors*,TF1*> fit;
   if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(channel,masses,data_hists,mc_hists); }
   else { fit = getFittedChiSquare(channel,masses,fits); }
   
+  LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
 
   //if(output->IsOpen()) { delete output; }
@@ -715,7 +726,7 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
     deltaBgr.push_back(bgr);
     deltaTtbgr.push_back(ttbgr);
 
-    LOG(logDEBUG2) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
+    LOG(logDEBUG3) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
   }
 
   delete nominalfile;
@@ -1247,7 +1258,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 			       Xbins);
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
-    LOG(logDEBUG2) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
     signalHist->SetBinContent(bin+1-startbin,aDiffXSecHist->GetBinContent(bin));
     signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin));
   }
@@ -1332,7 +1343,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
     simulationHist->SetBinError(bin+1-startbin,aMcBinned->GetBinError(bin));
-    LOG(logDEBUG2) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << " (err=" << simulationHist->GetBinError(bin+1-startbin) << ")";
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << " (err=" << simulationHist->GetBinError(bin+1-startbin) << ")";
   }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
