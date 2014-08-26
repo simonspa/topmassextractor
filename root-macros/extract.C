@@ -281,7 +281,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   secondconf->SetPoint(0,second->GetX()[0] - 1, 0);
   for (Int_t i = 1; i <= second->GetN(); i++) { secondconf->SetPoint(i, second->GetX()[i-1], 0); }
   secondconf->SetPoint(second->GetN(),second->GetX()[second->GetN()-1] + 1, 0);
-  //Compute the confidence intervals at the x points of the created graph
+  // Compute the confidence intervals at the x points of the created graph
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(secondconf);
 
   first->Fit("pol2","Q","",xmin,xmax);
@@ -313,8 +313,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     shiftGraph(first,-1*xshift,-1*yshift);
   }
 
-  TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+    TCanvas* c = 0;
 
     // Naming:
     TString cname = "chi2_" + channel + Form("_bin%i",bin);
@@ -433,12 +433,6 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Do
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TString name = "chi2_" + ch;
 
-  TCanvas* c = 0;
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    c = new TCanvas(name+"_c",name+"_c");
-    c->cd();
-  }
-
   TGraphErrors * chisquare = new TGraphErrors();
   chisquare->SetTitle(name);
 
@@ -452,7 +446,10 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Do
   }
 
   chisquare->Fit("pol2","Q");
+
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+    TCanvas* c = new TCanvas(name+"_c",name+"_c");
+    c->cd();
     chisquare->SetMarkerStyle(20);
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
@@ -1306,7 +1303,6 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   Xbins[nbins] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
 
   // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
-  aMcHist->Sumw2();
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",Xbins));
 
   for (Int_t bin=0; bin < nbins; bin++) {
