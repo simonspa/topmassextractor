@@ -152,11 +152,12 @@ class extractorDiffXSec : public extractor {
   TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   TFile * selectInputFile(TString sample, TString channel);
 
+  TString closureFile;
  protected:
   inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}} #left[GeV^{-1}#right]"; }
 
 public:
- extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {
+ extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : closureFile(""), extractor(ch, sample, steeringFlags) {
     LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
   };
   void setClosureSample(TString closure);
