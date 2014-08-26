@@ -155,7 +155,7 @@ class extractorDiffXSec : public extractor {
 
   TString closureFile;
  protected:
-  inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}} #left[GeV^{-1}#right]"; }
+  inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
 
 public:
  extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : closureFile(""), extractor(ch, sample, steeringFlags) {

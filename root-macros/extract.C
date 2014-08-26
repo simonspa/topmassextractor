@@ -1164,7 +1164,6 @@ void extractor::setStyle(TGraphErrors *hist, TString name)
   hist->SetLineWidth(2);
   
   hist->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
-  //hist->GetYaxis()->SetTitle("#frac{1}{#sigma} #frac{d#sigma}{d"+XAxis+"}"+" #left[GeV^{-1}#right]"); 
 
   if(name == "data") {
     hist->SetLineWidth(2);
