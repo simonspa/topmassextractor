@@ -1089,10 +1089,15 @@ void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, double textSiz
     TPaveText *decch = new TPaveText();
 
     if(bin > 0) {
-      // Lower and upper edge of the bin:
-      Double_t bin_low = bin_boundaries.at(bin-1);
-      Double_t bin_high = bin_boundaries.at(bin);
-      decch->AddText(decaychannel + Form(", %1.1f < #rho_{S} < %1.1f",bin_low,bin_high));
+      if(!bin_boundaries.empty()) {
+	// Lower and upper edge of the bin:
+	Double_t bin_low = bin_boundaries.at(bin-1);
+	Double_t bin_high = bin_boundaries.at(bin);
+	decch->AddText(decaychannel + Form(", %1.2f < #rho_{S} < %1.2f",bin_low,bin_high));
+      }
+      else {
+	decch->AddText(decaychannel + Form(", bin %i",bin));
+      }
     }
     else { decch->AddText(decaychannel); }
 
@@ -1256,6 +1261,10 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 			       "diffxs_" + channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
+
+  // Store the binning for global use:
+  bin_boundaries.clear();
+  for(Int_t i = 0; i < nbins+2-startbin; i++) { bin_boundaries.push_back(Xbins[i]); }
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
