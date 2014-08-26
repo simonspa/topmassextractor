@@ -1502,9 +1502,9 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(2) << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(2) << std::fixed << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
 
-    SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(2) << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
+    SystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(2) << std::fixed << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
     SystOutputFile.close();
     delete mass_samples;
   }
@@ -1615,9 +1615,9 @@ void extract_diffxsec(std::vector<TString> channels, uint32_t flags) {
 
     total_syst_pos = sqrt(total_syst_pos);
     total_syst_neg = sqrt(total_syst_neg);
-    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(2) << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
+    LOG(logRESULT) << "Channel " << *ch << ": m_t = " << setprecision(2) << std::fixed << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV";
 
-    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(2) << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
+    DiffSystOutputFile << "Channel " << *ch << ": m_t = " << setprecision(2) << std::fixed << topmass << setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << endl;
     DiffSystOutputFile.close();
     delete mass_diffxs;
   }
