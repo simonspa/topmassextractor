@@ -1068,7 +1068,7 @@ void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, int cmsprelim,
 
     cms->SetFillStyle(0);
     cms->SetBorderSize(0);
-    if (textSize!=0) cms->SetTextSize(textSize);
+    if (textSize!=0) cms->SetTextSize(textSize*1.1);
     cms->SetTextAlign(12);
     cms->SetTextFont(61);
     cms->Draw("same");
