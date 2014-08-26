@@ -86,7 +86,7 @@ private:
   void setHHStyle(TStyle& HHStyle);
   void DrawDecayChLabel(TString decaychannel="", Int_t bin=0, double textSize=0.04);
   void DrawCMSLabels(int cmsprelim=true, double energy=8, double textSize=0.04);
-  void setStyle(TGraphErrors *hist);
+  void setStyle(TGraphErrors *hist, TString name="");
   void setStyleAndFillLegend(TGraphErrors* histo, TString name, TLegend *leg);
   void setLegendStyle(TLegend *leg);
 

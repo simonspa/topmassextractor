@@ -273,7 +273,7 @@ std::pair<TGraphErrors*,TGraphErrors*> extractor::fitMassBins(TString ch, Int_t 
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     setStyleAndFillLegend(graph,"data",leg);
 
-    graph->Draw("SAME P E1");
+    graph->Draw("SAME L E3");
     DrawDecayChLabel(getChannelLabel(ch),bin);
     DrawCMSLabels();
 
@@ -361,11 +361,18 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
   second->Fit("pol2","Q","",xmin,xmax);
   TF1 * secondFit = second->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
+  TGraphErrors *secondconf = new TGraphErrors(second->GetN());
+  // Add additional point, just for drawing:
+  secondconf->SetPoint(0,second->GetX()[0] - 1, 0);
+  for (Int_t i = 1; i <= second->GetN(); i++) { secondconf->SetPoint(i, second->GetX()[i-1], 0); }
+  secondconf->SetPoint(second->GetN(),second->GetX()[second->GetN()-1] + 1, 0);
+  //Compute the confidence intervals at the x points of the created graph
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(secondconf);
 
   first->Fit("pol2","Q","",xmin,xmax);
   TF1 * firstFit = first->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
-  
+
   // Pick fixed error for data from middle point:
   Double_t fixedError = first->GetErrorY(first->GetN()/2);
 
@@ -384,7 +391,12 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     chi2_tmp->SetPoint(i, scanPoints.at(i), chi2);
   }
 
-  if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { chi2_graph = getShiftedGraph(chi2_tmp,-1*xshift,0); }
+  if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
+    chi2_graph = getShiftedGraph(chi2_tmp,-1*xshift,0);
+    secondconf = getShiftedGraph(secondconf,-1*xshift,-1*yshift);
+    second = getShiftedGraph(second,-1*xshift,-1*yshift);
+    first = getShiftedGraph(first,-1*xshift,-1*yshift);
+  }
   else { chi2_graph = chi2_tmp; }
 
   TCanvas* c = 0;
@@ -401,6 +413,41 @@ TGraphErrors * extractor::createIntersectionChiSquare(std::pair<TGraphErrors*,TG
     chi2_graph->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
+
+    TString c2name = "inputs_" + channel + Form("_bin%i",bin);
+    c = new TCanvas(c2name,c2name);
+    c->cd();
+    TLegend *leg = new TLegend();
+    setLegendStyle(leg);
+
+    second->SetTitle("");
+    second->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+    second->GetYaxis()->SetTitle(getQuantity());
+
+    secondconf->SetTitle("");
+    secondconf->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+    secondconf->GetYaxis()->SetTitle(getQuantity());
+    secondconf->GetXaxis()->SetLimits(second->GetX()[0]-1,second->GetX()[second->GetN()-1] + 1);
+
+    setStyle(second,"madgraph");
+    setStyleAndFillLegend(secondconf,"madgraph",leg);
+    setStyleAndFillLegend(first,"data",leg);
+
+    secondconf->Draw("A E3");
+    second->Draw("SAME P");
+
+    first->SetPoint(0,first->GetX()[0] - 1,first->GetY()[0]);
+    first->SetPoint(first->GetN()-1,first->GetX()[first->GetN()-1] + 1,first->GetY()[first->GetN()-1]);
+    first->Draw("SAME L E3");
+
+    DrawDecayChLabel(getChannelLabel(channel),bin);
+    DrawCMSLabels();
+    leg->Draw();
+
+    //first->Write(dname + ch);
+    
+    c->Write(c2name);
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + c2name + ".pdf"); }
   }
 
   return chi2_graph;
@@ -1173,7 +1220,7 @@ TString extractor::getSampleLabel(TString systematic) {
   return label;
 }
 
-void extractor::setStyle(TGraphErrors *hist)
+void extractor::setStyle(TGraphErrors *hist, TString name)
 {
   hist->SetLineWidth(1);
   hist->GetXaxis()->SetLabelFont(42);
@@ -1193,28 +1240,31 @@ void extractor::setStyle(TGraphErrors *hist)
   
   hist->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
   //hist->GetYaxis()->SetTitle("#frac{1}{#sigma} #frac{d#sigma}{d"+XAxis+"}"+" #left[GeV^{-1}#right]"); 
+
+  if(name == "data") {
+    hist->SetLineWidth(2);
+    hist->SetFillStyle(3002);
+    hist->SetFillColor(kBlack);
+  }
+  else if(name == "madgraph") {
+    hist->SetMarkerColor(kRed+1);
+    hist->SetLineColor(kRed+1);
+    hist->SetFillStyle(3004);
+    hist->SetFillColor(kRed+1);
+  }
 }
 
 
 void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg) {
 
-  setStyle(hist);
+  setStyle(hist,name);
 
-  if(name == "data"){
-    hist->SetLineWidth(0);
+  if(name == "data") {
     if(leg && doClosure) leg->AddEntry(hist, "Pseudo Data",  "p");
     else if(leg) leg->AddEntry(hist, "Data",  "p");
   }
-
-  /*  if(name != "data") {
-    hist->SetMarkerStyle(1);
-    hist->SetMarkerSize(0);
-    }*/
-  
-  if(name == "madgraph") {
-    hist->SetMarkerColor(kRed+1);
-    hist->SetLineColor(kRed+1);
-    if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
+  else if(name == "madgraph") {
+  if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
   }
 }
 
