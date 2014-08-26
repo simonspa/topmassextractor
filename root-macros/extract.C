@@ -182,6 +182,7 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
     // Write corrected Reco:
     simulationHist->SetBinContent(bin-startbin+1,corr_reco);
+    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
