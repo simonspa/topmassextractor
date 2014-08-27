@@ -36,6 +36,18 @@
 // Either deliver minimum of the fit to the final ChiSquare or just the TGraph's minimum:
 #define FLAG_RETURN_FITMIN 0x80
 
+// Exclude bins which are not significant from the overall Chi2 sum:
+#define FLAG_EXCLUDE_INSIGNIFICANT_BINS 0x100
+
+Double_t nominalmass = 172.5;
+Double_t lumi = 19712;
+
+Int_t granularity = 500;
+Double_t confidenceLevel = 0.95;
+Double_t chi2significance = 1.5;
+
+TString basepath = "ExtractionResults";
+
 
 class extractor {
 

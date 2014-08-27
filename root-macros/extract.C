@@ -18,14 +18,6 @@
 #include "log.h"
 #include "extract.h"
 
-Double_t nominalmass = 172.5;
-Double_t lumi = 19712;
-
-Int_t granularity = 500;
-Double_t confidenceLevel = 0.95;
-
-TString basepath = "ExtractionResults";
-
 using namespace unilog;
 
 
@@ -391,6 +383,16 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
   for(size_t bin = 0; bin < data.size(); bin++) {
     // Get the likelihood for the two functions:
     TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin);
+
+    // Discard insignificant bins if requested:
+    if((flags & FLAG_EXCLUDE_INSIGNIFICANT_BINS) != 0) {
+      Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
+      if(maxVal < chi2significance) {
+	LOG(logWARNING) << "Discarding ch " << ch << " bin " << bin+1 << " since max(chi2) = " << maxVal << " < " << chi2significance;
+	continue;
+      }
+      else { LOG(logDEBUG2) << "Including ch " << ch << " bin " << bin+1 << " with max(chi2) = " << maxVal; }
+    }
 
     // Sum them all:
     for(Int_t i = 0; i < chi2->GetN(); i++) {
