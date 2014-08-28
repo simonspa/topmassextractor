@@ -606,7 +606,7 @@ Double_t extractor::getTopMass() {
   // Store the output histograms into this file:
   TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    output = TFile::Open(basepath + "/MassFitRates.root","update");
+    output = TFile::Open(basepath + "/" + getRootFilename(),"update");
     gDirectory->pwd();
   }
 
@@ -772,7 +772,7 @@ Double_t extractor::getMassFromSample(TString sample) {
   return topmass;
 }
 
-void extractorDiffXSec::setClosureSample(TString closure) {
+void extractorDiffXSec::setClosureSample(TString /*closure*/) {
   LOG(logERROR) << "Not possible to request closure for DiffXSec extraction. Re-run unfolding with closure flag enabled in order to get closure pseudo data.";
   LOG(logINFO) << "Use \"setUnfoldingMass()\" to select different mass samples used for unfolding.";
 }
@@ -1340,9 +1340,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   std::vector<TString> filenames;
-  TString generator = "MADGRAPH", filename;
-
-  TString sample;
+  TString filename, sample;
 
   if(mass < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
   else if(mass < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
@@ -1459,7 +1457,6 @@ TMatrixD * extractorDiffXSec::getInverseCovarianceMatrix(TString ch) {
       LOG(logDEBUG3) << "Cov: inv (" << x << "," << y << ") = " << (*invcov)(x,y); 
     }
   }
-
   return invcov;
 }
 

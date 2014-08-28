@@ -110,6 +110,7 @@ private:
 
  protected:
   virtual inline TString getQuantity() { return "Events"; }
+  virtual inline TString getRootFilename() { return "MassFitRates.root"; }
   virtual TFile * selectInputFile(TString sample, TString channel);
 
  public:
@@ -172,9 +173,10 @@ class extractorDiffXSec : public extractor {
   Double_t unfoldingMass;
  protected:
   inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
+  inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
 public:
- extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : unfoldingMass(nominalmass), extractor(ch, sample, steeringFlags) {
+ extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags), unfoldingMass(nominalmass) {
     LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
   };
   void setUnfoldingMass(Double_t mass);
