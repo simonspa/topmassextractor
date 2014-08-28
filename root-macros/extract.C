@@ -702,6 +702,45 @@ void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString sys
   delete systematicfile;
 }
 
+TString extractor::getSampleFromMass(TString sample, Double_t mass, bool nominal) {
+
+  TString fullSampleName = "";
+
+  // Variations down:
+  if(mass < (nominalmass-5.5)) {
+    if(nominal) { fullSampleName = "MASS_DOWN_6GEV"; }
+    else { fullSampleName = sample + "_6NEG"; }
+  }
+  else if(mass < (nominalmass-2.5)) {
+    if(nominal) { fullSampleName = "MASS_DOWN_3GEV"; }
+    else { fullSampleName = sample + "_3NEG"; }
+  }
+  else if(mass < (nominalmass-0.5)) {
+    if(nominal) { fullSampleName = "MASS_DOWN_1GEV"; }
+    else { fullSampleName = sample + "_1NEG"; }
+  }
+  // Variations up:
+  else if(mass > (nominalmass+5.5)) {
+    if(nominal) { fullSampleName = "MASS_UP_1GEV"; }
+    else { fullSampleName = sample + "_1POS"; }
+  }
+  else if(mass > (nominalmass+2.5)) {
+    if(nominal) { fullSampleName = "MASS_UP_3GEV"; }
+    else { fullSampleName = sample + "_3POS"; }
+  }
+  else if(mass > (nominalmass+0.5)) {
+    if(nominal) { fullSampleName = "MASS_UP_6GEV"; }
+    else { fullSampleName = sample + "_6POS"; }
+  }
+  // Nominal mass:
+  else {
+    if(nominal) { fullSampleName = "Nominal"; }
+    else { fullSampleName = sample; }
+  }
+
+  return fullSampleName;
+}
+
 Double_t extractor::getMassFromSample(TString sample) {
 
   Double_t topmass = nominalmass;

@@ -104,6 +104,7 @@ private:
   void setLegendStyle(TLegend *leg);
 
   Double_t getMassFromSample(TString sample);
+  TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
   TString getChannelLabel(TString channel);
 
  protected:
