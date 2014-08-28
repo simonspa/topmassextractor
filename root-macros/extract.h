@@ -166,15 +166,15 @@ class extractorDiffXSec : public extractor {
   TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   TFile * selectInputFile(TString sample, TString channel);
 
-  TString closureFile;
+  Double_t unfoldingMass;
  protected:
   inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
 
 public:
- extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : closureFile(""), extractor(ch, sample, steeringFlags) {
+ extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : unfoldingMass(nominalmass), extractor(ch, sample, steeringFlags) {
     LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
   };
+  void setUnfoldingMass(Double_t mass);
   void setClosureSample(TString closure);
-
 };
 #endif /* EXTRACT_H */

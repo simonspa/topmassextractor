@@ -770,8 +770,13 @@ Double_t extractor::getMassFromSample(TString sample) {
 }
 
 void extractorDiffXSec::setClosureSample(TString closure) {
-  LOG(logINFO) << "Requested to use " << closure << " for comparison.";
-  closureFile = closure;
+  LOG(logERROR) << "Not possible to request closure for DiffXSec extraction. Re-run unfolding with closure flag enabled in order to get closure pseudo data.";
+  LOG(logINFO) << "Use \"setUnfoldingMass()\" to select different mass samples used for unfolding.";
+}
+
+void extractorDiffXSec::setUnfoldingMass(Double_t mass) {
+  LOG(logINFO) << "Requested to use m_t=" << mass << " for unfolding.";
+  unfoldingMass = mass;
 }
 
 void extractor::setClosureSample(TString closure) {
@@ -1416,12 +1421,19 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   // Overwrite the samples unfolded with different masses with just the nominal:
   if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { 
     LOG(logDEBUG2) << "Overwriting: " << sample;
-    // Check if we have set a specific sample to compare to:
-    if(closureFile != "") { sample = closureFile; }
+
     // Mass samples from Nominal:
-    else if(sample.Contains("GEV")) { sample = "Nominal"; }
+    if(sample.Contains("GEV") || sample.Contains("Nominal")) {
+      sample = getSampleFromMass("Nominal",unfoldingMass,true);
+    }
+
     // All other mass-varied samples:
-    else if(sample.Contains("POS") || sample.Contains("NEG")) { sample.Remove(sample.Length()-5); }
+    else if(sample.Contains("POS") || sample.Contains("NEG")) { 
+      sample.Remove(sample.Length()-5);
+      // Check if we have set a specific sample to use for unfolding:
+      sample = getSampleFromMass(sample,unfoldingMass,false);
+    }
+
     LOG(logDEBUG2) << "with: " << sample;
   }
 
@@ -1567,7 +1579,7 @@ void extract_yield(std::vector<TString> channels, bool closure, TString closure_
 }
 
 
-void extract_diffxsec(std::vector<TString> channels, TString sampleFile, uint32_t flags) {
+void extract_diffxsec(std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags) {
 
   std::vector<TString> systematics;
   systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
@@ -1598,7 +1610,7 @@ void extract_diffxsec(std::vector<TString> channels, TString sampleFile, uint32_
     DiffSystOutputFile << "\\hline" << std::endl;
 
     extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
-    mass_diffxs->setClosureSample(sampleFile);
+    mass_diffxs->setUnfoldingMass(unfoldingMass);
     Double_t topmass = mass_diffxs->getTopMass();
     Double_t total_stat_pos;
     Double_t total_stat_neg;
@@ -1607,16 +1619,14 @@ void extract_diffxsec(std::vector<TString> channels, TString sampleFile, uint32_
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
-
+    /*
     // Systematic Variations with own samples:
     extractorDiffXSec * var, * var2;
     Double_t diff = 0;
 
     LOG(logDEBUG) << "Getting HAD variation...";
     var = new extractorDiffXSec(*ch,"POWHEG", flags);
-    var->setClosureSample(sampleFile);
     var2 = new extractorDiffXSec(*ch,"MCATNLO", flags);
-    var2->setClosureSample(sampleFile);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
@@ -1626,9 +1636,7 @@ void extract_diffxsec(std::vector<TString> channels, TString sampleFile, uint32_
 
     LOG(logDEBUG) << "Getting CR variation...";
     var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", flags);
-    var->setClosureSample(sampleFile);
     var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
-    var2->setClosureSample(sampleFile);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
@@ -1639,24 +1647,21 @@ void extract_diffxsec(std::vector<TString> channels, TString sampleFile, uint32_
     LOG(logDEBUG) << "Getting UE variation...";
     extractorDiffXSec * var3;
     var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
-    var->setClosureSample(sampleFile);
     var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", flags);
-    var2->setClosureSample(sampleFile);
     var3 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
-    var3->setClosureSample(sampleFile);
     diff = (TMath::Abs(var->getTopMass() - var3->getTopMass()) + TMath::Abs(var2->getTopMass() - var3->getTopMass()))/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
     delete var; delete var2;
-
+    */
     // Systematic Variations produced by varying nominal samples:
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
       extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
-      variation_diffxs->setClosureSample(sampleFile);
+      variation_diffxs->setUnfoldingMass(unfoldingMass);
 
       Double_t topmass_variation = variation_diffxs->getTopMass();
       LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
@@ -1693,6 +1698,7 @@ void extract() {
 
   bool closure = true;
   TString closure_sample = "Nominal";
+  Double_t unfolding_mass = nominalmass-3;
 
   const uint32_t flags = FLAG_NORMALIZE_YIELD;
 
@@ -1702,7 +1708,7 @@ void extract() {
   channels.push_back("mumu");
   channels.push_back("combined");
 
-  extract_diffxsec(channels,closure_sample,flags);
+  extract_diffxsec(channels,unfolding_mass,flags);
   //extract_yield(channels,closure,closure_sample,flags);
 
   return;
