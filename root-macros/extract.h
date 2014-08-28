@@ -2,6 +2,7 @@
 #include <string>
 #include "Riostream.h"
 #include <TH1D.h>
+#include <TMatrixD.h>
 #include <TFile.h>
 #include <TStyle.h>
 #include <TF1.h>
@@ -164,7 +165,9 @@ class extractorDiffXSec : public extractor {
  private:
   TH1D * getSignalHistogram(Double_t mass, TFile * histos);
   TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
-  TFile * selectInputFile(TString sample, TString channel);
+  TFile * selectInputFile(TString sample, TString ch);
+
+  TMatrixD * getInverseCovarianceMatrix(TString ch);
 
   Double_t unfoldingMass;
  protected:

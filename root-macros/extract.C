@@ -3,7 +3,10 @@
 #include <string>
 #include <Riostream.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TFile.h>
+#include <TMatrixD.h>
+#include <TDecompSVD.h>
 #include <TStyle.h>
 #include <TLegend.h>
 #include <TF1.h>
@@ -1414,6 +1417,50 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
   return simulationHist;
+}
+
+TMatrixD * extractorDiffXSec::getInverseCovarianceMatrix(TString ch) {
+
+  // Input files for Differential Cross section mass extraction: unfolded distributions
+  TString filename = "SVD/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
+  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_STATCOV";
+
+  TFile * input = TFile::Open(filename,"read");
+  if(!input->IsOpen()) {
+    LOG(logCRITICAL) << "Failed to access covariance matrix file " << filename;
+    throw 1;
+  }
+  LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
+
+  // Histogram containing differential cross section from data:
+  TH2D * statCovNorm = static_cast<TH2D*>(input->Get(histogramname));
+  if(!statCovNorm) { LOG(logCRITICAL) << "Failed to get histogram " << histogramname; }
+  else { LOG(logDEBUG) << "Fetched " << histogramname; }
+
+  // Cut away over and underflow bins:
+  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix.";
+
+  // Read the matrix from file:
+  TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
+      LOG(logDEBUG3) << "Cov: filling (" << x << "," << y << ") = " << (*cov)(x,y);
+    }
+  }
+
+  // Invert the (singular) matrix using SVD:
+  TDecompSVD svd(*cov);
+  TMatrixD * invcov = new TMatrixD(svd.Invert());
+
+  // Just printing is for debugging:
+  for(Int_t y = 0; y < invcov->GetNcols(); y++) {
+    for(Int_t x = 0; x < invcov->GetNrows(); x++) {
+      LOG(logDEBUG3) << "Cov: inv (" << x << "," << y << ") = " << (*invcov)(x,y); 
+    }
+  }
+
+  return invcov;
 }
 
 TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
