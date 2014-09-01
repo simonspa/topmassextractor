@@ -172,6 +172,8 @@ class extractorDiffXSec : public extractor {
   TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   TFile * selectInputFile(TString sample, TString ch);
 
+  virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
+
   Double_t unfoldingMass;
  protected:
   inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
@@ -184,4 +186,20 @@ public:
   void setUnfoldingMass(Double_t mass);
   void setClosureSample(TString closure);
 };
+
+class extractorDiffXSecScaled : public extractorDiffXSec {
+
+private:
+  Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+  void prepareScaleFactors(TString ch, TString systematic);
+  std::vector<Double_t> scaleFactors;
+
+public:
+ extractorDiffXSecScaled(TString ch, TString sample, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, steeringFlags), scaleFactors() {
+    LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
+    prepareScaleFactors(ch,scale);
+  };
+};
+
 #endif /* EXTRACT_H */

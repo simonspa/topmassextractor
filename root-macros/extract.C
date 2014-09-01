@@ -1349,6 +1349,49 @@ void extractorBackground::prepareScaleFactor(TString systematic) {
   }
 }
 
+void extractorDiffXSecScaled::prepareScaleFactors(TString ch, TString systematic) {
+
+  Int_t sign = 0;
+  if(systematic.Contains("UP")) { sign = 1; }
+  else if(systematic.Contains("DOWN")) { sign = -1; }
+
+  if(systematic.Contains("PDF")) {
+    LOG(logDEBUG2) << "Preparing PDF uncertainty scale factors...";
+    // PDF scaling for all five bins:
+    if(ch == "combined") {
+      scaleFactors.push_back(sign*0.0518874555267725);
+      scaleFactors.push_back(sign*0.0307283998130669);
+      scaleFactors.push_back(sign*0.0124526579196978);
+      scaleFactors.push_back(sign*0.00149147332885075);
+      scaleFactors.push_back(sign*0.00473063248751739);
+    }
+    else if(ch == "ee") {
+      scaleFactors.push_back(sign*0.0520053995180302);
+      scaleFactors.push_back(sign*0.0303351933038199);
+      scaleFactors.push_back(sign*0.0126092037398061);
+      scaleFactors.push_back(sign*0.00156712414239097);
+      scaleFactors.push_back(sign*0.00486566872899394);
+    }
+    else if(ch == "emu") {
+      scaleFactors.push_back(sign*0.0525837643853782);
+      scaleFactors.push_back(sign*0.0303790574991724);
+      scaleFactors.push_back(sign*0.0124525455719107);
+      scaleFactors.push_back(sign*0.00151246828268544);
+      scaleFactors.push_back(sign*0.00463153835628149);
+    }
+    else if(ch == "mumu") {
+      scaleFactors.push_back(sign*0.04862795023471);
+      scaleFactors.push_back(sign*0.0321488889850916);
+      scaleFactors.push_back(sign*0.0123548702575585);
+      scaleFactors.push_back(sign*0.00139357258960364);
+      scaleFactors.push_back(sign*0.00496195593202099);
+    }
+  }
+  std::stringstream sv;
+  for(std::vector<Double_t>::iterator sf = scaleFactors.begin(); sf != scaleFactors.end(); ++sf) { sv << *sf << " "; }
+  LOG(logDEBUG2) << "Scale factors for every bin: " << sv.str();
+}
+
 TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing differential cross section from data:
@@ -1372,13 +1415,22 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   for(Int_t i = 0; i < nbins+2-startbin; i++) { bin_boundaries.push_back(Xbins[i]); }
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
-    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin);
-    signalHist->SetBinContent(bin+1-startbin,aDiffXSecHist->GetBinContent(bin));
+    Double_t signal = getSignal(bin-startbin,mass,aDiffXSecHist->GetBinContent(bin));
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin) << " signal=" << signal;
+    signalHist->SetBinContent(bin+1-startbin,signal);
     signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin));
   }
 
   // Return DiffXSec signal histogram:
   return signalHist;
+}
+
+Double_t extractorDiffXSec::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  return data;
+}
+
+Double_t extractorDiffXSecScaled::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  return (1+scaleFactors.at(bin))*data;
 }
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
@@ -1747,8 +1799,24 @@ void extract_diffxsec(std::vector<TString> channels, Double_t unfoldingMass, uin
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
     total_syst_pos += diff*diff;
     total_syst_neg += diff*diff;
-    delete var; delete var2;
-    */
+    delete var; delete var2; delete var3;
+
+    LOG(logDEBUG) << "Getting PDF variation...";
+    extractorDiffXSecScaled * pdf;
+    pdf = new extractorDiffXSecScaled(*ch,"Nominal", flags, "PDF_UP");
+    diff = (Double_t)topmass - pdf->getTopMass();
+    LOG(logINFO) << "PDF_UP - " << *ch << ": delta = " << diff;
+    if(diff > 0) total_syst_pos += diff*diff;
+    else total_syst_neg += diff*diff;
+    DiffSystOutputFile << pdf->getSampleLabel("PDF_UP") << " & $\\pm " << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
+
+    pdf = new extractorDiffXSecScaled(*ch,"Nominal", flags, "PDF_DOWN");
+    diff = (Double_t)topmass - pdf->getTopMass();
+    LOG(logINFO) << "PDF_DOWN - " << *ch << ": delta = " << diff;
+    if(diff > 0) total_syst_pos += diff*diff;
+    else total_syst_neg += diff*diff;
+    DiffSystOutputFile << setprecision(2) << std::fixed <<  (diff > 0 ? "+" : "" ) << diff << "}$ \\\\" << endl;
+
     // Systematic Variations produced by varying nominal samples:
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
