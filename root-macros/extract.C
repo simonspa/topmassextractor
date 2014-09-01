@@ -389,28 +389,64 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
     throw(1);
   }
 
+  std::vector<TGraphErrors*> dataFits, mcFits;
   // Loop over all bins we have:
   for(size_t bin = 0; bin < data.size(); bin++) {
+
+    TGraphErrors * dataFit = new TGraphErrors();
+    TGraphErrors * mcFit = new TGraphErrors();
+
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin);
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
+
+    dataFits.push_back(dataFit);
+    mcFits.push_back(mcFit);
 
     // Discard insignificant bins if requested:
-    if((flags & FLAG_EXCLUDE_INSIGNIFICANT_BINS) != 0) {
-      Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
-      if(maxVal < chi2significance) {
-	LOG(logWARNING) << "Discarding ch " << ch << " bin " << bin+1 << " since max(chi2) = " << maxVal << " < " << chi2significance;
-	continue;
-      }
-      else { LOG(logDEBUG2) << "Including ch " << ch << " bin " << bin+1 << " with max(chi2) = " << maxVal; }
+    Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
+    if(maxVal < chi2significance) {
+      LOG(logWARNING) << "Channel " << ch << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
     }
 
-    // Sum them all:
-    for(Int_t i = 0; i < chi2->GetN(); i++) {
-      Double_t xsum,ysum,x,y;
-      chi2->GetPoint(i,x,y);
-      chi2sum->GetPoint(i,xsum,ysum);
-      LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
-      chi2sum->SetPoint(i,x,y+ysum);
+    // If we don't use or have the Covariance matrix, just use statistical errors:
+    if((flags & FLAG_DONT_USE_COVARIANCE) != 0) {
+      // Sum them all:
+      for(Int_t i = 0; i < chi2->GetN(); i++) {
+	Double_t xsum,ysum,x,y;
+	chi2->GetPoint(i,x,y);
+	chi2sum->GetPoint(i,xsum,ysum);
+	LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
+	chi2sum->SetPoint(i,x,y+ysum);
+      }
+    }
+  }
+
+  // Calculate the overall Chi2 usiong all bin correlations from covariance matrix:
+  if((flags & FLAG_DONT_USE_COVARIANCE) == 0) {
+    // Get the inverse covariance matrix:
+    TMatrixD * invCov = getInverseCovMatrix(ch,m_sample);
+    // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
+    // Scanning over the fits:
+    for(size_t i = 0; i < dataFits.at(0)->GetN(); i++) {
+      // Prepare the vector containing the (dat - mc) difference for all bins:
+      TVectorD v(dataFits.size());
+      Double_t x_dat;
+      std::stringstream sv;
+      for(size_t bin = 0; bin < dataFits.size(); bin++) {
+	Double_t y_dat, y_mc;
+	dataFits.at(bin)->GetPoint(i,x_dat,y_dat);
+	mcFits.at(bin)->GetPoint(i,x_dat,y_mc);
+	v[bin] = y_dat - y_mc;
+	sv << v[bin] << " ";
+      }
+      // Do the matrix multiplication with the inverse covariance matrix:
+      TVectorD v2 = v;
+      v2 *= *invCov;
+      Double_t chi2 = v2*v;
+      LOG(logDEBUG4) << "(" << i << ") Chi2 = V^T*COV^-1*V = (" << x_dat << "/" << chi2 << ") "
+		     << "(V:" << v.GetNoElements() << "x1, {" << sv.str() << "} "
+		     << "COV: " << invCov->GetNrows() << "x" << invCov->GetNcols() << ")";
+      chi2sum->SetPoint(i,x_dat,chi2);
     }
   }
 
