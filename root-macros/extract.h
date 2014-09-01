@@ -37,8 +37,8 @@
 // Either deliver minimum of the fit to the final ChiSquare or just the TGraph's minimum:
 #define FLAG_RETURN_FITMIN 0x80
 
-// Exclude bins which are not significant from the overall Chi2 sum:
-#define FLAG_EXCLUDE_INSIGNIFICANT_BINS 0x100
+// Do not take full covariance matrix into account, but just use stat. errors:
+#define FLAG_DONT_USE_COVARIANCE 0x100
 
 Double_t nominalmass = 172.5;
 Double_t lumi = 19712;
@@ -70,6 +70,9 @@ private:
   TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin);
   std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
+  // Function for fetching covariance matrix and inverting it:
+  TMatrixD * getInverseCovMatrix(TString ch, TString sample);
+
   // Minimization of the global Chi2 for extraction of the final mass value:
   Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 
@@ -78,6 +81,7 @@ private:
   Double_t extractedMass;
 
   TString channel;
+  TString m_sample;
   std::vector<TString> samples;
   std::vector<Double_t> bin_boundaries;
 
@@ -167,8 +171,6 @@ class extractorDiffXSec : public extractor {
   TH1D * getSignalHistogram(Double_t mass, TFile * histos);
   TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   TFile * selectInputFile(TString sample, TString ch);
-
-  TMatrixD * getInverseCovarianceMatrix(TString ch);
 
   Double_t unfoldingMass;
  protected:

@@ -1,6 +1,8 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <Riostream.h>
 #include <TH1D.h>
 #include <TH2D.h>
@@ -1417,11 +1419,11 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   return simulationHist;
 }
 
-TMatrixD * extractorDiffXSec::getInverseCovarianceMatrix(TString ch) {
+TMatrixD * extractor::getInverseCovMatrix(TString ch, TString sample) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "SVD/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_STATCOV";
+  TString filename = "SVD/" + sample + "/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
+  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
 
   TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {
@@ -1436,28 +1438,33 @@ TMatrixD * extractorDiffXSec::getInverseCovarianceMatrix(TString ch) {
   else { LOG(logDEBUG) << "Fetched " << histogramname; }
 
   // Cut away over and underflow bins:
-  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix.";
+  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix:";
 
   // Read the matrix from file:
   TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
       (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
-      LOG(logDEBUG3) << "Cov: filling (" << x << "," << y << ") = " << (*cov)(x,y);
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
     }
+    LOG(logDEBUG3) << st.str();
   }
 
-  // Invert the (singular) matrix using SVD:
-  TDecompSVD svd(*cov);
-  TMatrixD * invcov = new TMatrixD(svd.Invert());
+  // Invert the covariance matrix:
+  cov->Invert();
 
+  LOG(logDEBUG2) << "Inverted COV matrix:";
   // Just printing is for debugging:
-  for(Int_t y = 0; y < invcov->GetNcols(); y++) {
-    for(Int_t x = 0; x < invcov->GetNrows(); x++) {
-      LOG(logDEBUG3) << "Cov: inv (" << x << "," << y << ") = " << (*invcov)(x,y); 
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y); 
     }
+    LOG(logDEBUG3) << st.str();
   }
-  return invcov;
+
+  return cov;
 }
 
 TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
