@@ -909,9 +909,9 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
   if((flags & FLAG_DONT_SHIFT_GRAPHS) != 0 ) { s << "DONT_SHIFT_GRAPHS "; }
   if((flags & FLAG_STORE_PDFS) != 0 ) { s << "STORE_PDFS "; }
   if((flags & FLAG_RETURN_FITMIN) != 0 ) { s << "RETURN_FITMIN "; }
+  if((flags & FLAG_DONT_USE_COVARIANCE) != 0 ) { s << "DONT_USE_COVARIANCE "; }
 
-  LOG(logINFO) << "Flags shipped: " << s.str();
-  LOG(logINFO) << "Initialized.";
+  LOG(logDEBUG) << "Initialized. Flags shipped: " << s.str();
 }
 
 template<class t>
@@ -1270,6 +1270,7 @@ TString extractor::getSampleLabel(TString systematic) {
   else if(systematic.Contains("MASS")) { label = "Top Mass"; }
   else if(systematic.Contains("CR")) { label = "Color Reconnection"; }
   else if(systematic.Contains("UE")) { label = "Underlying Event"; }
+  else if(systematic.Contains("PDF")) { label = "PDF"; }
 
   return label;
 }
