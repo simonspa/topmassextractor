@@ -227,7 +227,7 @@ void extractor::shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshi
   }
 }
 
-TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin) {
+TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
   TString gname = "chi2_" + channel + Form("_bin%i",bin);
@@ -301,6 +301,9 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     
     LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
+
+    fit1->SetPoint(i, scanPoints.at(i), a);
+    fit2->SetPoint(i, scanPoints.at(i), b);
   }
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
@@ -309,6 +312,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     shiftGraph(secondconf,-1*xshift,-1*yshift);
     shiftGraph(second,-1*xshift,-1*yshift);
     shiftGraph(first,-1*xshift,-1*yshift);
+    shiftGraph(fit1,-1*xshift,-1*yshift);
+    shiftGraph(fit2,-1*xshift,-1*yshift);
   }
 
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
@@ -823,7 +828,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
   // Do not add histograms to the directory listing:
   TH1::AddDirectory(kFALSE);
