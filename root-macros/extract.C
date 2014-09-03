@@ -40,57 +40,75 @@ Double_t extractorOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t dat
 
 Double_t extractor::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  // Calculate the signal fraction from reconstructed events and TT background:
-  Double_t fsignal = reco/(reco+ttbgr);
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
+    return data;
+  }
+  else {
+    // Calculate the signal fraction from reconstructed events and TT background:
+    Double_t fsignal = reco/(reco+ttbgr);
 
-  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
-  Double_t bgr_other = bgr - ttbgr;
+    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+    Double_t bgr_other = bgr - ttbgr;
 
-  // Calculate signal by subtracting backround from data, multiplied by signal fraction.
-  Double_t signal = (data - bgr_other)*fsignal;
+    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+    Double_t signal = (data - bgr_other)*fsignal;
 
-  LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
 
   return signal;
+  }
 }
 
 Double_t extractorBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  // Calculate the signal fraction from reconstructed events and TT background:
-  Double_t fsignal = reco/(reco+ttbgr);
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
+    return data;
+  }
+  else {
+    // Calculate the signal fraction from reconstructed events and TT background:
+    Double_t fsignal = reco/(reco+ttbgr);
 
-  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
-  Double_t bgr_other = bgr - ttbgr;
+    // Calculate the "others background" as difference between bgr and ttbgr (no xsec scaling)
+    Double_t bgr_other = bgr - ttbgr;
 
-  // Scale with DY or BG scale factor:
-  bgr_other *= scaleFactor;
+    // Scale with DY or BG scale factor:
+    bgr_other *= scaleFactor;
 
-  // Calculate signal by subtracting backround from data, multiplied by signal fraction.
-  Double_t signal = (data - bgr_other)*fsignal;
+    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+    Double_t signal = (data - bgr_other)*fsignal;
 
-  LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
 
-  return signal;
+    return signal;
+  }
 }
 
-Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco) {
+Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  // Scale the reco accoring to the different TTBar Cross sections (mass dependent):
+  // Scale the reco according to the different TTBar Cross sections (mass dependent):
   Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
   LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
 
-  // Return the reco event count corrected by the ttbar Xsec at given mass:
-  return corr_reco;
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    // Return the corrected reco event count plus the background:
+    return (corr_reco + bgr);
+  }
+  else {
+    // Return the reco event count corrected by the ttbar Xsec at given mass:
+    return corr_reco;
+  }
 }
 
-Double_t extractorOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco) {
+Double_t extractorOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   //variation for every bin:
   reco -= deltaRec.at(bin-1);
 
   // Call parent class signal calculation function:
-  return extractor::getReco(bin, mass, reco);
+  return extractor::getReco(bin, mass, reco, bgr, ttbgr);
 }
 
 TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
@@ -157,6 +175,8 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing reconstructed events:
   TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
+  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
+  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
 
   // Create a new histogram with the same binning:
   Int_t nbins = aRecHist->GetNbinsX();
@@ -175,7 +195,7 @@ TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
   for(Int_t bin = startbin; bin <= nbins; bin++) {
 
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin));
+    Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
 
     // Write corrected Reco:
     simulationHist->SetBinContent(bin-startbin+1,corr_reco);

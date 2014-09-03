@@ -40,6 +40,9 @@
 // Do not take full covariance matrix into account, but just use stat. errors:
 #define FLAG_DONT_USE_COVARIANCE 0x100
 
+// Do not subtract the background from data but compare all with background:
+#define FLAG_DONT_SUBTRACT_BACKGROUND 0x200
+
 Double_t nominalmass = 172.5;
 Double_t lumi = 19712;
 
@@ -57,7 +60,7 @@ private:
   virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   
   virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
-  virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco);
+virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
 
   void getControlPlots(std::vector<TH1D*> histograms);
 
@@ -135,7 +138,7 @@ class extractorOtherSamples : public extractor {
 
 private:
   Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
-  Double_t getReco(Int_t bin, Double_t mass, Double_t reco);
+  Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
 
   void calcDifferenceToNominal(TString nominal, TString systematics);
 
