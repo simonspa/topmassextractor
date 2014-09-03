@@ -1808,7 +1808,7 @@ void extract_diffxsec(std::vector<TString> channels, Double_t unfoldingMass, uin
     LOG(logINFO) << "PDF_UP - " << *ch << ": delta = " << diff;
     if(diff > 0) total_syst_pos += diff*diff;
     else total_syst_neg += diff*diff;
-    DiffSystOutputFile << pdf->getSampleLabel("PDF_UP") << " & $\\pm " << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
+    DiffSystOutputFile << pdf->getSampleLabel("PDF_UP") << " & $^{" << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
 
     pdf = new extractorDiffXSecScaled(*ch,"Nominal", flags, "PDF_DOWN");
     diff = (Double_t)topmass - pdf->getTopMass();
