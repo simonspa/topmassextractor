@@ -171,6 +171,10 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
     LOG(logDEBUG) << "Normalized Data hist.";
   }
 
+  for(Int_t b = 1; b <= signalHist->GetNbinsX(); ++b) {
+    LOG(logDEBUG2) << "#" << b << ": " << signalHist->GetBinContent(b) << " +-" << signalHist->GetBinError(b);
+  }
+
   // Return signal-only histogram:
   return signalHist;
 }
@@ -212,6 +216,10 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
     LOG(logDEBUG) << "Normalized Reco hist.";
   }
 
+  for(Int_t b = 1; b <= simulationHist->GetNbinsX(); ++b) {
+    LOG(logDEBUG2) << "#" << b << ": " << simulationHist->GetBinContent(b) << " +-" << simulationHist->GetBinError(b);
+  }
+  
   // Return reco histogram:
   return simulationHist;
 }
@@ -252,9 +260,10 @@ Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Doubl
 
 Double_t extractorYieldOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-  // Subtract the difference in event count for the nominal mass bin and systematics
-  //variation for every bin:
+  // Subtract the difference in event count for the nominal mass bin and systematics variation for every bin:
   reco -= deltaRec.at(bin-1);
+  bgr -= deltaBgr.at(bin-1);
+  ttbgr -= deltaTtbgr.at(bin-1);
 
   // Call parent class signal calculation function:
   return extractorYield::getReco(bin, mass, reco, bgr, ttbgr);
@@ -339,7 +348,9 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
     deltaBgr.push_back(bgr);
     deltaTtbgr.push_back(ttbgr);
 
-    LOG(logDEBUG3) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec << " dbgr=" << bgr << " dttbgr=" << ttbgr;
+    LOG(logDEBUG3) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec;
+    LOG(logDEBUG3) << "Diff bin #" << bin << " bgr: " << nominalBgr->GetBinContent(bin) << " - " << varBgr->GetBinContent(bin) << " dbgr=" << bgr;
+    LOG(logDEBUG3) << "Diff bin #" << bin << " ttbgr: " << nominalTtbgr->GetBinContent(bin) << " - " << varTtbgr->GetBinContent(bin) << " dbgr=" << ttbgr;
   }
 
   delete nominalfile;
