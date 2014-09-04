@@ -127,6 +127,7 @@ namespace massextractor {
   protected:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
     Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+    Double_t getPseudoData(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
 
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);

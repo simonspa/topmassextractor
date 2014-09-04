@@ -29,7 +29,7 @@ using namespace massextractor;
 Double_t extractorYield::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
-    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " (incl. bgr)";
     return data;
   }
   else {
@@ -48,17 +48,19 @@ Double_t extractorYield::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, 
   }
 }
 
-Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t /*ttbgr*/) {
-
-  // Scale the reco according to the different TTBar Cross sections (mass dependent):
-  Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-  LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
-    // Return the corrected reco event count plus the background:
-    return (corr_reco + bgr);
+    // Return a full pseudo data set including scaled backgrounds:
+    Double_t reco_data = getPseudoData(bin,mass,reco,bgr,ttbgr);
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data;
+    return reco_data;
   }
   else {
+    // Scale the reco according to the different TTBar Cross sections (mass dependent):
+    Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+
     // Return the reco event count corrected by the ttbar Xsec at given mass:
     return corr_reco;
   }
