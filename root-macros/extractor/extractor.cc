@@ -20,7 +20,9 @@
 #include <TGraphAsymmErrors.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+
 #include "log.h"
+#include "helpers.h"
 #include "extractor.h"
 
 using namespace unilog;
@@ -483,19 +485,7 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
 		  << "NORMALIZE_YIELD in favor for extracting from last bin only.";
     flags &= ~FLAG_NORMALIZE_YIELD;
   }
-
-  std::stringstream s;
-  if((flags & FLAG_STORE_HISTOGRAMS) != 0 ) { s << "STORE_HISTOGRAMS "; }
-  if((flags & FLAG_NORMALIZE_YIELD) != 0 ) { s << "NORMALIZE_YIELD "; }
-  if((flags & FLAG_LASTBIN_EXTRACTION) != 0 ) { s << "LASTBIN_EXTRACTION "; }
-  if((flags & FLAG_UNFOLD_ALLMASSES) != 0 ) { s << "UNFOLD_ALLMASSES "; }
-  if((flags & FLAG_CHISQUARE_FROM_FITS) != 0 ) { s << "CHISQUARE_FROM_FITS "; }
-  if((flags & FLAG_DONT_SHIFT_GRAPHS) != 0 ) { s << "DONT_SHIFT_GRAPHS "; }
-  if((flags & FLAG_STORE_PDFS) != 0 ) { s << "STORE_PDFS "; }
-  if((flags & FLAG_RETURN_FITMIN) != 0 ) { s << "RETURN_FITMIN "; }
-  if((flags & FLAG_DONT_USE_COVARIANCE) != 0 ) { s << "DONT_USE_COVARIANCE "; }
-
-  LOG(logDEBUG) << "Initialized. Flags shipped: " << s.str();
+  LOG(logDEBUG) << "Initialized. Flags shipped: " << listFlags(flags);
 }
 
 
