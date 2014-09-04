@@ -468,6 +468,9 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   // Set the histogram styles:
   setHHStyle(*gStyle);
 
+  // Supress Root info and warnings:
+  gErrorIgnoreLevel=kError;
+
   // This is our nominal mass variation sample:
   if(sample == "Nominal") {
     samples.push_back("MASS_DOWN_6GEV");
