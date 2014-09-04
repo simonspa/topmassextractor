@@ -78,8 +78,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   second->GetPoint(0,xmin2,ymin2);
   second->GetPoint(n-1,xmax2,ymax2);
 
-  Double_t xmin = std::min(xmin1*0.95,xmin2*0.95);
-  Double_t xmax = std::min(xmax1*1.05,xmax2*1.05);
+  Double_t xmin = std::min(xmin1*0.995,xmin2*0.995);
+  Double_t xmax = std::min(xmax1*1.005,xmax2*1.005);
   Double_t ymeana = (ymax1+ymin1)/2;
   Double_t ymeanb = (ymax2+ymin2)/2;
 
