@@ -2,16 +2,34 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <stdint.h>
 
 #include "extractor.h"
 #include "log.h"
+#include "helpers.h"
 
 #include <TMath.h>
+#include <TSystem.h>
 
 using namespace std;
 using namespace massextractor;
 using namespace unilog;
+
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+  std::vector<std::string> elems;
+  split(s, delim, elems);
+  return elems;
+}
 
 void extract_yield(TString basepath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags) {
 
@@ -277,8 +295,13 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
 int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString("INFO");
-  TString basepath = "ExtractionResults";
-  std::string type;
+  TString outputpath = "ExtractionResults";
+  TString inputpath = "";
+  bool closure = true;
+  std::string type, channel;
+
+  std::vector<std::string> flagtokens;
+  uint32_t flags = 0;
 
   for (int i = 1; i < argc; i++) {
     // select to either extract from yield of differential cross section:
@@ -291,26 +314,66 @@ int main(int argc, char* argv[]) {
     }
     // Set the verbosity level:
     else if (!strcmp(argv[i],"-v")) { Log::ReportingLevel() = Log::FromString(argv[++i]); }
-    // Set output option
-    else if(!strcmp(argv[i],"-o")) { 
-    }
+    // Set output path option
+    else if(!strcmp(argv[i],"-i")) { inputpath = string(argv[++i]); }
+    // Set output path option
+    else if(!strcmp(argv[i],"-o")) { outputpath = string(argv[++i]); }
+    // Set "data" flag to run on real data instead of closure test (just yield):
+    else if(!strcmp(argv[i],"-d")) { closure = false; }
+    // Select the channel to run on:
+    else if(!strcmp(argv[i],"-c")) { channel = string(argv[++i]); }
+    // Read and tokeinze the flags::
+    else if(!strcmp(argv[i],"-f")) { flagtokens = split(string(argv[++i]), ','); }
+    else { LOG(logERROR) << "Unrecognized command line argument \"" << argv[i] << "\".";}
   }
 
-  bool closure = true;
+  // Check that the channel we selected is fine:
+  std::vector<TString> channels;
+  if(channel == "ee" || channel.empty()) { channels.push_back("ee"); }
+  if(channel == "emu" || channel.empty()) { channels.push_back("emu"); }
+  if(channel == "mumu" || channel.empty()) { channels.push_back("mumu"); }
+  if(channel == "combined" || channel.empty()) { channels.push_back("combined");}
+  if(channels.empty()) {
+    LOG(logERROR) << "No valid channel selected.";
+    return 0;
+  }
+  else {
+    std::stringstream ch;
+    for(std::vector<TString>::iterator c = channels.begin(); c != channels.end(); ++c) { ch << *c << ", "; }
+    LOG(logINFO) << "Running on channels " << ch.str();
+  }
+
+  if(gSystem->AccessPathName(inputpath)) {
+    LOG(logERROR) << "Input path \"" << inputpath << "\" does not exist!";
+    return 0;
+  }
+  // Check and create output path if necessary:
+  if(gSystem->AccessPathName(outputpath)) {
+    gSystem->mkdir(outputpath, true);
+    LOG(logDEBUG) << "Created output directory \"" << outputpath << "\"";
+  }
+
+  // Standard flag settings: Chi2 fit, no Covariance, normalized.
+  flags = FLAG_CHISQUARE_FROM_FITS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_YIELD;
+  // Check and assign the flags:
+  for(std::vector<std::string>::iterator tok = flagtokens.begin(); tok != flagtokens.end(); ++tok) {
+    if(*tok == "fit") { flags |= FLAG_CHISQUARE_FROM_FITS; }
+    else if(*tok == "pdf") { flags |= FLAG_STORE_PDFS; }
+    else if(*tok == "cov") { flags &= ~FLAG_DONT_USE_COVARIANCE; }
+    else if(*tok == "nocov") { flags |= FLAG_DONT_USE_COVARIANCE; }
+    else if(*tok == "norm") { flags |= FLAG_NORMALIZE_YIELD; }
+    else if(*tok == "nonorm") { flags &= ~FLAG_NORMALIZE_YIELD; }
+    else if(*tok == "lastbin") { flags |= FLAG_LASTBIN_EXTRACTION; }
+    else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
+  }
+  LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);
+
   TString closure_sample = "Nominal";
   Double_t unfolding_mass = nominalmass;
 
-  const uint32_t flags = FLAG_CHISQUARE_FROM_FITS | FLAG_STORE_PDFS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_YIELD;// | FLAG_LASTBIN_EXTRACTION;
-
-  std::vector<TString> channels;
-  channels.push_back("ee");
-  channels.push_back("emu");
-  channels.push_back("mumu");
-  channels.push_back("combined");
-
   try {
-    if(type == "yield") extract_yield(basepath,channels,closure,closure_sample,flags);
-    else extract_diffxsec(basepath,channels,unfolding_mass,flags);
+    if(type == "yield") extract_yield(outputpath,channels,closure,closure_sample,flags);
+    else extract_diffxsec(outputpath,channels,unfolding_mass,flags);
   }
   catch(...) {
     LOG(logCRITICAL) << "Mass extraction failed.";
