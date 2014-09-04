@@ -231,3 +231,129 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   LOG(logDEBUG) << "Successfully opened file " << filename;
   return input;
 }
+
+std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
+
+  // Not using the covariance matrix method, but just summing the individual chi2 of the bins:
+  if((flags & FLAG_DONT_USE_COVARIANCE) != 0) { return extractor::getFittedChiSquare(ch, masses, data, mc); }
+
+  std::pair<TGraphErrors*,TF1*> finalChiSquare;
+  TGraphErrors * chi2sum = new TGraphErrors();
+  TString gname = "chi2_" + ch + "_sum";
+  chi2sum->SetTitle(gname);
+
+  // Cross-check: we have the same number of rho-S bins:
+  if(data.size() != mc.size()) {
+    LOG(logCRITICAL) << "Bin numbers don't match!";
+    throw(1);
+  }
+
+  std::vector<TGraphErrors*> dataFits, mcFits;
+  // Loop over all bins we have:
+  for(size_t bin = 0; bin < data.size(); bin++) {
+    TGraphErrors * dataFit = new TGraphErrors();
+    TGraphErrors * mcFit = new TGraphErrors();
+
+    // Get the likelihood for the two functions:
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
+    dataFits.push_back(dataFit);
+    mcFits.push_back(mcFit);
+  }
+
+  // Calculate the overall Chi2 using all bin correlations from covariance matrix:
+  // Get the inverse covariance matrix:
+  TMatrixD * invCov = getInverseCovMatrix(ch,m_sample);
+  // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
+  // Scanning over the fits:
+  for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
+    // Prepare the vector containing the (dat - mc) difference for all bins:
+    TVectorD v(dataFits.size());
+    Double_t x_dat;
+    std::stringstream sv;
+    for(size_t bin = 0; bin < dataFits.size(); bin++) {
+      Double_t y_dat, y_mc;
+      dataFits.at(bin)->GetPoint(i,x_dat,y_dat);
+      mcFits.at(bin)->GetPoint(i,x_dat,y_mc);
+      v[bin] = y_dat - y_mc;
+      sv << v[bin] << " ";
+    }
+    // Do the matrix multiplication with the inverse covariance matrix:
+    TVectorD v2 = v;
+    v2 *= *invCov;
+    Double_t chi2 = v2*v;
+    LOG(logDEBUG4) << "(" << i << ") Chi2 = V^T*COV^-1*V = (" << x_dat << "/" << chi2 << ") "
+		   << "(V:" << v.GetNoElements() << "x1, {" << sv.str() << "} "
+		   << "COV: " << invCov->GetNrows() << "x" << invCov->GetNcols() << ")";
+    chi2sum->SetPoint(i,x_dat,chi2);
+  }
+
+  TCanvas* c = 0;
+  if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
+    TString cname = "chi2_" + ch + "_sum";
+    c = new TCanvas(cname,cname);
+    c->cd();
+    chi2sum->SetMarkerStyle(20);
+    chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2sum->GetYaxis()->SetTitle("#chi^{2}");
+    chi2sum->Draw("AP");
+    DrawDecayChLabel(getChannelLabel(channel));
+    DrawCMSLabels();
+    chi2sum->Write(gname);
+    c->Write(cname);
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
+  }
+
+  // Fit the graph
+  chi2sum->Fit("pol2","Q","",170,174.5);
+  
+  finalChiSquare = std::make_pair(chi2sum,chi2sum->GetFunction("pol2"));
+  return finalChiSquare;
+}
+
+TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString ch, TString sample) {
+
+  // Input files for Differential Cross section mass extraction: unfolded distributions
+  TString filename = "SVD/" + sample + "/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
+  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
+
+  TFile * input = TFile::Open(filename,"read");
+  if(!input->IsOpen()) {
+    LOG(logCRITICAL) << "Failed to access covariance matrix file " << filename;
+    throw 1;
+  }
+  LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
+
+  // Histogram containing differential cross section from data:
+  TH2D * statCovNorm = static_cast<TH2D*>(input->Get(histogramname));
+  if(!statCovNorm) { LOG(logCRITICAL) << "Failed to get histogram " << histogramname; }
+  else { LOG(logDEBUG) << "Fetched " << histogramname; }
+
+  // Cut away over and underflow bins:
+  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix:";
+
+  // Read the matrix from file:
+  TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+    }
+    LOG(logDEBUG3) << st.str();
+  }
+
+  // Invert the covariance matrix:
+  cov->Invert();
+
+  LOG(logDEBUG2) << "Inverted COV matrix:";
+  // Just printing is for debugging:
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y); 
+    }
+    LOG(logDEBUG3) << st.str();
+  }
+
+  return cov;
+}

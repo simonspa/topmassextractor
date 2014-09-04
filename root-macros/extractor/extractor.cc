@@ -26,45 +26,6 @@
 using namespace unilog;
 using namespace massextractor;
 
-Double_t extractor::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
-
-  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
-    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
-    return data;
-  }
-  else {
-    // Calculate the signal fraction from reconstructed events and TT background:
-    Double_t fsignal = reco/(reco+ttbgr);
-
-    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
-    Double_t bgr_other = bgr - ttbgr;
-
-    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
-    Double_t signal = (data - bgr_other)*fsignal;
-
-    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
-
-  return signal;
-  }
-}
-
-
-Double_t extractor::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
-
-  // Scale the reco according to the different TTBar Cross sections (mass dependent):
-  Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-  LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
-
-  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
-    // Return the corrected reco event count plus the background:
-    return (corr_reco + bgr);
-  }
-  else {
-    // Return the reco event count corrected by the ttbar Xsec at given mass:
-    return corr_reco;
-  }
-}
-
 TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing data:
@@ -363,64 +324,16 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
     throw(1);
   }
 
-  std::vector<TGraphErrors*> dataFits, mcFits;
   // Loop over all bins we have:
   for(size_t bin = 0; bin < data.size(); bin++) {
 
-    TGraphErrors * dataFit = new TGraphErrors();
-    TGraphErrors * mcFit = new TGraphErrors();
-
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
-
-    dataFits.push_back(dataFit);
-    mcFits.push_back(mcFit);
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, NULL, NULL);
 
     // Discard insignificant bins if requested:
     Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
     if(maxVal < chi2significance) {
       LOG(logWARNING) << "Channel " << ch << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
-    }
-
-    // If we don't use or have the Covariance matrix, just use statistical errors:
-    if((flags & FLAG_DONT_USE_COVARIANCE) != 0) {
-      // Sum them all:
-      for(Int_t i = 0; i < chi2->GetN(); i++) {
-	Double_t xsum,ysum,x,y;
-	chi2->GetPoint(i,x,y);
-	chi2sum->GetPoint(i,xsum,ysum);
-	LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
-	chi2sum->SetPoint(i,x,y+ysum);
-      }
-    }
-  }
-
-  // Calculate the overall Chi2 using all bin correlations from covariance matrix:
-  if((flags & FLAG_DONT_USE_COVARIANCE) == 0) {
-    // Get the inverse covariance matrix:
-    TMatrixD * invCov = getInverseCovMatrix(ch,m_sample);
-    // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
-    // Scanning over the fits:
-    for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
-      // Prepare the vector containing the (dat - mc) difference for all bins:
-      TVectorD v(dataFits.size());
-      Double_t x_dat;
-      std::stringstream sv;
-      for(size_t bin = 0; bin < dataFits.size(); bin++) {
-	Double_t y_dat, y_mc;
-	dataFits.at(bin)->GetPoint(i,x_dat,y_dat);
-	mcFits.at(bin)->GetPoint(i,x_dat,y_mc);
-	v[bin] = y_dat - y_mc;
-	sv << v[bin] << " ";
-      }
-      // Do the matrix multiplication with the inverse covariance matrix:
-      TVectorD v2 = v;
-      v2 *= *invCov;
-      Double_t chi2 = v2*v;
-      LOG(logDEBUG4) << "(" << i << ") Chi2 = V^T*COV^-1*V = (" << x_dat << "/" << chi2 << ") "
-		     << "(V:" << v.GetNoElements() << "x1, {" << sv.str() << "} "
-		     << "COV: " << invCov->GetNrows() << "x" << invCov->GetNcols() << ")";
-      chi2sum->SetPoint(i,x_dat,chi2);
     }
   }
 
@@ -737,104 +650,4 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
   LOG(logDEBUG) << "Initialized. Flags shipped: " << s.str();
 }
 
-template<class t>
-bool extractor::isApprox(t a, t b, double eps) {
-  if (fabs(a - b) < eps) { return true; }
-  else { return false; }
-}
-
-float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
-    /*
-     * all numbers following arxiv 1303.6254
-     *
-     */
-    float mref=173.3;
-    float referencexsec=0;
-    float deltam=topmass-mref;
-
-
-    float a1=0,a2=0;
-
-    if(isApprox(energy,8.f,0.01)){
-        a1=-1.1125;
-        a2=0.070778;
-        referencexsec=245.8;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.026;
-    }
-    else if(isApprox(energy,7.f,0.01)){
-        a1=-1.24243;
-        a2=0.890776;
-        referencexsec=172.0;
-        if(scaleerr)
-            *scaleerr=0.034;
-        if(pdferr)
-            *pdferr=0.028;
-    }
-
-    float reldm=mref/(mref+deltam);
-
-    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
-
-    return out;
-}
-
-void extractorBackground::prepareScaleFactor(TString systematic) {
-
-  if(systematic.Contains("BG") || systematic.Contains("DY")) {
-
-    if(systematic.Contains("UP")) { scaleFactor = 1.3; }
-    if(systematic.Contains("DOWN")) { scaleFactor = 0.7; }
-  }
-}
-
-TMatrixD * extractor::getInverseCovMatrix(TString ch, TString sample) {
-
-  // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "SVD/" + sample + "/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
-
-  TFile * input = TFile::Open(filename,"read");
-  if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access covariance matrix file " << filename;
-    throw 1;
-  }
-  LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
-
-  // Histogram containing differential cross section from data:
-  TH2D * statCovNorm = static_cast<TH2D*>(input->Get(histogramname));
-  if(!statCovNorm) { LOG(logCRITICAL) << "Failed to get histogram " << histogramname; }
-  else { LOG(logDEBUG) << "Fetched " << histogramname; }
-
-  // Cut away over and underflow bins:
-  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix:";
-
-  // Read the matrix from file:
-  TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
-  for(Int_t y = 0; y < cov->GetNcols(); y++) {
-    std::stringstream st;
-    for(Int_t x = 0; x < cov->GetNrows(); x++) {
-      (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
-      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
-    }
-    LOG(logDEBUG3) << st.str();
-  }
-
-  // Invert the covariance matrix:
-  cov->Invert();
-
-  LOG(logDEBUG2) << "Inverted COV matrix:";
-  // Just printing is for debugging:
-  for(Int_t y = 0; y < cov->GetNcols(); y++) {
-    std::stringstream st;
-    for(Int_t x = 0; x < cov->GetNrows(); x++) {
-      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y); 
-    }
-    LOG(logDEBUG3) << st.str();
-  }
-
-  return cov;
-}
 

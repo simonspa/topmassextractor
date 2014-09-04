@@ -55,8 +55,8 @@ namespace massextractor {
     virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
   
-    virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
-    virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+    virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
+    virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
 
     void getControlPlots(std::vector<TH1D*> histograms);
 
@@ -67,10 +67,7 @@ namespace massextractor {
     // Functions for more involved fitted Chi2 extraction:
     std::vector<TGraphErrors*> splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms);
     TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin, TGraphErrors* firstFit, TGraphErrors* secondFit);
-    std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
-
-    // Function for fetching covariance matrix and inverting it:
-    TMatrixD * getInverseCovMatrix(TString ch, TString sample);
+    virtual std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
     // Minimization of the global Chi2 for extraction of the final mass value:
     Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
@@ -139,7 +136,17 @@ namespace massextractor {
   };
 
 
-  class extractorOtherSamples : public extractor {
+  class extractorYield : public extractor {
+
+  protected:
+    Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+  public:
+  extractorYield(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {};
+  };
+
+  class extractorYieldOtherSamples : public extractorYield {
 
   private:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
@@ -152,13 +159,13 @@ namespace massextractor {
     std::vector<Double_t> deltaTtbgr;
 
   public:
-  extractorOtherSamples(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractor(ch, sample, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
+  extractorYieldOtherSamples(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
       LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
       calcDifferenceToNominal(sample,systematic);
     };
   };
 
-  class extractorBackground : public extractor {
+  class extractorYieldBackground : public extractorYield {
 
   private:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
@@ -167,7 +174,7 @@ namespace massextractor {
     Double_t scaleFactor;
 
   public:
-  extractorBackground(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractor(ch, sample, steeringFlags), scaleFactor(1) {
+  extractorYieldBackground(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, steeringFlags), scaleFactor(1) {
       LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
       prepareScaleFactor(systematic);
     };
@@ -181,6 +188,11 @@ namespace massextractor {
     TFile * selectInputFile(TString sample, TString ch);
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) { return 0; };
+
+    std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
+    // Function for fetching covariance matrix and inverting it:
+    TMatrixD * getInverseCovMatrix(TString ch, TString sample);
 
     Double_t unfoldingMass;
   protected:

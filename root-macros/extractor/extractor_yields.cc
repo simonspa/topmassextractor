@@ -26,8 +26,55 @@
 using namespace unilog;
 using namespace massextractor;
 
+Double_t extractorYield::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
-Double_t extractorBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
+    return data;
+  }
+  else {
+    // Calculate the signal fraction from reconstructed events and TT background:
+    Double_t fsignal = reco/(reco+ttbgr);
+
+    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+    Double_t bgr_other = bgr - ttbgr;
+
+    // Calculate signal by subtracting backround from data, multiplied by signal fraction.
+    Double_t signal = (data - bgr_other)*fsignal;
+
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data << " fsignal=" << fsignal << " sig=" << signal << " mc=" << reco;
+
+  return signal;
+  }
+}
+
+
+Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  // Scale the reco according to the different TTBar Cross sections (mass dependent):
+  Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+  LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    // Return the corrected reco event count plus the background:
+    return (corr_reco + bgr);
+  }
+  else {
+    // Return the reco event count corrected by the ttbar Xsec at given mass:
+    return corr_reco;
+  }
+}
+
+void extractorYieldBackground::prepareScaleFactor(TString systematic) {
+
+  if(systematic.Contains("BG") || systematic.Contains("DY")) {
+
+    if(systematic.Contains("UP")) { scaleFactor = 1.3; }
+    if(systematic.Contains("DOWN")) { scaleFactor = 0.7; }
+  }
+}
+
+Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
     LOG(logDEBUG3) << "Bin #" << bin << ": data=" << data;
@@ -53,17 +100,17 @@ Double_t extractorBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t d
 }
 
 
-Double_t extractorOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorYieldOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   //variation for every bin:
   reco -= deltaRec.at(bin-1);
 
   // Call parent class signal calculation function:
-  return extractor::getReco(bin, mass, reco, bgr, ttbgr);
+  return extractorYield::getReco(bin, mass, reco, bgr, ttbgr);
 }
 
-Double_t extractorOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorYieldOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics
   // variation for every mass sample in the current bin:
@@ -72,10 +119,10 @@ Double_t extractorOtherSamples::getSignal(Int_t bin, Double_t mass, Double_t dat
   ttbgr -= deltaTtbgr.at(bin-1);
 
   // Call parent class signal calculation function:
-  return extractor::getSignal(bin, mass, data, reco, bgr, ttbgr);
+  return extractorYield::getSignal(bin, mass, data, reco, bgr, ttbgr);
 }
 
-void extractorOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
+void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
 
   // Input files:
   TString nfilename, sfilename;

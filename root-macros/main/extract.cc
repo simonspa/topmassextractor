@@ -58,7 +58,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     SystOutputFile << "\\hline" << std::endl;
 
 
-    extractor * mass_samples = new extractor(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
+    extractorYield * mass_samples = new extractorYield(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
@@ -73,7 +73,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorOtherSamples * matchscale_samples = new extractorOtherSamples(*ch,"Nominal", flags,(*syst));
+      extractorYieldOtherSamples * matchscale_samples = new extractorYieldOtherSamples(*ch,"Nominal", flags,(*syst));
       if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
@@ -91,7 +91,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     // Getting DrellYan/Background variations:
     for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorBackground * bg_samples = new extractorBackground(*ch,"Nominal",flags,(*syst));
+      extractorYieldBackground * bg_samples = new extractorYieldBackground(*ch,"Nominal",flags,(*syst));
       if(closure) bg_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = bg_samples->getTopMass();
@@ -109,7 +109,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractor * variation_samples = new extractor(*ch,*syst,flags);
+      extractorYield * variation_samples = new extractorYield(*ch,*syst,flags);
       if(closure) variation_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = variation_samples->getTopMass();

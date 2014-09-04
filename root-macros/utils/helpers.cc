@@ -127,3 +127,48 @@ Double_t extractor::getMassFromSample(TString sample) {
 
   return topmass;
 }
+
+template<class t>
+bool extractor::isApprox(t a, t b, double eps) {
+  if (fabs(a - b) < eps) { return true; }
+  else { return false; }
+}
+
+float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
+    /*
+     * all numbers following arxiv 1303.6254
+     *
+     */
+    float mref=173.3;
+    float referencexsec=0;
+    float deltam=topmass-mref;
+
+
+    float a1=0,a2=0;
+
+    if(isApprox(energy,8.f,0.01)){
+        a1=-1.1125;
+        a2=0.070778;
+        referencexsec=245.8;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.026;
+    }
+    else if(isApprox(energy,7.f,0.01)){
+        a1=-1.24243;
+        a2=0.890776;
+        referencexsec=172.0;
+        if(scaleerr)
+            *scaleerr=0.034;
+        if(pdferr)
+            *pdferr=0.028;
+    }
+
+    float reldm=mref/(mref+deltam);
+
+    float out= referencexsec* (reldm*reldm*reldm*reldm) * (1+ a1*(deltam)/mref + a2*(deltam/mref)*(deltam/mref));
+
+    return out;
+}
+
