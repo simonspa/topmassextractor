@@ -67,7 +67,7 @@ namespace massextractor {
 
     // Functions for more involved fitted Chi2 extraction:
     std::vector<TGraphErrors*> splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms);
-    TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin, TGraphErrors* firstFit, TGraphErrors* secondFit);
+    TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin, TGraphErrors* firstFit = NULL, TGraphErrors* secondFit = NULL);
     virtual std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
     // Minimization of the global Chi2 for extraction of the final mass value:

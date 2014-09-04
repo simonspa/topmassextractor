@@ -139,8 +139,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
 
-    fit1->SetPoint(i, scanPoints.at(i), a);
-    fit2->SetPoint(i, scanPoints.at(i), b);
+    if(fit1) fit1->SetPoint(i, scanPoints.at(i), a);
+    if(fit2) fit2->SetPoint(i, scanPoints.at(i), b);
   }
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
@@ -149,8 +149,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     shiftGraph(secondconf,-1*xshift,-1*yshift);
     shiftGraph(second,-1*xshift,-1*yshift);
     shiftGraph(first,-1*xshift,-1*yshift);
-    shiftGraph(fit1,-1*xshift,-1*yshift);
-    shiftGraph(fit2,-1*xshift,-1*yshift);
+    if(fit1) shiftGraph(fit1,-1*xshift,-1*yshift);
+    if(fit2) shiftGraph(fit2,-1*xshift,-1*yshift);
   }
 
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
