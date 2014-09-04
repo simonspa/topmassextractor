@@ -64,6 +64,17 @@ Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double
   }
 }
 
+Double_t extractorYield::getPseudoData(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+
+  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+  Double_t bgr_other = bgr - ttbgr;
+  Double_t pseudodata = (reco + ttbgr)*xsecCorrection + bgr_other;
+
+  return pseudodata;
+}
+
 TFile * extractorYield::selectInputFile(TString sample) {
   // Input files for Total Yield mass extraction: preunfolded histograms:
   TString filename = "preunfolded/" + sample + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
@@ -99,13 +110,8 @@ void extractorYield::setClosureSample(TString closure) {
   LOG(logINFO) << "Pseudo data mass = " << mass;
 
   for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
-    
-    Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
 
-    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
-    Double_t bgr_other = aBgrHist->GetBinContent(bin) - aTtBgrHist->GetBinContent(bin);
-
-    Double_t pdata = (aRecHist->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + bgr_other;
+    Double_t pdata = getPseudoData(bin,mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
 
     LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << pdata;
     // Write pseudo data with background:
