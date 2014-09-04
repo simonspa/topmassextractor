@@ -135,23 +135,14 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << filenames.size() << " to be opened.";
 
   TH1D* aMcHist;
-  TFile * input = TFile::Open(filenames.front(),"read");
-  if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access data file " << filenames.front();
-    throw 1;
-  }
-
+  TFile * input = OpenFile(filenames.front(),"read");
   LOG(logDEBUG) << "Getting NLO curve from " << filenames.front();
   aMcHist = dynamic_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass")->Clone());
   delete input;
 
   for(std::vector<TString>::iterator file = filenames.begin()+1; file != filenames.end(); ++file) {
     LOG(logDEBUG) << "Getting NLO curve from " << *file;
-    TFile * input2 = TFile::Open(*file,"read");
-    if(!input2->IsOpen()) {
-      LOG(logCRITICAL) << "Failed to access data file " << *file;
-      throw 1;
-    }
+    TFile * input2 = OpenFile(*file,"read");
     aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
@@ -218,11 +209,7 @@ TFile * extractorDiffXSec::selectInputFile(TString sample) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "UnfoldingResults/" + sample + "/" + m_channel + "/HypTTBar1stJetMassResults.root";
-  TFile * input = TFile::Open(filename,"read");
-  if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access data file " << filename;
-    throw 1;
-  }
+  TFile * input = OpenFile(filename,"read");
   LOG(logDEBUG) << "Successfully opened file " << filename;
   return input;
 }
@@ -311,11 +298,7 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
   TString filename = "SVD/" + sample + "/Unfolding_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
   TString histogramname = "SVD_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
 
-  TFile * input = TFile::Open(filename,"read");
-  if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access covariance matrix file " << filename;
-    throw 1;
-  }
+  TFile * input = OpenFile(filename,"read");
   LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
 
   // Histogram containing differential cross section from data:

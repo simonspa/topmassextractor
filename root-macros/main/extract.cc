@@ -277,13 +277,18 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
 int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString("INFO");
-
   TString basepath = "ExtractionResults";
+  std::string type;
 
   for (int i = 1; i < argc; i++) {
-    // Setting number of expected ROCs:
-    if (!strcmp(argv[i],"-n")) { 
-    } 
+    // select to either extract from yield of differential cross section:
+    if (!strcmp(argv[i],"-t")) {
+      type = string(argv[++i]);
+      if(type !=  "diffxs" && type != "yield") {
+	LOG(logERROR) << "Unknown extraction type \"" << type << "\".";
+	return 0;
+      }
+    }
     // Set the verbosity level:
     else if (!strcmp(argv[i],"-v")) { Log::ReportingLevel() = Log::FromString(argv[++i]); }
     // Set output option
@@ -303,8 +308,14 @@ int main(int argc, char* argv[]) {
   channels.push_back("mumu");
   channels.push_back("combined");
 
-  //extract_diffxsec(basepath,channels,unfolding_mass,flags);
-  extract_yield(basepath,channels,closure,closure_sample,flags);
+  try {
+    if(type == "yield") extract_yield(basepath,channels,closure,closure_sample,flags);
+    else extract_diffxsec(basepath,channels,unfolding_mass,flags);
+  }
+  catch(...) {
+    LOG(logCRITICAL) << "Mass extraction failed.";
+    return -1;
+  }
 
   return 0;
 }

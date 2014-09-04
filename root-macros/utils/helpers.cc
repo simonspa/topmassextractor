@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
-#include <sstream>
+#include <fstream>
 #include <Riostream.h>
 #include <TH1D.h>
 #include <TH2D.h>
@@ -25,6 +25,24 @@
 
 using namespace unilog;
 using namespace massextractor;
+
+TFile * extractor::OpenFile(TString name, TString mode) {
+
+  ifstream inputFileStream(name);
+  if(!inputFileStream.is_open()){
+    LOG(logCRITICAL) << "File \"" << name << "\" does not exist!";
+    throw 1;
+ }
+ inputFileStream.close();
+
+  TFile * file = TFile::Open(name,mode);
+  if(!file->IsOpen()) {
+    LOG(logCRITICAL) << "Problem opening file \"" << name << "\"!";
+    throw 1;    
+  }
+  
+  return file;
+}
 
 TString extractor::getChannelLabel() {
  

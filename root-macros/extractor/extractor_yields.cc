@@ -68,7 +68,7 @@ Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double
 TFile * extractorYield::selectInputFile(TString sample) {
   // Input files for Total Yield mass extraction: preunfolded histograms:
   TString filename = "preunfolded/" + sample + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * input = TFile::Open(filename,"read");
+  TFile * input = OpenFile(filename,"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
     throw 1;
@@ -297,8 +297,8 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
     sfilename = "preunfolded/" + systematic + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
 
-  TFile * nominalfile = TFile::Open(nfilename,"read");
-  TFile * systematicfile = TFile::Open(sfilename,"read");
+  TFile * nominalfile = OpenFile(nfilename,"read");
+  TFile * systematicfile = OpenFile(sfilename,"read");
 
   if(!nominalfile->IsOpen()) {
     LOG(logINFO) << "Failed to access file " << nfilename;
