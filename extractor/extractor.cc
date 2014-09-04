@@ -237,6 +237,15 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     if(maxVal < chi2significance) {
       LOG(logWARNING) << "Channel " << m_channel << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
     }
+
+    // Sum them all:
+    for(Int_t i = 0; i < chi2->GetN(); i++) {
+      Double_t xsum,ysum,x,y;
+      chi2->GetPoint(i,x,y);
+      chi2sum->GetPoint(i,xsum,ysum);
+      LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
+      chi2sum->SetPoint(i,x,y+ysum);
+    }
   }
 
   TCanvas* c = 0;
