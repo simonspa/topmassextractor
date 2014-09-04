@@ -54,9 +54,12 @@ namespace massextractor {
   private:
     virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos) = 0;
     virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos) = 0;
-  
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
     virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
+
+    virtual TString getQuantity() = 0;
+    virtual TString getRootFilename() = 0;
+    virtual TFile * selectInputFile(TString sample) = 0;
 
   protected:
     void getControlPlots(std::vector<TH1D*> histograms);
@@ -77,6 +80,7 @@ namespace massextractor {
     Double_t statErrorNeg;
     Double_t extractedMass;
 
+    TString basepath;
     TString m_channel;
     TString m_sample;
     std::vector<TString> samples;
@@ -108,21 +112,15 @@ namespace massextractor {
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
     TString getChannelLabel();
-
-  protected:
-    virtual TString getQuantity() = 0;
-    virtual TString getRootFilename() = 0;
-    virtual TFile * selectInputFile(TString sample) = 0;
-
+    TFile * OpenFile(TString name, TString mode);
 
     const static double lumi = 19712;
     const static Int_t granularity = 500;
     const static double confidenceLevel = 0.95;
     const static double chi2significance = 1.5;
 
-    TString basepath;
-
   public:
+    // Return the extracted top mass - starts the extraction procedure.
     Double_t getTopMass();
 
     // Get symmetrized statictical error only:
@@ -131,7 +129,6 @@ namespace massextractor {
     Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
     TString getSampleLabel(TString systematic);
-    virtual void setClosureSample(TString closure);
     extractor(TString channel, TString sample, uint32_t steeringFlags);
     virtual ~extractor() {};
   };
@@ -153,6 +150,7 @@ namespace massextractor {
 
   public:
   extractorYield(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {};
+    void setClosureSample(TString closure);
   };
 
   class extractorYieldOtherSamples : public extractorYield {
@@ -197,7 +195,7 @@ namespace massextractor {
     TFile * selectInputFile(TString sample);
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
-    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) { return 0; };
+    Double_t getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) { return 0; };
 
     std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Function for fetching covariance matrix and inverting it:
@@ -213,7 +211,6 @@ namespace massextractor {
       LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
     };
     void setUnfoldingMass(Double_t mass);
-    void setClosureSample(TString closure);
   };
 
   class extractorDiffXSecScaled : public extractorDiffXSec {

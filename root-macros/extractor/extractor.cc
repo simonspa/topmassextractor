@@ -448,45 +448,6 @@ Double_t extractor::getTopMass() {
   return extractedMass;
 }
 
-void extractor::setClosureSample(TString closure) {
-
-  // Enable closure test:
-  doClosure = true;
-
-  // Input file:
-  TString filename = "preunfolded/" + closure + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * closureFile = TFile::Open(filename,"read");
-
-  // Histograms containing the background:
-  TH1D * aRecHist = static_cast<TH1D*>(closureFile->Get("aRecHist"));
-  TH1D * aTtBgrHist = static_cast<TH1D*>(closureFile->Get("aTtBgrHist"));
-  TH1D * aBgrHist = static_cast<TH1D*>(closureFile->Get("aBgrHist"));
-
-  // Build a pseudo data set from the closure sample:
-  pseudoData = new TH1D("pseudodata","pseudodata",aRecHist->GetNbinsX(),0,100);
-  pseudoData->SetDirectory(0);
-  Double_t mass = getMassFromSample(closure);
-
-  LOG(logINFO) << "Running Closure test. Pseudo data taken from " << filename;
-  LOG(logINFO) << "Pseudo data mass = " << mass;
-
-  for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
-    
-    Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
-
-    // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
-    Double_t bgr_other = aBgrHist->GetBinContent(bin) - aTtBgrHist->GetBinContent(bin);
-
-    Double_t pdata = (aRecHist->GetBinContent(bin) + aTtBgrHist->GetBinContent(bin))*xsecCorrection + bgr_other;
-
-    LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << pdata;
-    // Write pseudo data with background:
-    pseudoData->SetBinContent(bin,pdata);
-  }
-
-  delete closureFile;
-}
-
 extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), m_channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
   // Do not add histograms to the directory listing:

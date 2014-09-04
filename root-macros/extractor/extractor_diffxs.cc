@@ -26,11 +26,6 @@
 using namespace unilog;
 using namespace massextractor;
 
-void extractorDiffXSec::setClosureSample(TString /*closure*/) {
-  LOG(logERROR) << "Not possible to request closure for DiffXSec extraction. Re-run unfolding with closure flag enabled in order to get closure pseudo data.";
-  LOG(logINFO) << "Use \"setUnfoldingMass()\" to select different mass samples used for unfolding.";
-}
-
 void extractorDiffXSec::setUnfoldingMass(Double_t mass) {
   LOG(logINFO) << "Requested to use m_t=" << mass << " for unfolding.";
   unfoldingMass = mass;
