@@ -1,32 +1,15 @@
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <Riostream.h>
-#include <TH1D.h>
-#include <TH2D.h>
-#include <TFile.h>
-#include <TMatrixD.h>
-#include <TDecompSVD.h>
-#include <TStyle.h>
-#include <TLegend.h>
-#include <TF1.h>
-#include <TString.h>
-#include <TCanvas.h>
-#include <TROOT.h>
 #include <TPaveText.h>
+#include <TAxis.h>
+#include <TStyle.h>
 #include <TGraphErrors.h>
-#include <TGraphAsymmErrors.h>
-#include <TVirtualFitter.h>
-#include <TMath.h>
-#include "log.h"
-#include "extractor.h"
+#include <TString.h>
+#include <TLegend.h>
 
-using namespace unilog;
+#include "plotter.h"
+
 using namespace massextractor;
 
-void extractor::setHHStyle(TStyle& HHStyle)
+void massextractor::setHHStyle(TStyle& HHStyle)
 {
     const int fontstyle=42;
     HHStyle.SetPalette(1);
@@ -216,7 +199,7 @@ void extractor::setHHStyle(TStyle& HHStyle)
 
 
 // Draw label for Decay Channel in upper left corner of plot
-void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, int cmsprelim, double textSize) {
+void massextractor::DrawDecayChLabel(TString decaychannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
 
     TPaveText *cms = new TPaveText();
     cms->AddText("CMS");
@@ -253,10 +236,10 @@ void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, int cmsprelim,
 
     if(bin > 0) {
       TPaveText *bintxt = new TPaveText();
-      if(!bin_boundaries.empty()) {
+      if(!boundaries.empty()) {
 	// Lower and upper edge of the bin:
-	Double_t bin_low = bin_boundaries.at(bin-1);
-	Double_t bin_high = bin_boundaries.at(bin);
+	Double_t bin_low = boundaries.at(bin-1);
+	Double_t bin_high = boundaries.at(bin);
 	bintxt->AddText(Form("%1.2f < #rho_{S} < %1.2f",bin_low,bin_high));
       }
       else {
@@ -290,7 +273,7 @@ void extractor::DrawDecayChLabel(TString decaychannel, Int_t bin, int cmsprelim,
 }
 
 // Draw official labels (CMS Preliminary, luminosity and CM energy) above plot
-void extractor::DrawCMSLabels(double energy, double textSize) {
+void massextractor::DrawCMSLabels(double lumi, double energy, double textSize) {
 
     const char *text = "%2.1f fb^{-1} (%2.f TeV)";
     
@@ -308,7 +291,7 @@ void extractor::DrawCMSLabels(double energy, double textSize) {
     label->Draw("same");
 }
 
-void extractor::setStyle(TGraphErrors *hist, TString name)
+void massextractor::setStyle(TGraphErrors *hist, TString name)
 {
   hist->SetLineWidth(1);
   hist->GetXaxis()->SetLabelFont(42);
@@ -342,12 +325,12 @@ void extractor::setStyle(TGraphErrors *hist, TString name)
 }
 
 
-void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg) {
+void massextractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg, bool closure) {
 
   setStyle(hist,name);
 
   if(name == "data") {
-    if(leg && doClosure) leg->AddEntry(hist, "Pseudo Data",  "p");
+    if(leg && closure) leg->AddEntry(hist, "Pseudo Data",  "p");
     else if(leg) leg->AddEntry(hist, "Data",  "p");
   }
   else if(name == "madgraph") {
@@ -355,7 +338,7 @@ void extractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend 
   }
 }
 
-void extractor::setLegendStyle(TLegend *leg) {
+void massextractor::setLegendStyle(TLegend *leg) {
 
   Double_t x1 = 0.560;
   Double_t y1 = 1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.2;
