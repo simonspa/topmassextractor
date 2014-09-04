@@ -33,9 +33,9 @@ typedef unsigned int uint32_t;
 namespace unilog {
 
   enum TLogLevel {
-    logRESULT,
     logCRITICAL,
     logERROR,
+    logRESULT,
     logWARNING,
     logINFO,
     logDEBUG,
@@ -127,7 +127,7 @@ namespace unilog {
 
   template <typename T>
     std::string uniLog<T>::ToString(TLogLevel level) {
-    static const char* const buffer[] = {"RESULT","CRITICAL","ERROR", "WARNING", "INFO", "DEBUG", "DEBUG2", "DEBUG3", "DEBUG4", "DEBUG5"};
+    static const char* const buffer[] = {"CRITICAL", "ERROR", "RESULT", "WARNING", "INFO", "DEBUG", "DEBUG2", "DEBUG3", "DEBUG4", "DEBUG5"};
     return buffer[level];
   }
 
