@@ -20,7 +20,9 @@
 #include <TGraphAsymmErrors.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+
 #include "log.h"
+#include "plotter.h"
 #include "extractor.h"
 
 using namespace unilog;

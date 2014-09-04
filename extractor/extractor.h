@@ -102,12 +102,6 @@ namespace massextractor {
      * errors are NOT returned in % (so e.g. 0.026)
      */
     float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0);
-    void setHHStyle(TStyle& HHStyle);
-    void DrawDecayChLabel(TString decaychannel="", Int_t bin=0, int cmsprelim = 1, double textSize=0.04);
-    void DrawCMSLabels(double energy=8, double textsize=0.045);
-    void setStyle(TGraphErrors *hist, TString name="");
-    void setStyleAndFillLegend(TGraphErrors* histo, TString name, TLegend *leg);
-    void setLegendStyle(TLegend *leg);
 
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);

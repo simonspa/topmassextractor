@@ -23,6 +23,7 @@
 
 #include "log.h"
 #include "helpers.h"
+#include "plotter.h"
 #include "extractor.h"
 
 using namespace unilog;
@@ -167,7 +168,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
     chi2_graph->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(),bin);
+    DrawDecayChLabel(getChannelLabel(),bin,bin_boundaries);
     DrawCMSLabels();
     chi2_graph->Write(gname);
     c->Write(cname);
@@ -190,7 +191,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
 
     setStyle(second,"madgraph");
     setStyleAndFillLegend(secondconf,"madgraph",leg);
-    setStyleAndFillLegend(first,"data",leg);
+    setStyleAndFillLegend(first,"data",leg, doClosure);
 
     secondconf->Draw("A E3");
     second->Draw("SAME P");
@@ -201,7 +202,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     first->Draw("SAME L E3");
     first->Write(firstname);
 
-    DrawDecayChLabel(getChannelLabel(),bin);
+    DrawDecayChLabel(getChannelLabel(),bin, bin_boundaries);
     DrawCMSLabels();
     leg->Draw();
 
@@ -487,5 +488,3 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
   }
   LOG(logDEBUG) << "Initialized. Flags shipped: " << listFlags(flags);
 }
-
-
