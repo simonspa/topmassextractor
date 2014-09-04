@@ -2,3 +2,6 @@
 *.so
 *.pdf
 *.root
+*/build
+*/bin
+*/lib
