@@ -48,8 +48,7 @@ Double_t extractorYield::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, 
   }
 }
 
-
-Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t /*ttbgr*/) {
 
   // Scale the reco according to the different TTBar Cross sections (mass dependent):
   Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);

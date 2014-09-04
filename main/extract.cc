@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <stdint.h>
 
 #include "extractor.h"

@@ -1,24 +1,21 @@
 #ifndef MASSEXTRACTOR_H
 #define MASSEXTRACTOR_H
 
-#include <vector>
-#include <string>
-#include <Riostream.h>
 #include <TH1D.h>
-#include <TMatrixD.h>
 #include <TFile.h>
-#include <TStyle.h>
-#include <TF1.h>
-#include <TString.h>
-#include <TCanvas.h>
 #include <TGraphErrors.h>
-#include <stdint.h>
+#include <TMatrixD.h>
 
 #include "log.h"
 
 namespace massextractor {
 
+  // Some ugly global defines:
 #define nominalmass 172.5
+#define granularity 500
+#define confidenceLevel 0.95
+#define chi2significance 1.5
+
   // Ship this flag in order to create and store histograms:
 #define FLAG_STORE_HISTOGRAMS 0x01
 
@@ -107,11 +104,6 @@ namespace massextractor {
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
     TString getChannelLabel();
     TFile * OpenFile(TString name, TString mode);
-
-    const static double lumi = 19712;
-    const static Int_t granularity = 500;
-    const static double confidenceLevel = 0.95;
-    const static double chi2significance = 1.5;
 
   public:
     // Return the extracted top mass - starts the extraction procedure.
