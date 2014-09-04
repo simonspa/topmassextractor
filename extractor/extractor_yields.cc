@@ -163,11 +163,11 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
     
     // Write background subtrated signal:
     signalHist->SetBinContent(bin-startbin+1,signal);
+    signalHist->SetBinError(bin-startbin+1,TMath::Sqrt(signal));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    signalHist->Sumw2();
-    signalHist->Scale(1./signalHist->Integral());
+    signalHist->Scale(1./signalHist->Integral("width"));
     LOG(logDEBUG) << "Normalized Data hist.";
   }
 
@@ -211,8 +211,7 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    simulationHist->Sumw2();
-    simulationHist->Scale(1./simulationHist->Integral());
+    simulationHist->Scale(1./simulationHist->Integral("width"));
     LOG(logDEBUG) << "Normalized Reco hist.";
   }
 
