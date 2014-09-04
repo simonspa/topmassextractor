@@ -230,7 +230,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
   for(size_t bin = 0; bin < data.size(); bin++) {
 
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, NULL, NULL);
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin);
 
     // Discard insignificant bins if requested:
     Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
