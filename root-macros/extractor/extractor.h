@@ -63,12 +63,12 @@ namespace massextractor {
 
     // Functions for simple summed Chi2 extraction:
     Double_t chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval);
-    std::pair<TGraphErrors*,TF1*> getChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
+    std::pair<TGraphErrors*,TF1*> getChiSquare(std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
 
     // Functions for more involved fitted Chi2 extraction:
     std::vector<TGraphErrors*> splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms);
     TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin, TGraphErrors* firstFit, TGraphErrors* secondFit);
-    virtual std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
+    virtual std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
     // Minimization of the global Chi2 for extraction of the final mass value:
     Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
@@ -77,7 +77,7 @@ namespace massextractor {
     Double_t statErrorNeg;
     Double_t extractedMass;
 
-    TString channel;
+    TString m_channel;
     TString m_sample;
     std::vector<TString> samples;
     std::vector<Double_t> bin_boundaries;
@@ -107,12 +107,12 @@ namespace massextractor {
 
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
-    TString getChannelLabel(TString channel);
+    TString getChannelLabel();
 
   protected:
     virtual TString getQuantity() = 0;
     virtual TString getRootFilename() = 0;
-    virtual TFile * selectInputFile(TString sample, TString channel) = 0;
+    virtual TFile * selectInputFile(TString sample) = 0;
 
 
     const static double lumi = 19712;
@@ -146,7 +146,7 @@ namespace massextractor {
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
-    TFile * selectInputFile(TString sample, TString ch);
+    TFile * selectInputFile(TString sample);
 
     inline TString getQuantity() { return "Events"; }
     inline TString getRootFilename() { return "MassFitRates.root"; }
@@ -194,14 +194,14 @@ namespace massextractor {
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
-    TFile * selectInputFile(TString sample, TString ch);
+    TFile * selectInputFile(TString sample);
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
     Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) { return 0; };
 
-    std::pair<TGraphErrors*,TF1*> getFittedChiSquare(TString channel, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
+    std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Function for fetching covariance matrix and inverting it:
-    TMatrixD * getInverseCovMatrix(TString ch, TString sample);
+    TMatrixD * getInverseCovMatrix(TString sample);
 
     Double_t unfoldingMass;
 
@@ -221,13 +221,13 @@ namespace massextractor {
   private:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
 
-    void prepareScaleFactors(TString ch, TString systematic);
+    void prepareScaleFactors(TString systematic);
     std::vector<Double_t> scaleFactors;
 
   public:
   extractorDiffXSecScaled(TString ch, TString sample, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, steeringFlags), scaleFactors() {
       LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
-      prepareScaleFactors(ch,scale);
+      prepareScaleFactors(scale);
     };
   };
 }

@@ -36,7 +36,7 @@ void extractorDiffXSec::setUnfoldingMass(Double_t mass) {
   unfoldingMass = mass;
 }
 
-void extractorDiffXSecScaled::prepareScaleFactors(TString ch, TString systematic) {
+void extractorDiffXSecScaled::prepareScaleFactors(TString systematic) {
 
   Int_t sign = 0;
   if(systematic.Contains("UP")) { sign = 1; }
@@ -45,28 +45,28 @@ void extractorDiffXSecScaled::prepareScaleFactors(TString ch, TString systematic
   if(systematic.Contains("PDF")) {
     LOG(logDEBUG2) << "Preparing PDF uncertainty scale factors...";
     // PDF scaling for all five bins:
-    if(ch == "combined") {
+    if(m_channel == "combined") {
       scaleFactors.push_back(sign*0.0518874555267725);
       scaleFactors.push_back(sign*0.0307283998130669);
       scaleFactors.push_back(sign*0.0124526579196978);
       scaleFactors.push_back(sign*0.00149147332885075);
       scaleFactors.push_back(sign*0.00473063248751739);
     }
-    else if(ch == "ee") {
+    else if(m_channel == "ee") {
       scaleFactors.push_back(sign*0.0520053995180302);
       scaleFactors.push_back(sign*0.0303351933038199);
       scaleFactors.push_back(sign*0.0126092037398061);
       scaleFactors.push_back(sign*0.00156712414239097);
       scaleFactors.push_back(sign*0.00486566872899394);
     }
-    else if(ch == "emu") {
+    else if(m_channel == "emu") {
       scaleFactors.push_back(sign*0.0525837643853782);
       scaleFactors.push_back(sign*0.0303790574991724);
       scaleFactors.push_back(sign*0.0124525455719107);
       scaleFactors.push_back(sign*0.00151246828268544);
       scaleFactors.push_back(sign*0.00463153835628149);
     }
-    else if(ch == "mumu") {
+    else if(m_channel == "mumu") {
       scaleFactors.push_back(sign*0.04862795023471);
       scaleFactors.push_back(sign*0.0321488889850916);
       scaleFactors.push_back(sign*0.0123548702575585);
@@ -92,8 +92,8 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   Double_t Xbins[nbins+2-startbin];
   for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aDiffXSecHist->GetBinLowEdge(bin);
   Xbins[nbins+1-startbin] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
-  TH1D * signalHist = new TH1D("diffxs_" + channel + Form("_m%3.1f",mass),
-			       "diffxs_" + channel + Form("_m%3.1f",mass),
+  TH1D * signalHist = new TH1D("diffxs_" + m_channel + Form("_m%3.1f",mass),
+			       "diffxs_" + m_channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
 
@@ -134,9 +134,9 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
 
   // Check if we need to add up several histograms:
-  if(channel == "ee" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
-  if(channel == "emu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
-  if(channel == "mumu" || channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
+  if(m_channel == "ee" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
+  if(m_channel == "emu" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
+  if(m_channel == "mumu" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
   LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << filenames.size() << " to be opened.";
 
   TH1D* aMcHist;
@@ -185,8 +185,8 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Simulation hist has " << nbins << " bins, using " << (nbins-startbin+1);
 
-  TH1D * simulationHist = new TH1D("reco_" + channel + Form("_m%3.1f",mass),
-				   "reco_" + channel + Form("_m%3.1f",mass),
+  TH1D * simulationHist = new TH1D("reco_" + m_channel + Form("_m%3.1f",mass),
+				   "reco_" + m_channel + Form("_m%3.1f",mass),
 				   nbins-startbin+1,
 				   &Xbins[startbin-1]);
 
@@ -200,7 +200,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   return simulationHist;
 }
 
-TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
+TFile * extractorDiffXSec::selectInputFile(TString sample) {
 
   // Overwrite the samples unfolded with different masses with just the nominal:
   if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { 
@@ -222,7 +222,7 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   }
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "UnfoldingResults/" + sample + "/" + ch + "/HypTTBar1stJetMassResults.root";
+  TString filename = "UnfoldingResults/" + sample + "/" + m_channel + "/HypTTBar1stJetMassResults.root";
   TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
@@ -232,14 +232,14 @@ TFile * extractorDiffXSec::selectInputFile(TString sample, TString ch) {
   return input;
 }
 
-std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
+std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
 
   // Not using the covariance matrix method, but just summing the individual chi2 of the bins:
-  if((flags & FLAG_DONT_USE_COVARIANCE) != 0) { return extractor::getFittedChiSquare(ch, masses, data, mc); }
+  if((flags & FLAG_DONT_USE_COVARIANCE) != 0) { return extractor::getFittedChiSquare(masses, data, mc); }
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
-  TString gname = "chi2_" + ch + "_sum";
+  TString gname = "chi2_" + m_channel + "_sum";
   chi2sum->SetTitle(gname);
 
   // Cross-check: we have the same number of rho-S bins:
@@ -262,7 +262,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(TString ch, 
 
   // Calculate the overall Chi2 using all bin correlations from covariance matrix:
   // Get the inverse covariance matrix:
-  TMatrixD * invCov = getInverseCovMatrix(ch,m_sample);
+  TMatrixD * invCov = getInverseCovMatrix(m_sample);
   // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
   // Scanning over the fits:
   for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
@@ -289,14 +289,14 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(TString ch, 
 
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    TString cname = "chi2_" + ch + "_sum";
+    TString cname = "chi2_" + m_channel + "_sum";
     c = new TCanvas(cname,cname);
     c->cd();
     chi2sum->SetMarkerStyle(20);
     chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(channel));
+    DrawDecayChLabel(getChannelLabel());
     DrawCMSLabels();
     chi2sum->Write(gname);
     c->Write(cname);
@@ -310,11 +310,11 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(TString ch, 
   return finalChiSquare;
 }
 
-TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString ch, TString sample) {
+TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "SVD/" + sample + "/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
+  TString filename = "SVD/" + sample + "/Unfolding_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
+  TString histogramname = "SVD_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
 
   TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {

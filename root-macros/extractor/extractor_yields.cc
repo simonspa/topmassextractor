@@ -65,9 +65,9 @@ Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double
   }
 }
 
-TFile * extractorYield::selectInputFile(TString sample, TString ch) {
+TFile * extractorYield::selectInputFile(TString sample) {
   // Input files for Total Yield mass extraction: preunfolded histograms:
-  TString filename = "preunfolded/" + sample + "/" + ch + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString filename = "preunfolded/" + sample + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   TFile * input = TFile::Open(filename,"read");
   if(!input->IsOpen()) {
     LOG(logCRITICAL) << "Failed to access data file " << filename;
@@ -105,8 +105,8 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   Double_t Xbins[nbins+2-startbin];
   for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin); }
   Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
-  TH1D * signalHist = new TH1D(type + channel + Form("_m%3.1f",mass),
-			       type + channel + Form("_m%3.1f",mass),
+  TH1D * signalHist = new TH1D(type + m_channel + Form("_m%3.1f",mass),
+			       type + m_channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
 
@@ -152,8 +152,8 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
   Double_t Xbins[nbins+2-startbin];
   for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin);
   Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
-  TH1D * simulationHist = new TH1D("reco_" + channel + Form("_m%3.1f",mass),
-			       "reco_" + channel + Form("_m%3.1f",mass),
+  TH1D * simulationHist = new TH1D("reco_" + m_channel + Form("_m%3.1f",mass),
+			       "reco_" + m_channel + Form("_m%3.1f",mass),
 			       nbins-startbin+1,
 			       Xbins);
 
@@ -241,21 +241,21 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
   bool splitDifference = true;
 
   if(systematic.Contains("HAD")) {
-    nfilename = "preunfolded/POWHEG/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/MCATNLO/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    nfilename = "preunfolded/POWHEG/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/MCATNLO/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
   else if(systematic.Contains("CR")) {
-    nfilename = "preunfolded/PERUGIA11/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/PERUGIA11NoCR/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    nfilename = "preunfolded/PERUGIA11/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/PERUGIA11NoCR/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
   else if(systematic.Contains("UE")) {
-    nfilename = "preunfolded/PERUGIA11/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/PERUGIA11mpiHi/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    nfilename = "preunfolded/PERUGIA11/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/PERUGIA11mpiHi/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
   else {
     splitDifference = false;
-    nfilename = "preunfolded/" + nominal + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/" + systematic + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    nfilename = "preunfolded/" + nominal + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+    sfilename = "preunfolded/" + systematic + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   }
 
   TFile * nominalfile = TFile::Open(nfilename,"read");

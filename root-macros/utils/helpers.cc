@@ -26,13 +26,13 @@
 using namespace unilog;
 using namespace massextractor;
 
-TString extractor::getChannelLabel(TString ch) {
+TString extractor::getChannelLabel() {
  
   TString label = "";
-  if(ch =="ee") { label = "ee"; }
-  if(ch =="mumu"){ label = "#mu#mu"; }
-  if(ch =="emu"){ label = "e#mu"; }
-  if(ch =="combined"){ label = "Dilepton Combined"; }
+  if(m_channel =="ee") { label = "ee"; }
+  if(m_channel =="mumu"){ label = "#mu#mu"; }
+  if(m_channel =="emu"){ label = "e#mu"; }
+  if(m_channel =="combined"){ label = "Dilepton Combined"; }
 
   return label;
 }

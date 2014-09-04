@@ -37,7 +37,7 @@ std::vector<TGraphErrors* > extractor::splitBins(TString type, std::vector<Doubl
  
     // Prepare new TGraphErrors for this bin:
     TGraphErrors * thisbin = new TGraphErrors();
-    thisbin->SetTitle(type + "_" + channel + Form("_masses_bin%i",bin));
+    thisbin->SetTitle(type + "_" + m_channel + Form("_masses_bin%i",bin));
 
     for(std::vector<TH1D*>::iterator hist = histograms.begin(); hist != histograms.end(); ++hist) {
       // Set the corresponding bin in output vector:
@@ -64,7 +64,7 @@ void extractor::shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshi
 TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
-  TString gname = "chi2_" + channel + Form("_bin%i",bin);
+  TString gname = "chi2_" + m_channel + Form("_bin%i",bin);
   chi2_graph->SetTitle(gname);
 
   size_t n = first->GetN();
@@ -154,10 +154,10 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     TCanvas* c = 0;
 
     // Naming:
-    TString cname = "chi2_" + channel + Form("_bin%i",bin);
-    TString c2name = "inputs_" + channel + Form("_bin%i",bin);
-    TString secondname = "input_mc_" + channel + Form("_bin%i",bin);
-    TString firstname = "input_dat_" + channel + Form("_bin%i",bin);
+    TString cname = "chi2_" + m_channel + Form("_bin%i",bin);
+    TString c2name = "inputs_" + m_channel + Form("_bin%i",bin);
+    TString secondname = "input_mc_" + m_channel + Form("_bin%i",bin);
+    TString firstname = "input_dat_" + m_channel + Form("_bin%i",bin);
 
     c = new TCanvas(cname,cname);
     c->cd();
@@ -165,7 +165,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
     chi2_graph->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(channel),bin);
+    DrawDecayChLabel(getChannelLabel(),bin);
     DrawCMSLabels();
     chi2_graph->Write(gname);
     c->Write(cname);
@@ -199,7 +199,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     first->Draw("SAME L E3");
     first->Write(firstname);
 
-    DrawDecayChLabel(getChannelLabel(channel),bin);
+    DrawDecayChLabel(getChannelLabel(),bin);
     DrawCMSLabels();
     leg->Draw();
 
@@ -210,11 +210,11 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   return chi2_graph;
 }
 
-std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vector<Double_t> /*masses*/, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
+std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t> /*masses*/, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
-  TString gname = "chi2_" + ch + "_sum";
+  TString gname = "chi2_" + m_channel + "_sum";
   chi2sum->SetTitle(gname);
 
   // Cross-check: we have the same number of rho-S bins:
@@ -232,20 +232,20 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(TString ch, std::vec
     // Discard insignificant bins if requested:
     Double_t maxVal = TMath::MaxElement(chi2->GetN(),chi2->GetY());
     if(maxVal < chi2significance) {
-      LOG(logWARNING) << "Channel " << ch << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
+      LOG(logWARNING) << "Channel " << m_channel << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
     }
   }
 
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    TString cname = "chi2_" + ch + "_sum";
+    TString cname = "chi2_" + m_channel + "_sum";
     c = new TCanvas(cname,cname);
     c->cd();
     chi2sum->SetMarkerStyle(20);
     chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(channel));
+    DrawDecayChLabel(getChannelLabel());
     DrawCMSLabels();
     chi2sum->Write(gname);
     c->Write(cname);
@@ -263,10 +263,10 @@ Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared
   return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(widthsquared);
 }
 
-std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
+std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
-  TString name = "chi2_" + ch;
+  TString name = "chi2_" + m_channel;
 
   TGraphErrors * chisquare = new TGraphErrors();
   chisquare->SetTitle(name);
@@ -289,7 +289,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(TString ch, std::vector<Do
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
     chisquare->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(ch));
+    DrawDecayChLabel(getChannelLabel());
     DrawCMSLabels();
     chisquare->Write(name);
     c->Write(name + "_c");
@@ -382,7 +382,7 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
     }
   }
 
-  DrawDecayChLabel(getChannelLabel(channel));
+  DrawDecayChLabel(getChannelLabel());
   DrawCMSLabels();
   c->Write(canvastitle);
   if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + canvastitle + ".pdf"); }
@@ -401,7 +401,7 @@ Double_t extractor::getTopMass() {
 
   for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
 
-    TFile * datafile = selectInputFile(*sample,channel);
+    TFile * datafile = selectInputFile(*sample);
     Double_t topmass = getMassFromSample(*sample);
 
     LOG(logDEBUG) << "Top Mass for Sample " << (*sample) << " m_t=" << topmass;
@@ -433,12 +433,12 @@ Double_t extractor::getTopMass() {
 
   LOG(logDEBUG2) << "Calculating Chi2 value...";
   std::pair<TGraphErrors*,TF1*> fit;
-  if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(channel,masses,data_hists,mc_hists); }
+  if((flags & FLAG_CHISQUARE_FROM_FITS) == 0) { fit = getChiSquare(masses,data_hists,mc_hists); }
   else {
     LOG(logDEBUG2) << "Splitting histograms into bins...";
     std::vector<TGraphErrors*> data_graphs = splitBins("data",masses,data_hists);
     std::vector<TGraphErrors*> mc_graphs = splitBins("mc",masses,mc_hists);
-    fit = getFittedChiSquare(channel,masses,data_graphs,mc_graphs);
+    fit = getFittedChiSquare(masses,data_graphs,mc_graphs);
   }
   
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
@@ -454,7 +454,7 @@ void extractor::setClosureSample(TString closure) {
   doClosure = true;
 
   // Input file:
-  TString filename = "preunfolded/" + closure + "/" + channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
+  TString filename = "preunfolded/" + closure + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
   TFile * closureFile = TFile::Open(filename,"read");
 
   // Histograms containing the background:
@@ -487,7 +487,7 @@ void extractor::setClosureSample(TString closure) {
   delete closureFile;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), m_channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
   // Do not add histograms to the directory listing:
   TH1::AddDirectory(kFALSE);
