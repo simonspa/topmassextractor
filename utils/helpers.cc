@@ -26,18 +26,25 @@
 using namespace unilog;
 using namespace massextractor;
 
-TFile * extractor::OpenFile(TString name, TString mode) {
+TFile * extractor::OpenFile(TString name, TString mode, bool output) {
 
-  ifstream inputFileStream(name);
-  if(!inputFileStream.is_open()){
-    LOG(logCRITICAL) << "File \"" << name << "\" does not exist!";
-    throw 1;
- }
- inputFileStream.close();
+  TString path;
+  if(output) path = m_outputpath;
+  else path = m_inputpath;
 
-  TFile * file = TFile::Open(name,mode);
+  // If we want to read an existing file, check first if it's there:
+  if(mode == "read") {
+    ifstream inputFileStream(path + "/" + name);
+    if(!inputFileStream.is_open()){
+      LOG(logCRITICAL) << "File \"" << path << "/" << name << "\" does not exist!";
+      throw 1;
+    }
+    inputFileStream.close();
+  }
+
+  TFile * file = TFile::Open(path + "/" + name,mode);
   if(!file->IsOpen()) {
-    LOG(logCRITICAL) << "Problem opening file \"" << name << "\"!";
+    LOG(logCRITICAL) << "Problem opening file \"" << path << "/" << name << "\"!";
     throw 1;    
   }
   

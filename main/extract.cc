@@ -32,7 +32,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
   return elems;
 }
 
-void extract_yield(TString basepath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags) {
+void extract_yield(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags) {
 
   // #######################################
   // ###              YIELD              ###
@@ -71,13 +71,13 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
-    std::ofstream SystOutputFile(basepath + "/MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    std::ofstream SystOutputFile(outputpath + "/MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
     SystOutputFile << "Top Mass, Channel: " << *ch << endl;
     SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
     SystOutputFile << "\\hline" << std::endl;
 
 
-    extractorYield * mass_samples = new extractorYield(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
+    extractorYield * mass_samples = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_STORE_HISTOGRAMS);
     if(closure) mass_samples->setClosureSample(closure_sample);
 
     Double_t topmass = mass_samples->getTopMass();
@@ -92,7 +92,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     // Systematic Variations with own samples:
     for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorYieldOtherSamples * matchscale_samples = new extractorYieldOtherSamples(*ch,"Nominal", flags,(*syst));
+      extractorYieldOtherSamples * matchscale_samples = new extractorYieldOtherSamples(*ch,"Nominal", inputpath, outputpath, flags,(*syst));
       if(closure) matchscale_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = matchscale_samples->getTopMass();
@@ -110,7 +110,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     // Getting DrellYan/Background variations:
     for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorYieldBackground * bg_samples = new extractorYieldBackground(*ch,"Nominal",flags,(*syst));
+      extractorYieldBackground * bg_samples = new extractorYieldBackground(*ch,"Nominal",inputpath, outputpath, flags,(*syst));
       if(closure) bg_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = bg_samples->getTopMass();
@@ -128,7 +128,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorYield * variation_samples = new extractorYield(*ch,*syst,flags);
+      extractorYield * variation_samples = new extractorYield(*ch,*syst,inputpath, outputpath, flags);
       if(closure) variation_samples->setClosureSample(closure_sample);
 
       Double_t topmass_variation = variation_samples->getTopMass();
@@ -161,8 +161,7 @@ void extract_yield(TString basepath, std::vector<TString> channels, bool closure
   return;
 }
 
-
-void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags) {
+void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags) {
 
   std::vector<TString> systematics;
   systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
@@ -187,12 +186,12 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
-    std::ofstream DiffSystOutputFile(basepath + "/MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
+    std::ofstream DiffSystOutputFile(outputpath + "/MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
     DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
     DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
     DiffSystOutputFile << "\\hline" << std::endl;
 
-    extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", flags | FLAG_STORE_HISTOGRAMS);
+    extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", inputpath, outputpath, flags | FLAG_STORE_HISTOGRAMS);
     mass_diffxs->setUnfoldingMass(unfoldingMass);
     Double_t topmass = mass_diffxs->getTopMass();
     Double_t total_stat_pos;
@@ -208,8 +207,8 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
     Double_t diff = 0;
 
     LOG(logDEBUG) << "Getting HAD variation...";
-    var = new extractorDiffXSec(*ch,"POWHEG", flags);
-    var2 = new extractorDiffXSec(*ch,"MCATNLO", flags);
+    var = new extractorDiffXSec(*ch,"POWHEG", inputpath, outputpath, flags);
+    var2 = new extractorDiffXSec(*ch,"MCATNLO", inputpath, outputpath, flags);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
@@ -218,8 +217,8 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
     delete var; delete var2;
 
     LOG(logDEBUG) << "Getting CR variation...";
-    var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", flags);
-    var2 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
+    var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", inputpath, outputpath, flags);
+    var2 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
     diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
@@ -229,9 +228,9 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
 
     LOG(logDEBUG) << "Getting UE variation...";
     extractorDiffXSec * var3;
-    var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", flags);
-    var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", flags);
-    var3 = new extractorDiffXSec(*ch,"PERUGIA11", flags);
+    var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", inputpath, outputpath, flags);
+    var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", inputpath, outputpath, flags);
+    var3 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
     diff = (TMath::Abs(var->getTopMass() - var3->getTopMass()) + TMath::Abs(var2->getTopMass() - var3->getTopMass()))/2;
     DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
     LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
@@ -241,14 +240,14 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
 
     LOG(logDEBUG) << "Getting PDF variation...";
     extractorDiffXSecScaled * pdf;
-    pdf = new extractorDiffXSecScaled(*ch,"Nominal", flags, "PDF_UP");
+    pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
     diff = (Double_t)topmass - pdf->getTopMass();
     LOG(logINFO) << "PDF_UP - " << *ch << ": delta = " << diff;
     if(diff > 0) total_syst_pos += diff*diff;
     else total_syst_neg += diff*diff;
     DiffSystOutputFile << pdf->getSampleLabel("PDF_UP") << " & $^{" << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
 
-    pdf = new extractorDiffXSecScaled(*ch,"Nominal", flags, "PDF_DOWN");
+    pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
     diff = (Double_t)topmass - pdf->getTopMass();
     LOG(logINFO) << "PDF_DOWN - " << *ch << ": delta = " << diff;
     if(diff > 0) total_syst_pos += diff*diff;
@@ -259,7 +258,7 @@ void extract_diffxsec(TString basepath, std::vector<TString> channels, Double_t 
     Double_t btag_syst_pos = 0, btag_syst_neg = 0;
     for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
       LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,flags);
+      extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,inputpath, outputpath, flags);
       variation_diffxs->setUnfoldingMass(unfoldingMass);
 
       Double_t topmass_variation = variation_diffxs->getTopMass();
@@ -373,8 +372,8 @@ int main(int argc, char* argv[]) {
   Double_t unfolding_mass = nominalmass;
 
   try {
-    if(type == "yield") extract_yield(outputpath,channels,closure,closure_sample,flags);
-    else extract_diffxsec(outputpath,channels,unfolding_mass,flags);
+    if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags);
+    else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags);
   }
   catch(...) {
     LOG(logCRITICAL) << "Mass extraction failed.";

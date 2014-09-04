@@ -77,7 +77,9 @@ namespace massextractor {
     Double_t statErrorNeg;
     Double_t extractedMass;
 
-    TString basepath;
+    TString m_inputpath;
+    TString m_outputpath;
+
     TString m_channel;
     TString m_sample;
     std::vector<TString> samples;
@@ -103,7 +105,7 @@ namespace massextractor {
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
     TString getChannelLabel();
-    TFile * OpenFile(TString name, TString mode);
+    TFile * OpenFile(TString name, TString mode, bool output = false);
 
   public:
     // Return the extracted top mass - starts the extraction procedure.
@@ -115,7 +117,7 @@ namespace massextractor {
     Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
     TString getSampleLabel(TString systematic);
-    extractor(TString channel, TString sample, uint32_t steeringFlags);
+    extractor(TString channel, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags);
     virtual ~extractor() {};
   };
 
@@ -135,7 +137,7 @@ namespace massextractor {
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
   public:
-  extractorYield(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {};
+  extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags) {};
     void setClosureSample(TString closure);
   };
 
@@ -152,7 +154,7 @@ namespace massextractor {
     std::vector<Double_t> deltaTtbgr;
 
   public:
-  extractorYieldOtherSamples(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
+  extractorYieldOtherSamples(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
       LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
       calcDifferenceToNominal(sample,systematic);
     };
@@ -167,7 +169,7 @@ namespace massextractor {
     Double_t scaleFactor;
 
   public:
-  extractorYieldBackground(TString ch, TString sample, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, steeringFlags), scaleFactor(1) {
+  extractorYieldBackground(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), scaleFactor(1) {
       LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
       prepareScaleFactor(systematic);
     };
@@ -193,7 +195,7 @@ namespace massextractor {
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
   public:
-  extractorDiffXSec(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags), unfoldingMass(nominalmass) {
+  extractorDiffXSec(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags), unfoldingMass(nominalmass) {
       LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
     };
     void setUnfoldingMass(Double_t mass);
@@ -208,7 +210,7 @@ namespace massextractor {
     std::vector<Double_t> scaleFactors;
 
   public:
-  extractorDiffXSecScaled(TString ch, TString sample, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, steeringFlags), scaleFactors() {
+  extractorDiffXSecScaled(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags), scaleFactors() {
       LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
       prepareScaleFactors(scale);
     };

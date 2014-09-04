@@ -284,7 +284,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     DrawCMSLabels();
     chi2sum->Write(gname);
     c->Write(cname);
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
   }
 
   // Fit the graph

@@ -172,7 +172,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     DrawCMSLabels();
     chi2_graph->Write(gname);
     c->Write(cname);
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
 
 
     c = new TCanvas(c2name,c2name);
@@ -207,7 +207,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     leg->Draw();
 
     c->Write(c2name);
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + c2name + ".pdf"); }
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + c2name + ".pdf"); }
   }
 
   return chi2_graph;
@@ -252,7 +252,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     DrawCMSLabels();
     chi2sum->Write(gname);
     c->Write(cname);
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + cname + ".pdf"); }
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
   }
 
   // Fit the graph
@@ -296,7 +296,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> mass
     DrawCMSLabels();
     chisquare->Write(name);
     c->Write(name + "_c");
-    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + name + ".pdf"); }
+    if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + name + ".pdf"); }
   }
 
   finalChiSquare = std::make_pair(chisquare,chisquare->GetFunction("pol2"));
@@ -388,7 +388,7 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
   DrawDecayChLabel(getChannelLabel());
   DrawCMSLabels();
   c->Write(canvastitle);
-  if((flags & FLAG_STORE_PDFS) != 0) { c->Print(basepath + "/" + canvastitle + ".pdf"); }
+  if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + canvastitle + ".pdf"); }
 
   return;
 }
@@ -426,7 +426,7 @@ Double_t extractor::getTopMass() {
   // Store the output histograms into this file:
   TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    output = TFile::Open(basepath + "/" + getRootFilename(),"update");
+    output = OpenFile(getRootFilename(),"update", true);
     gDirectory->pwd();
   }
 
@@ -451,7 +451,7 @@ Double_t extractor::getTopMass() {
   return extractedMass;
 }
 
-extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), m_channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), m_inputpath(inputpath), m_outputpath(outputpath), m_channel(ch), m_sample(sample), samples(), bin_boundaries(), flags(steeringFlags), doClosure(false) {
 
   // Do not add histograms to the directory listing:
   TH1::AddDirectory(kFALSE);
@@ -486,5 +486,7 @@ extractor::extractor(TString ch, TString sample, uint32_t steeringFlags) : statE
 		  << "NORMALIZE_YIELD in favor for extracting from last bin only.";
     flags &= ~FLAG_NORMALIZE_YIELD;
   }
+
+  LOG(logDEBUG) << "Reading input files from \"" << m_inputpath << "\".";
   LOG(logDEBUG) << "Initialized. Flags shipped: " << listFlags(flags);
 }
