@@ -26,107 +26,6 @@
 using namespace unilog;
 using namespace massextractor;
 
-TH1D * extractor::getSignalHistogram(Double_t mass, TFile * histos) {
-
-  // Histogram containing data:
-  TH1D * aDataHist;
-  TString type = "";
-  if(!doClosure) {
-    aDataHist = static_cast<TH1D*>(histos->Get("aDataHist"));
-    type = "data_";
-  }
-  else {
-    aDataHist = static_cast<TH1D*>(pseudoData);
-    type = "pseudodata_";
-  }
-
-  // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
-  // Histograms containing the background:
-  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
-  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
-
-  // Create a new histogram with the same binning:
-  Int_t nbins = aDataHist->GetNbinsX();
-  Int_t startbin = 1;
-  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
-  LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  Double_t Xbins[nbins+2-startbin];
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin); }
-  Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
-  TH1D * signalHist = new TH1D(type + channel + Form("_m%3.1f",mass),
-			       type + channel + Form("_m%3.1f",mass),
-			       nbins-startbin+1,
-			       Xbins);
-
-  // Store the binning for global use:
-  bin_boundaries.clear();
-  for(Int_t i = 0; i < nbins+2-startbin; i++) { bin_boundaries.push_back(Xbins[i]); }
-
-  // Iterate over all bins:
-  for(Int_t bin = startbin; bin <= nbins; bin++) {
-
-    // Get signal corrected by ttbar background:
-    Double_t signal = getSignal(bin, mass, aDataHist->GetBinContent(bin),
-				aRecHist->GetBinContent(bin),
-				aBgrHist->GetBinContent(bin),
-				aTtBgrHist->GetBinContent(bin));
-    
-    // Write background subtrated signal:
-    signalHist->SetBinContent(bin-startbin+1,signal);
-  }
-
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    signalHist->Sumw2();
-    signalHist->Scale(1./signalHist->Integral());
-    LOG(logDEBUG) << "Normalized Data hist.";
-  }
-
-  // Return signal-only histogram:
-  return signalHist;
-}
-
-TH1D * extractor::getSimulationHistogram(Double_t mass, TFile * histos) {
-
-  // Histogram containing reconstructed events:
-  TH1D * aRecHist = static_cast<TH1D*>(histos->Get("aRecHist"));
-  TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
-  TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
-
-  // Create a new histogram with the same binning:
-  Int_t nbins = aRecHist->GetNbinsX();
-  Int_t startbin = 1;
-  if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
-  LOG(logDEBUG) << "Reco hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  Double_t Xbins[nbins+2-startbin];
-  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aRecHist->GetBinLowEdge(bin);
-  Xbins[nbins+1-startbin] = aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins);
-  TH1D * simulationHist = new TH1D("reco_" + channel + Form("_m%3.1f",mass),
-			       "reco_" + channel + Form("_m%3.1f",mass),
-			       nbins-startbin+1,
-			       Xbins);
-
-  // Iterate over all bins:
-  for(Int_t bin = startbin; bin <= nbins; bin++) {
-
-    // Correct the Reco events for different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
-
-    // Write corrected Reco:
-    simulationHist->SetBinContent(bin-startbin+1,corr_reco);
-    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin));
-  }
-
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
-    simulationHist->Sumw2();
-    simulationHist->Scale(1./simulationHist->Integral());
-    LOG(logDEBUG) << "Normalized Reco hist.";
-  }
-
-  // Return reco histogram:
-  return simulationHist;
-}
-
 std::vector<TGraphErrors* > extractor::splitBins(TString type, std::vector<Double_t> masses, std::vector<TH1D*> histograms) {
 
   std::vector<TGraphErrors* > separated_bins;
@@ -459,18 +358,6 @@ Double_t extractor::getStatError(Double_t &statPos, Double_t &statNeg) {
   statPos = statErrorPos;
   statNeg = statErrorNeg;
   return (statErrorPos+statErrorNeg)/2;
-}
-
-TFile * extractor::selectInputFile(TString sample, TString ch) {
-  // Input files for Total Yield mass extraction: preunfolded histograms:
-  TString filename = "preunfolded/" + sample + "/" + ch + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * input = TFile::Open(filename,"read");
-  if(!input->IsOpen()) {
-    LOG(logCRITICAL) << "Failed to access data file " << filename;
-    throw 1;
-  }
-  LOG(logDEBUG) << "Successfully opened file " << filename;
-  return input;
 }
 
 void extractor::getControlPlots(std::vector<TH1D*> histograms) {

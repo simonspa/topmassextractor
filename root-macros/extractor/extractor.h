@@ -51,13 +51,14 @@ namespace massextractor {
 
   class extractor {
 
-  protected:
-    virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
-    virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+  private:
+    virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos) = 0;
+    virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos) = 0;
   
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
     virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
 
+  protected:
     void getControlPlots(std::vector<TH1D*> histograms);
 
     // Functions for simple summed Chi2 extraction:
@@ -109,9 +110,9 @@ namespace massextractor {
     TString getChannelLabel(TString channel);
 
   protected:
-    virtual inline TString getQuantity() { return "Events"; }
-    virtual inline TString getRootFilename() { return "MassFitRates.root"; }
-    virtual TFile * selectInputFile(TString sample, TString channel);
+    virtual TString getQuantity() = 0;
+    virtual TString getRootFilename() = 0;
+    virtual TFile * selectInputFile(TString sample, TString channel) = 0;
 
 
     const static double lumi = 19712;
@@ -141,6 +142,14 @@ namespace massextractor {
   protected:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
     Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+  private:
+    TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+    TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
+    TFile * selectInputFile(TString sample, TString ch);
+
+    inline TString getQuantity() { return "Events"; }
+    inline TString getRootFilename() { return "MassFitRates.root"; }
 
   public:
   extractorYield(TString ch, TString sample, uint32_t steeringFlags) : extractor(ch, sample, steeringFlags) {};
@@ -195,7 +204,7 @@ namespace massextractor {
     TMatrixD * getInverseCovMatrix(TString ch, TString sample);
 
     Double_t unfoldingMass;
-  protected:
+
     inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
