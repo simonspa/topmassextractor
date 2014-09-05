@@ -135,6 +135,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     // For MC, use confidence interval of the fit - all points are uncorrelated:
     Double_t bwidth = confIntervalMC.at(i);
     Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
+
+    Double_t chi2 = chiSquare(b,bwidth*bwidth,awidth*awidth,a);
     
     LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
@@ -271,8 +273,14 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
   return finalChiSquare;
 }
 
-Double_t extractor::chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval) {
-  return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(widthsquared);
+Double_t extractor::chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval) {
+  // Do not take the "eval" statictical error into account when running on systematic variation sample:
+  if(m_isSystematicVariation && (flags & FLAG_INCLUDE_DATA_IN_VARIATION_STATERR) == 0) {
+    return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(center_widthsquared);
+  }
+  else {
+    return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(center_widthsquared + eval_widthsquared);
+  }
 }
 
 std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc) {
@@ -287,7 +295,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> mass
     Double_t chi2 = 0;
     // Iterate over all bins:
     for(Int_t bin = 1; bin <= data.at(point)->GetNbinsX(); bin++) {
-      chi2 += chiSquare(mc.at(point)->GetBinContent(bin),data.at(point)->GetBinError(bin)*data.at(point)->GetBinError(bin),data.at(point)->GetBinContent(bin));
+      chi2 += chiSquare(mc.at(point)->GetBinContent(bin),0,data.at(point)->GetBinError(bin)*data.at(point)->GetBinError(bin),data.at(point)->GetBinContent(bin));
     }
     chisquare->SetPoint(point, masses.at(point), chi2);
   }

@@ -46,6 +46,9 @@ namespace massextractor {
   // Do not subtract the background from data but compare all with background:
 #define FLAG_DONT_SUBTRACT_BACKGROUND 0x200
 
+  // Flag to explicitly include the statistical error on data in the chi2 calculation for systematic variation samples. If not set, just the MC statistical errors are taken into account.
+#define FLAG_INCLUDE_DATA_IN_VARIATION_STATERR 0x800
+
   class extractor {
 
   private:
@@ -62,7 +65,7 @@ namespace massextractor {
     void getControlPlots(std::vector<TH1D*> histograms);
 
     // Functions for simple summed Chi2 extraction:
-    Double_t chiSquare(const Double_t center, const Double_t widthsquared, const Double_t eval);
+    Double_t chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval);
     std::pair<TGraphErrors*,TF1*> getChiSquare(std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
 
     // Functions for more involved fitted Chi2 extraction:
