@@ -121,7 +121,6 @@ namespace massextractor {
     // Get both statistical error values: up and down, separately
     Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
-    TString getSampleLabel(TString systematic);
     extractor(TString channel, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags);
     virtual ~extractor() {};
   };
