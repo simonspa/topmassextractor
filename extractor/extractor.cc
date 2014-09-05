@@ -483,6 +483,9 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   }
   // We are looking at a systematic uncertainty sample here:
   else {
+    // This is a systematic variation run:
+    m_isSystematicVariation = true;
+
     samples.push_back(sample+"_6NEG");
     samples.push_back(sample+"_3NEG");
     samples.push_back(sample+"_1NEG");

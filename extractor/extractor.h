@@ -85,6 +85,8 @@ namespace massextractor {
     std::vector<TString> samples;
     std::vector<Double_t> bin_boundaries;
 
+    bool m_isSystematicVariation;
+
     // Storing the settings flags:
     uint32_t flags;
 
@@ -139,6 +141,7 @@ namespace massextractor {
 
   public:
   extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags) {
+
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
 	LOG(unilog::logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
@@ -163,6 +166,10 @@ namespace massextractor {
 
   public:
   extractorYieldOtherSamples(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
       LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
       calcDifferenceToNominal(sample,systematic);
     };
@@ -178,6 +185,10 @@ namespace massextractor {
 
   public:
   extractorYieldBackground(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), scaleFactor(1) {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
       LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
       prepareScaleFactor(systematic);
     };
@@ -219,6 +230,10 @@ namespace massextractor {
 
   public:
   extractorDiffXSecScaled(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags), scaleFactors() {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
       LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
       prepareScaleFactors(scale);
     };
