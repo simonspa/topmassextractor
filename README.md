@@ -1,2 +1,50 @@
 topmassextractor
 ================
+
+Extract the top quark mass from event yields or normalized differential cross section. Requires output histograms from the DESY top analysis framework.
+
+# Compilation #
+
+The topmassextractor requires the ROOT libraries and headers to be present. Also, CMake is needed.
+
+To compile the extractor library and the executable, run:
+
+  ```
+  $ mkdir build && cd build/
+  $ cmake ..
+  $ make
+  ```
+
+
+# Usage #
+
+The extraction is invoked by the following command:
+
+```
+$ ../bin/extract [options]
+```
+
+with the following possible command line arguments:
+
+  * `-t [yield|diffxs]`:  select the type of extraction, either from the total event yield (`yield`) or from the normalized differential cross section (`diffxs`)
+  * `-v [CRITICAL|ERROR|RESULT|WARNING|INFO|DEBUG|DEBUG2-4]`: select the verbosity level of the extractor. For normal operation, running either `RESULT` or `INFO` should be fine, lower levels may produce a lot of output and slow down the process.
+  * `-i [path]`: input path, should be the parent folder of the top mass analysis framework, i.e. the folder containing "preunfolded", "SelectionRoot", "SVD", "UnfoldingResults"
+  * `-o [path]`: output path, where all histograms, tables and PDFs will be stored.
+  * `-c [ee|emu|mumu|combined]`: select the channel to run on. Of no argument is given, extraction from all channels is performed.
+  * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! The following flags are currently supported:
+    
+    * `fit | nofit`: Get Chi2 distribution from already fitted bin distributions instead of calculating the Chi2 just at the measurement points. Default is `fit`.
+    * `root`: Do create and store histograms and canvases into an output Root file.
+    * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
+    * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
+
+<!-- comment -->
+    The following flags only apply for the `yield` mode:
+
+    * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
+    * `bgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds.
+
+<!-- comment -->
+    The following flags only apply for the `diffxs` mode:
+
+    * `cov | nocov`: enable or disable calculation of bin-to-bin correlations using the covariance matrix from unfolding.
