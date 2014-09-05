@@ -64,19 +64,19 @@ void extractor::shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshi
   }
 }
 
-TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGraphErrors* second, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
+TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc_stat, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
   TString gname = "chi2_" + m_channel + Form("_bin%i",bin);
   chi2_graph->SetTitle(gname);
 
-  size_t n = first->GetN();
+  size_t n = data->GetN();
   Double_t xmin1,xmax1,ymin1,ymax1;
-  first->GetPoint(0,xmin1,ymin1);
-  first->GetPoint(n-1,xmax1,ymax1);
+  data->GetPoint(0,xmin1,ymin1);
+  data->GetPoint(n-1,xmax1,ymax1);
   Double_t xmin2,xmax2,ymin2,ymax2;
-  second->GetPoint(0,xmin2,ymin2);
-  second->GetPoint(n-1,xmax2,ymax2);
+  mc_stat->GetPoint(0,xmin2,ymin2);
+  mc_stat->GetPoint(n-1,xmax2,ymax2);
 
   Double_t xmin = std::min(xmin1*0.995,xmin2*0.995);
   Double_t xmax = std::min(xmax1*1.005,xmax2*1.005);
@@ -90,8 +90,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) {
     // Get shifted graphs:
     LOG(logDEBUG) << "Shift all coordinates by [" << xshift << "/" << yshift << "]";
-    shiftGraph(first,xshift,yshift);
-    shiftGraph(second,xshift,yshift);
+    shiftGraph(data,xshift,yshift);
+    shiftGraph(mc_stat,xshift,yshift);
     xmin -= xshift; xmax -= xshift;
   }
   // Else use input graphs directly.
@@ -108,27 +108,27 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
 
   LOG(logDEBUG2) << "Prepared for fitting, " << scanPoints.size() << " scan points in [" << xmin << "," << xmax << "]";
 
-  second->Fit("pol2","Q","",xmin,xmax);
-  TF1 * secondFit = second->GetFunction("pol2");
+  mc_stat->Fit("pol2","Q","",xmin,xmax);
+  TF1 * mc_statFit = mc_stat->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
-  TGraphErrors *secondconf = new TGraphErrors(second->GetN());
+  TGraphErrors *mc_statconf = new TGraphErrors(mc_stat->GetN());
   // Add additional point, just for drawing:
-  secondconf->SetPoint(0,second->GetX()[0] - 1, 0);
-  for (Int_t i = 1; i <= second->GetN(); i++) { secondconf->SetPoint(i, second->GetX()[i-1], 0); }
-  secondconf->SetPoint(second->GetN(),second->GetX()[second->GetN()-1] + 1, 0);
+  mc_statconf->SetPoint(0,mc_stat->GetX()[0] - 1, 0);
+  for (Int_t i = 1; i <= mc_stat->GetN(); i++) { mc_statconf->SetPoint(i, mc_stat->GetX()[i-1], 0); }
+  mc_statconf->SetPoint(mc_stat->GetN(),mc_stat->GetX()[mc_stat->GetN()-1] + 1, 0);
   // Compute the confidence intervals at the x points of the created graph
-  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(secondconf);
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(mc_statconf);
 
-  first->Fit("pol2","Q","",xmin,xmax);
-  TF1 * firstFit = first->GetFunction("pol2");
+  data->Fit("pol2","Q","",xmin,xmax);
+  TF1 * dataFit = data->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
 
   // Pick fixed error for data from middle point:
-  Double_t fixedError = first->GetErrorY(first->GetN()/2);
+  Double_t fixedError = data->GetErrorY(data->GetN()/2);
 
   for(size_t i = 0; i < scanPoints.size(); i++) {
-    Double_t a = firstFit->EvalPar(&scanPoints.at(i));
-    Double_t b = secondFit->EvalPar(&scanPoints.at(i));
+    Double_t a = dataFit->EvalPar(&scanPoints.at(i));
+    Double_t b = mc_statFit->EvalPar(&scanPoints.at(i));
 
     // For data, do not use fitted confidence interval since all points are correlated. Use fixed error:
     Double_t awidth = fixedError;
@@ -146,9 +146,9 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
     // Shift all graphs back to initial position:
     shiftGraph(chi2_graph,-1*xshift,0);
-    shiftGraph(secondconf,-1*xshift,-1*yshift);
-    shiftGraph(second,-1*xshift,-1*yshift);
-    shiftGraph(first,-1*xshift,-1*yshift);
+    shiftGraph(mc_statconf,-1*xshift,-1*yshift);
+    shiftGraph(mc_stat,-1*xshift,-1*yshift);
+    shiftGraph(data,-1*xshift,-1*yshift);
     if(fit1) shiftGraph(fit1,-1*xshift,-1*yshift);
     if(fit2) shiftGraph(fit2,-1*xshift,-1*yshift);
   }
@@ -159,8 +159,8 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     // Naming:
     TString cname = "chi2_" + m_channel + Form("_bin%i",bin);
     TString c2name = "inputs_" + m_channel + Form("_bin%i",bin);
-    TString secondname = "input_mc_" + m_channel + Form("_bin%i",bin);
-    TString firstname = "input_dat_" + m_channel + Form("_bin%i",bin);
+    TString mc_statname = "input_mc_" + m_channel + Form("_bin%i",bin);
+    TString dataname = "input_dat_" + m_channel + Form("_bin%i",bin);
 
     c = new TCanvas(cname,cname);
     c->cd();
@@ -180,27 +180,27 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* first, TGrap
     TLegend *leg = new TLegend();
     setLegendStyle(leg);
 
-    second->SetTitle("");
-    second->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
-    second->GetYaxis()->SetTitle(getQuantity());
+    mc_stat->SetTitle("");
+    mc_stat->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+    mc_stat->GetYaxis()->SetTitle(getQuantity());
 
-    secondconf->SetTitle("");
-    secondconf->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
-    secondconf->GetYaxis()->SetTitle(getQuantity());
-    secondconf->GetXaxis()->SetLimits(second->GetX()[0]-1,second->GetX()[second->GetN()-1] + 1);
+    mc_statconf->SetTitle("");
+    mc_statconf->GetXaxis()->SetTitle("m_{t} #left[GeV#right]");
+    mc_statconf->GetYaxis()->SetTitle(getQuantity());
+    mc_statconf->GetXaxis()->SetLimits(mc_stat->GetX()[0]-1,mc_stat->GetX()[mc_stat->GetN()-1] + 1);
 
-    setStyle(second,"madgraph");
-    setStyleAndFillLegend(secondconf,"madgraph",leg);
-    setStyleAndFillLegend(first,"data",leg, doClosure);
+    setStyle(mc_stat,"madgraph");
+    setStyleAndFillLegend(mc_statconf,"madgraph",leg);
+    setStyleAndFillLegend(data,"data",leg, doClosure);
 
-    secondconf->Draw("A E3");
-    second->Draw("SAME P");
-    second->Write(secondname);
+    mc_statconf->Draw("A E3");
+    mc_stat->Draw("SAME P");
+    mc_stat->Write(mc_statname);
 
-    first->SetPoint(0,first->GetX()[0] - 1,first->GetY()[0]);
-    first->SetPoint(first->GetN()-1,first->GetX()[first->GetN()-1] + 1,first->GetY()[first->GetN()-1]);
-    first->Draw("SAME L E3");
-    first->Write(firstname);
+    data->SetPoint(0,data->GetX()[0] - 1,data->GetY()[0]);
+    data->SetPoint(data->GetN()-1,data->GetX()[data->GetN()-1] + 1,data->GetY()[data->GetN()-1]);
+    data->Draw("SAME L E3");
+    data->Write(dataname);
 
     DrawDecayChLabel(getChannelLabel(),bin, bin_boundaries);
     DrawCMSLabels();
