@@ -31,18 +31,22 @@ with the following possible command line arguments:
   * `-i [path]`: input path, should be the parent folder of the top mass analysis framework, i.e. the folder containing "preunfolded", "SelectionRoot", "SVD", "UnfoldingResults"
   * `-o [path]`: output path, where all histograms, tables and PDFs will be stored.
   * `-c [ee|emu|mumu|combined]`: select the channel to run on. Of no argument is given, extraction from all channels is performed.
-  * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! The following flags are currently supported:
+  * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! (I.e. 
+
+# Flags / Flag Tokens #
+
+The following flag tokens for the `-f` command line argument are currently supported:
     
-    * `fit | nofit`: Get Chi2 distribution from already fitted bin distributions instead of calculating the Chi2 just at the measurement points. Default is `fit`.
-    * `root`: Do create and store histograms and canvases into an output Root file.
-    * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
-    * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
+  * `fit | nofit`: Get Chi2 distribution from already fitted bin distributions instead of calculating the Chi2 just at the measurement points. Default is `fit`.
+  * `root`: Do create and store histograms and canvases into an output Root file.
+  * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
+  * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
 
-    The following flags only apply for the `yield` mode:
+The following flags only apply for the `yield` mode:
 
-    * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
-    * `bgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds.
+  * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
+  * `bgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds.
 
-    The following flags only apply for the `diffxs` mode:
+The following flags only apply for the `diffxs` mode:
 
-    * `cov | nocov`: enable or disable calculation of bin-to-bin correlations using the covariance matrix from unfolding.
+  * `cov | nocov`: enable or disable calculation of bin-to-bin correlations using the covariance matrix from unfolding.
