@@ -38,14 +38,10 @@ with the following possible command line arguments:
     * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
     * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
 
-<!-- comment -->
-
     The following flags only apply for the `yield` mode:
 
     * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
     * `bgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds.
-
-<!-- comment -->
 
     The following flags only apply for the `diffxs` mode:
 
