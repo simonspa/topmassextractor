@@ -138,7 +138,14 @@ namespace massextractor {
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
   public:
-  extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags) {};
+  extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags) {
+      if((flags & FLAG_NORMALIZE_YIELD) != 0
+	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
+	LOG(unilog::logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
+		      << "NORMALIZE_YIELD in favor for extracting from last bin only.";
+	flags &= ~FLAG_NORMALIZE_YIELD;
+      }
+    };
     void setClosureSample(TString closure);
   };
 

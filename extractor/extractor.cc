@@ -492,13 +492,6 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
     samples.push_back(sample+"_6POS");
   }
 
-  if((flags & FLAG_NORMALIZE_YIELD) != 0
-     && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
-    LOG(logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
-		  << "NORMALIZE_YIELD in favor for extracting from last bin only.";
-    flags &= ~FLAG_NORMALIZE_YIELD;
-  }
-
   LOG(logDEBUG) << "Reading input files from \"" << m_inputpath << "\".";
   LOG(logDEBUG) << "Initialized. Flags shipped: " << listFlags(flags);
 }
