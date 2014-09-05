@@ -313,7 +313,7 @@ void massextractor::setStyle(TGraphErrors *hist, TString name)
 
   if(name == "data") {
     hist->SetLineWidth(2);
-    hist->SetFillStyle(3002);
+    hist->SetFillStyle(3005);
     hist->SetFillColor(kBlack);
   }
   else if(name == "madgraph") {
