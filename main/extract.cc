@@ -74,7 +74,7 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 
     std::ofstream SystOutputFile(outputpath + "/MassFitRatesSystematics_" + *ch + ".txt", std::ofstream::trunc);
     SystOutputFile << "Top Mass, Channel: " << *ch << endl;
-    SystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
+    SystOutputFile << "Systematic & Syst. error on m_t [GeV] & Stat. error on Variation \\\\" << endl;
     SystOutputFile << "\\hline" << std::endl;
 
     extractorYield * mass_samples = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_STORE_HISTOGRAMS);
@@ -124,7 +124,7 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	if(delta > 0) total_syst_pos += delta*delta;
 	else total_syst_neg += delta*delta;
       
-	if(syst->Contains("UP")) SystOutputFile << bg_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed << (delta > 0 ? "+" : "" ) << delta << "}_{";
+	if(syst->Contains("UP")) SystOutputFile << getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed << (delta > 0 ? "+" : "" ) << delta << "}_{";
 	else SystOutputFile << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
       }
 
@@ -148,11 +148,11 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	  else btag_syst_neg += delta*delta;
 	}
 	else {
-	  if(syst->Contains("UP")) SystOutputFile << variation_samples->getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+	  if(syst->Contains("UP")) SystOutputFile << getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
 	  else SystOutputFile << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
 	}
       }
-      SystOutputFile << mass_samples->getSampleLabel("BTAG") << " & $^{+" << setprecision(2) << std::fixed <<  TMath::Sqrt(btag_syst_pos) << "}_{"
+      SystOutputFile << getSampleLabel("BTAG") << " & $^{+" << setprecision(2) << std::fixed <<  TMath::Sqrt(btag_syst_pos) << "}_{"
       		     << setprecision(2) << std::fixed << TMath::Sqrt(btag_syst_neg) << "}$ \\\\" << endl;
 
     }
@@ -195,7 +195,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 
     std::ofstream DiffSystOutputFile(outputpath + "/MassFitDiffXSecSystematics_" + *ch + ".txt", std::ofstream::trunc);
     DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
-    DiffSystOutputFile << "Systematic & Syst. error on m_t & [GeV] \\\\" << endl;
+    DiffSystOutputFile << "Systematic & Syst. error on m_t [GeV] & Stat. error on Variation \\\\" << endl;
     DiffSystOutputFile << "\\hline" << std::endl;
 
     extractorDiffXSec * mass_diffxs = new extractorDiffXSec(*ch,"Nominal", inputpath, outputpath, flags | FLAG_STORE_HISTOGRAMS);
@@ -217,7 +217,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var = new extractorDiffXSec(*ch,"POWHEG", inputpath, outputpath, flags);
       var2 = new extractorDiffXSec(*ch,"MCATNLO", inputpath, outputpath, flags);
       diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
-      DiffSystOutputFile << mass_diffxs->getSampleLabel("HAD_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
+      DiffSystOutputFile << getSampleLabel("HAD_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
       LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff;
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
@@ -227,7 +227,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", inputpath, outputpath, flags);
       var2 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
       diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
-      DiffSystOutputFile << mass_diffxs->getSampleLabel("CR_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
+      DiffSystOutputFile << getSampleLabel("CR_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
       LOG(logINFO) << "CR - " << *ch << ": delta = " << diff;
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
@@ -239,7 +239,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", inputpath, outputpath, flags);
       var3 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
       diff = (TMath::Abs(var->getTopMass() - var3->getTopMass()) + TMath::Abs(var2->getTopMass() - var3->getTopMass()))/2;
-      DiffSystOutputFile << mass_diffxs->getSampleLabel("UE_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
+      DiffSystOutputFile << getSampleLabel("UE_UP") << " & $\\pm " << setprecision(2) << std::fixed << diff << "$ \\\\" << endl;
       LOG(logINFO) << "UE - " << *ch << ": delta = " << diff;
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
@@ -252,7 +252,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       LOG(logINFO) << "PDF_UP - " << *ch << ": delta = " << diff;
       if(diff > 0) total_syst_pos += diff*diff;
       else total_syst_neg += diff*diff;
-      DiffSystOutputFile << pdf->getSampleLabel("PDF_UP") << " & $^{" << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
+      DiffSystOutputFile << getSampleLabel("PDF_UP") << " & $^{" << setprecision(2) << std::fixed << (diff > 0 ? "+" : "" ) << diff << "}_{";
 
       pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
       diff = (Double_t)topmass - pdf->getTopMass();
@@ -281,11 +281,11 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 	  else btag_syst_neg += delta*delta;
 	}
 	else {
-	  if(syst->Contains("UP")) DiffSystOutputFile << variation_diffxs->getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
+	  if(syst->Contains("UP")) DiffSystOutputFile << getSampleLabel((*syst)) << " & $^{" << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}_{";
 	  else DiffSystOutputFile << setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta << "}$ \\\\" << endl;
 	}
       }
-      DiffSystOutputFile << mass_diffxs->getSampleLabel("BTAG") << " & $^{+" << setprecision(2) << std::fixed <<  TMath::Sqrt(btag_syst_pos) << "}_{"
+      DiffSystOutputFile << getSampleLabel("BTAG") << " & $^{+" << setprecision(2) << std::fixed <<  TMath::Sqrt(btag_syst_pos) << "}_{"
 			 << setprecision(2) << std::fixed << TMath::Sqrt(btag_syst_neg) << "}$ \\\\" << endl;
     }
 

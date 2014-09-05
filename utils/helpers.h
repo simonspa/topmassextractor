@@ -28,6 +28,7 @@ namespace massextractor {
     return os.str();
   }
 
+  TString getSampleLabel(TString systematic);
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */

@@ -20,7 +20,9 @@
 #include <TGraphAsymmErrors.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+
 #include "log.h"
+#include "helpers.h"
 #include "extractor.h"
 
 using namespace unilog;
@@ -62,7 +64,7 @@ TString extractor::getChannelLabel() {
   return label;
 }
 
-TString extractor::getSampleLabel(TString systematic) {
+TString massextractor::getSampleLabel(TString systematic) {
 
   TString label = "";
   if(systematic.Contains("Nominal")) { label = "Nominal"; }
