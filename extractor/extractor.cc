@@ -134,7 +134,6 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     Double_t awidth = fixedError;
     // For MC, use confidence interval of the fit - all points are uncorrelated:
     Double_t bwidth = confIntervalMC.at(i);
-    Double_t chi2 = chiSquare(b,awidth*awidth+bwidth*bwidth,a);
 
     Double_t chi2 = chiSquare(b,bwidth*bwidth,awidth*awidth,a);
     
