@@ -315,17 +315,6 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
 
   TFile * nominalfile = OpenFile(nfilename,"read");
   TFile * systematicfile = OpenFile(sfilename,"read");
-
-  if(!nominalfile->IsOpen()) {
-    LOG(logINFO) << "Failed to access file " << nfilename;
-    throw 1;
-  }
-  LOG(logDEBUG2) << "Opened " << nfilename;
-
-  if(!systematicfile->IsOpen()) {
-    LOG(logINFO) << "Failed to access file " << sfilename;
-    throw 1;
-  }
   LOG(logDEBUG2) << "Opened " << sfilename;
 
   LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
