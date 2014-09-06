@@ -463,7 +463,7 @@ Double_t extractor::getTopMass() {
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
 
-  //if(output->IsOpen()) { delete output; }
+  if(((flags & FLAG_STORE_HISTOGRAMS) != 0) && output->IsOpen()) { output->Close(); }
   return extractedMass;
 }
 
