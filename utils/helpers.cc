@@ -53,13 +53,13 @@ TFile * extractor::OpenFile(TString name, TString mode, bool output) {
   return file;
 }
 
-TString extractor::getChannelLabel() {
+TString massextractor::getChannelLabel(TString channel) {
  
   TString label = "";
-  if(m_channel =="ee") { label = "ee"; }
-  if(m_channel =="mumu"){ label = "#mu#mu"; }
-  if(m_channel =="emu"){ label = "e#mu"; }
-  if(m_channel =="combined"){ label = "Dilepton Combined"; }
+  if(channel =="ee") { label = "ee"; }
+  if(channel =="mumu"){ label = "#mu#mu"; }
+  if(channel =="emu"){ label = "e#mu"; }
+  if(channel =="combined"){ label = "Dilepton Combined"; }
 
   return label;
 }

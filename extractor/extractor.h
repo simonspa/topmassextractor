@@ -109,7 +109,6 @@ namespace massextractor {
 
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
-    TString getChannelLabel();
     TFile * OpenFile(TString name, TString mode, bool output = false);
 
   public:

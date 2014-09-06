@@ -29,6 +29,8 @@ namespace massextractor {
   }
 
   TString getSampleLabel(TString systematic);
+  TString getChannelLabel(TString channel);
+
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */
