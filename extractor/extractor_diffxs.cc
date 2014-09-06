@@ -86,17 +86,17 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  Double_t Xbins[nbins+2-startbin];
-  for (Int_t bin = startbin; bin <= nbins; bin++) Xbins[bin-startbin] = aDiffXSecHist->GetBinLowEdge(bin);
-  Xbins[nbins+1-startbin] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
+  std::vector<Double_t> Xbins;
+  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
+  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
+
   TH1D * signalHist = new TH1D("diffxs_" + m_channel + Form("_m%3.1f",mass),
 			       "diffxs_" + m_channel + Form("_m%3.1f",mass),
-			       nbins-startbin+1,
-			       Xbins);
+			       Xbins.size()-1,
+			       &Xbins.front());
 
   // Store the binning for global use:
-  bin_boundaries.clear();
-  for(Int_t i = 0; i < nbins+2-startbin; i++) { bin_boundaries.push_back(Xbins[i]); }
+  bin_boundaries = Xbins;
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     Double_t signal = getSignal(bin-startbin,mass,aDiffXSecHist->GetBinContent(bin));
@@ -109,7 +109,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   return signalHist;
 }
 
-Double_t extractorDiffXSec::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+Double_t extractorDiffXSec::getSignal(Int_t /*bin*/, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
   return data;
 }
 
@@ -154,17 +154,17 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   // Histogram containing differential cross section from data (just for the binning):
   TH1D * aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
   Int_t nbins = aDiffXSecHist->GetNbinsX();
-  Double_t Xbins[nbins+1];
-  for (Int_t bin = 1; bin <= nbins; bin++) Xbins[bin-1] = aDiffXSecHist->GetBinLowEdge(bin);
-  Xbins[nbins] = aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins);
+  std::vector<Double_t> Xbins;
+  for (Int_t bin = 1; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
+  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
 
   // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
-  aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",Xbins));
+  aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",&Xbins.front()));
 
   for (Int_t bin=0; bin < nbins; bin++) {
     // Divide rebinned histogram's bin content by bin width factor (new/old):
-    aMcBinned->SetBinError(bin+1,sqrt(aMcBinned->GetBinContent(bin+1))/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
-    aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins[bin+1]-Xbins[bin])/aMcHist->GetBinWidth(1)));
+    aMcBinned->SetBinError(bin+1,sqrt(aMcBinned->GetBinContent(bin+1))/((Xbins.at(bin+1)-Xbins.at(bin))/aMcHist->GetBinWidth(1)));
+    aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins.at(bin+1)-Xbins.at(bin))/aMcHist->GetBinWidth(1)));
   }
   aMcBinned->Scale(1./aMcBinned->Integral("width"));
   
@@ -175,8 +175,8 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   TH1D * simulationHist = new TH1D("reco_" + m_channel + Form("_m%3.1f",mass),
 				   "reco_" + m_channel + Form("_m%3.1f",mass),
-				   nbins-startbin+1,
-				   &Xbins[startbin-1]);
+				   Xbins.size()-startbin,
+				   &Xbins.at(startbin-1));
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
@@ -239,7 +239,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     TGraphErrors * mcFit = new TGraphErrors();
 
     // Get the likelihood for the two functions:
-    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
+    createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
     dataFits.push_back(dataFit);
     mcFits.push_back(mcFit);
   }
