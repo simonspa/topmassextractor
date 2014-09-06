@@ -46,8 +46,8 @@ namespace massextractor {
   // Do not subtract the background from data but compare all with background:
 #define FLAG_DONT_SUBTRACT_BACKGROUND 0x200
 
-  // Flag to explicitly include the statistical error on data in the chi2 calculation for systematic variation samples. If not set, just the MC statistical errors are taken into account.
-#define FLAG_INCLUDE_DATA_IN_VARIATION_STATERR 0x800
+  // Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
+#define FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR 0x800
 
   class extractor {
 

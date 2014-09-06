@@ -424,7 +424,7 @@ int main(int argc, char* argv[]) {
     else if(*tok == "nonorm") { flags &= ~FLAG_NORMALIZE_YIELD; }
     else if(*tok == "lastbin") { flags |= FLAG_LASTBIN_EXTRACTION; }
     else if(*tok == "bgr") { flags |= FLAG_DONT_SUBTRACT_BACKGROUND; }
-    else if(*tok == "statvar") { flags |= FLAG_INCLUDE_DATA_IN_VARIATION_STATERR; }
+    else if(*tok == "mcstat") { flags |= FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR; }
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
   }
   LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);

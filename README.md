@@ -41,6 +41,7 @@ The following flag tokens for the `-f` command line argument are currently suppo
   * `root`: Do create and store histograms and canvases into an output Root file.
   * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
   * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
+  * `mcstat`: Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
 
 The following flags only apply for the `yield` mode:
 
