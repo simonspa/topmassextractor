@@ -100,8 +100,10 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     Double_t signal = getSignal(bin-startbin,mass,aDiffXSecHist->GetBinContent(bin));
     LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin) << " signal=" << signal;
+
     signalHist->SetBinContent(bin+1-startbin,signal);
-    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin));
+    // Scale the error, so that the relative statistical error stays the same:
+    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin)*signal/aDiffXSecHist->GetBinContent(bin));
   }
 
   // Return DiffXSec signal histogram:
