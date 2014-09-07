@@ -95,8 +95,7 @@ void extractorYield::setClosureSample(TString closure) {
   doClosure = true;
 
   // Input file:
-  TString filename = "preunfolded/" + closure + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  TFile * closureFile = OpenFile(filename,"read");
+  TFile * closureFile = selectInputFile(closure);
 
   // Histograms containing the background:
   TH1D * aRecHist = static_cast<TH1D*>(closureFile->Get("aRecHist"));
@@ -108,7 +107,7 @@ void extractorYield::setClosureSample(TString closure) {
   pseudoData->SetDirectory(0);
   Double_t mass = getMassFromSample(closure);
 
-  LOG(logINFO) << "Running Closure test. Pseudo data taken from " << filename;
+  LOG(logINFO) << "Running Closure test. Pseudo data taken from closure sample " << closure;
   LOG(logINFO) << "Pseudo data mass = " << mass;
 
   for(Int_t bin = 1; bin <= pseudoData->GetNbinsX(); bin++) {
