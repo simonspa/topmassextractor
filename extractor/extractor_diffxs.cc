@@ -87,9 +87,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aDiffXSecHist,startbin,nbins);
 
   TH1D * signalHist = new TH1D("diffxs_" + m_channel + Form("_m%3.1f",mass),
 			       "diffxs_" + m_channel + Form("_m%3.1f",mass),
@@ -102,8 +100,10 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     Double_t signal = getSignal(bin-startbin,mass,aDiffXSecHist->GetBinContent(bin));
     LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin) << " signal=" << signal;
+
     signalHist->SetBinContent(bin+1-startbin,signal);
-    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin));
+    // Scale the error, so that the relative statistical error stays the same:
+    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin)*signal/aDiffXSecHist->GetBinContent(bin));
   }
 
   // Return DiffXSec signal histogram:
@@ -120,32 +120,19 @@ Double_t extractorDiffXSecScaled::getSignal(Int_t bin, Double_t /*mass*/, Double
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
 
-  std::vector<TString> filenames;
-  TString filename, sample;
-
-  if(mass < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
-  else if(mass < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
-  else if(mass < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
-  else if(mass < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
-  else if(mass < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
-  else if(mass < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
-  else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
-
-  // Check if we need to add up several histograms:
-  if(m_channel == "ee" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/ee/ee" + filename); }
-  if(m_channel == "emu" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/emu/emu" + filename); }
-  if(m_channel == "mumu" || m_channel == "combined") { filenames.push_back("selectionRoot/" + sample + "/mumu/mumu" + filename); }
-  LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << filenames.size() << " to be opened.";
+  std::vector<TString> channels;
+  
+  if(m_channel == "combined") { channels.push_back("ee"); channels.push_back("emu"); channels.push_back("mumu"); }
+  else channels.push_back(m_channel);
+  LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << channels.size() << " files to be summed.";
 
   TH1D* aMcHist;
-  TFile * input = OpenFile(filenames.front(),"read");
-  LOG(logDEBUG) << "Getting NLO curve from " << filenames.front();
+  TFile * input = selectInputFileTheory(mass, channels.front());
   aMcHist = dynamic_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass")->Clone());
   delete input;
 
-  for(std::vector<TString>::iterator file = filenames.begin()+1; file != filenames.end(); ++file) {
-    LOG(logDEBUG) << "Getting NLO curve from " << *file;
-    TFile * input2 = OpenFile(*file,"read");
+  for(std::vector<TString>::iterator ch = channels.begin()+1; ch != channels.end(); ++ch) {
+    TFile * input2 = selectInputFileTheory(mass, *ch);
     aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
@@ -155,9 +142,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   // Histogram containing differential cross section from data (just for the binning):
   TH1D * aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
   Int_t nbins = aDiffXSecHist->GetNbinsX();
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = 1; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aDiffXSecHist);
 
   // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",&Xbins.front()));
@@ -187,6 +172,25 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
   return simulationHist;
+}
+
+TFile * extractorDiffXSec::selectInputFileTheory(Double_t mass, TString sample) {
+
+  TString filename;
+  if(mass < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
+  else if(mass < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
+  else if(mass < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
+  else if(mass < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
+  else if(mass < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
+  else if(mass < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
+  else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
+
+  // Input files for Differential Cross section mass extraction: NLO curves
+  TString path = "selectionRoot/" + sample + "/" + m_channel + "/" + m_channel + filename;
+  LOG(logDEBUG) << "Getting NLO curve from " << path;
+  TFile * input = OpenFile(path,"read");
+  LOG(logDEBUG) << "Successfully opened file " << path;
+  return input;
 }
 
 TFile * extractorDiffXSec::selectInputFile(TString sample) {

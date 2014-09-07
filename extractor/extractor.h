@@ -152,12 +152,15 @@ namespace massextractor {
     inline TString getQuantity() { return "Events"; }
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
+    std::vector<Double_t> scaling_data;
+
   public:
   extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) 
     : extractor(ch, sample, inputpath, outputpath, steeringFlags),
       m_prediction_errors_rec(),
       m_prediction_errors_bgr(),
-      m_prediction_errors_ttbgr() {
+      m_prediction_errors_ttbgr(),
+	  scaling_data() {
 
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {

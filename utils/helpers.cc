@@ -53,6 +53,20 @@ TFile * extractor::OpenFile(TString name, TString mode, bool output) {
   return file;
 }
 
+std::vector<Double_t> massextractor::getBinningFromHistogram(TH1D * histo, Int_t startbin, Int_t nbins) {
+  
+  std::vector<Double_t> binning;
+
+  if(nbins == 0) { nbins = histo->GetNbinsX(); }
+
+  for (Int_t bin = startbin; bin <= nbins; bin++) { 
+    binning.push_back(histo->GetBinLowEdge(bin));
+  }
+  binning.push_back(histo->GetBinLowEdge(nbins) + histo->GetBinWidth(nbins));
+  
+  return binning;
+}
+
 TString massextractor::getChannelLabel(TString channel) {
  
   TString label = "";

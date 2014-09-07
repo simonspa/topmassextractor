@@ -20,7 +20,9 @@
 #include <TGraphAsymmErrors.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+
 #include "log.h"
+#include "helpers.h"
 #include "extractor.h"
 
 using namespace unilog;
@@ -48,17 +50,27 @@ Double_t extractorYield::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, 
   }
 }
 
-Double_t extractorYield::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  // Other (i.e. non-ttbar) backgrounds:
+  Double_t bgr_other = bgr - ttbgr;
+
+  // Scale factor (normalizing to data):
+  if(scaling_data.size() < static_cast<size_t>(bin)) { 
+    LOG(logCRITICAL) << "Data fror scaling missing!";
+    throw(1);
+  }
+  Double_t X = (reco + ttbgr)/(scaling_data.at(bin-1) - bgr_other);
 
   if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
     // Return a full pseudo data set including scaled backgrounds:
-    Double_t reco_data = getPseudoData(bin,mass,reco,bgr,ttbgr);
-    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data;
+    Double_t reco_data = (reco + ttbgr)*X + bgr_other;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data << " X=" << X;
     return reco_data;
   }
   else {
     // Scale the reco according to the different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = reco*getTtbarXsec(mass)/getTtbarXsec(nominalmass);
+    Double_t corr_reco = reco*X;
     LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
 
     // Return the reco event count corrected by the ttbar Xsec at given mass:
@@ -147,9 +159,7 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aRecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aRecHist,startbin, nbins);
 
   TH1D * signalHist = new TH1D(type + m_channel + Form("_m%3.1f",mass),
 			       type + m_channel + Form("_m%3.1f",mass),
@@ -162,6 +172,9 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   // Iterate over all bins:
   for(Int_t bin = startbin; bin <= nbins; bin++) {
 
+    // Store the pure data numbers for MC scaling:
+    scaling_data.push_back(aDataHist->GetBinContent(bin));
+
     // Get signal corrected by ttbar background:
     Double_t signal = getSignal(bin, mass, aDataHist->GetBinContent(bin),
 				aRecHist->GetBinContent(bin),
@@ -170,7 +183,8 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
     
     // Write background subtrated signal:
     signalHist->SetBinContent(bin-startbin+1,signal);
-    signalHist->SetBinError(bin-startbin+1,TMath::Sqrt(signal));
+    // Scale the error, so that the relative statistical error stays the same:
+    signalHist->SetBinError(bin-startbin+1,aDataHist->GetBinError(bin)*signal/aDataHist->GetBinContent(bin));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
@@ -198,9 +212,7 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Reco hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aRecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aRecHist,startbin,nbins);
 
   TH1D * simulationHist = new TH1D("reco_" + m_channel + Form("_m%3.1f",mass),
 				   "reco_" + m_channel + Form("_m%3.1f",mass),
@@ -212,10 +224,10 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
 
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
     Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
-
     // Write corrected Reco:
     simulationHist->SetBinContent(bin-startbin+1,corr_reco);
-    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin));
+    // Scale the error, so that the relative statistical error stays the same:
+    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin)*corr_reco/aRecHist->GetBinContent(bin));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
