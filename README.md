@@ -31,6 +31,7 @@ with the following possible command line arguments:
   * `-i [path]`: input path, should be the parent folder of the top mass analysis framework, i.e. the folder containing "preunfolded", "SelectionRoot", "SVD", "UnfoldingResults"
   * `-o [path]`: output path, where all histograms, tables and PDFs will be stored.
   * `-c [ee|emu|mumu|combined]`: select the channel to run on. Of no argument is given, extraction from all channels is performed.
+  * `-s`: run on all systematic variations. Without this flag, only the nominal sample is evaluated and the mass extracted.
   * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! (I.e. 
 
 # Flags / Flag Tokens #
