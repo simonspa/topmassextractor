@@ -418,6 +418,9 @@ Double_t extractor::getTopMass() {
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
 
+  // Calculate the theory prediction errors to nominal sample:
+  if((flags & FLAG_NO_THEORYPREDICITION_ERRORS) == 0) { getPredictionUncertainties(); }
+
   for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
 
     TFile * datafile = selectInputFile(*sample);

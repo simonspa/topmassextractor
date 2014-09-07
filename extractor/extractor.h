@@ -46,6 +46,9 @@ namespace massextractor {
   // Do not subtract the background from data but compare all with background:
 #define FLAG_DONT_SUBTRACT_BACKGROUND 0x200
 
+  // Exclude theory predicition errors from bin-by-bin MC fit:
+#define FLAG_NO_THEORYPREDICITION_ERRORS 0x400
+
   // Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
 #define FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR 0x800
 
@@ -56,6 +59,8 @@ namespace massextractor {
     virtual TH1D * getSimulationHistogram(Double_t mass, TFile * histos) = 0;
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
     virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) = 0;
+
+    virtual void getPredictionUncertainties() = 0;
 
     virtual TString getQuantity() = 0;
     virtual TString getRootFilename() = 0;
@@ -139,11 +144,20 @@ namespace massextractor {
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFile(TString sample);
 
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
+    void getPredictionUncertainties();
+
     inline TString getQuantity() { return "Events"; }
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
   public:
-  extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags) {
+  extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) 
+    : extractor(ch, sample, inputpath, outputpath, steeringFlags),
+      m_prediction_errors_rec(),
+      m_prediction_errors_bgr(),
+      m_prediction_errors_ttbgr() {
 
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
@@ -203,6 +217,10 @@ namespace massextractor {
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFile(TString sample);
+    TFile * selectInputFileTheory(Double_t mass, TString sample);
+
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors;
+    void getPredictionUncertainties();
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
     Double_t getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) { return 0; };

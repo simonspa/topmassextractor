@@ -338,3 +338,24 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
 
   return cov;
 }
+
+void extractorDiffXSec::getPredictionUncertainties() {
+
+  m_prediction_errors.clear();
+  LOG(logDEBUG2) << "Preparing theory prediction uncertainties for " << m_sample;
+
+  std::vector<Double_t> aRecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aRecScaleUp = calcSampleDifference(m_sample,"SCALE_UP","VisGenTTBar1stJetMass");
+
+  std::vector<Double_t> aRecMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aRecScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","VisGenTTBar1stJetMass");
+
+  // Take the theory prediction errors into account:
+  for(size_t i = 0; i < aRecMatchUp.size(); ++i) {
+    Double_t dxsec_up = TMath::Sqrt(aRecMatchUp.at(i)*aRecMatchUp.at(i) + aRecScaleUp.at(i)*aRecScaleUp.at(i));
+    Double_t dxsec_down = TMath::Sqrt(aRecMatchDown.at(i)*aRecMatchDown.at(i) + aRecScaleDown.at(i)*aRecScaleDown.at(i));
+
+    m_prediction_errors.push_back(std::make_pair(dxsec_up,dxsec_down));
+    LOG(logDEBUG3) << "Prediction errors: bin #" << i+1 << " diffxs = +" << dxsec_up << " -" << dxsec_down;
+  }
+}
