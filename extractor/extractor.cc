@@ -493,7 +493,19 @@ std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString s
   return difference;
 }
 
-extractor::extractor(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : statErrorPos(0), statErrorNeg(0), extractedMass(0), m_inputpath(inputpath), m_outputpath(outputpath), m_channel(ch), m_sample(sample), samples(), bin_boundaries(), m_isSystematicVariation(false), flags(steeringFlags), doClosure(false) {
+extractor::extractor(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : 
+  statErrorPos(0),
+  statErrorNeg(0),
+  extractedMass(0),
+  m_inputpath(inputpath),
+  m_outputpath(outputpath),
+  m_channel(ch),
+  m_sample(sample),
+  samples(),
+  bin_boundaries(),
+  m_isSystematicVariation(false),
+  flags(steeringFlags),
+  doClosure(false) {
 
   // Do not add histograms to the directory listing:
   TH1::AddDirectory(kFALSE);
