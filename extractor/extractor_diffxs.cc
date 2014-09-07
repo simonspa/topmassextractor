@@ -87,9 +87,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aDiffXSecHist,startbin,nbins);
 
   TH1D * signalHist = new TH1D("diffxs_" + m_channel + Form("_m%3.1f",mass),
 			       "diffxs_" + m_channel + Form("_m%3.1f",mass),
@@ -142,9 +140,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   // Histogram containing differential cross section from data (just for the binning):
   TH1D * aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm"));
   Int_t nbins = aDiffXSecHist->GetNbinsX();
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = 1; bin <= nbins; bin++) { Xbins.push_back(aDiffXSecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aDiffXSecHist->GetBinLowEdge(nbins) + aDiffXSecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aDiffXSecHist);
 
   // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",&Xbins.front()));

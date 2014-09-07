@@ -20,7 +20,9 @@
 #include <TGraphAsymmErrors.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+
 #include "log.h"
+#include "helpers.h"
 #include "extractor.h"
 
 using namespace unilog;
@@ -147,9 +149,7 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Data hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aRecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aRecHist,startbin, nbins);
 
   TH1D * signalHist = new TH1D(type + m_channel + Form("_m%3.1f",mass),
 			       type + m_channel + Form("_m%3.1f",mass),
@@ -198,9 +198,7 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
   Int_t startbin = 1;
   if((flags & FLAG_LASTBIN_EXTRACTION) != 0) { startbin = nbins; }
   LOG(logDEBUG) << "Reco hist has " << nbins << " bins, using " << (nbins-startbin+1);
-  std::vector<Double_t> Xbins;
-  for (Int_t bin = startbin; bin <= nbins; bin++) { Xbins.push_back(aRecHist->GetBinLowEdge(bin)); }
-  Xbins.push_back(aRecHist->GetBinLowEdge(nbins) + aRecHist->GetBinWidth(nbins));
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aRecHist,startbin,nbins);
 
   TH1D * simulationHist = new TH1D("reco_" + m_channel + Form("_m%3.1f",mass),
 				   "reco_" + m_channel + Form("_m%3.1f",mass),

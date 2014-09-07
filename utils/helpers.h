@@ -31,6 +31,8 @@ namespace massextractor {
   TString getSampleLabel(TString systematic);
   TString getChannelLabel(TString channel);
 
+  std::vector<Double_t> getBinningFromHistogram(TH1D * histo, Int_t startbin=1, Int_t nbins=0);
+
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */
