@@ -292,64 +292,29 @@ Double_t extractorYieldOtherSamples::getSignal(Int_t bin, Double_t mass, Double_
 void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TString systematic) {
 
   // Input files:
-  TString nfilename, sfilename;
   bool splitDifference = true;
+  bool systematicUp = false;
+  if(systematic.Contains("UP")) { systematicUp = true; }
 
-  if(systematic.Contains("HAD")) {
-    nfilename = "preunfolded/POWHEG/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/MCATNLO/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  }
-  else if(systematic.Contains("CR")) {
-    nfilename = "preunfolded/PERUGIA11/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/PERUGIA11NoCR/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  }
-  else if(systematic.Contains("UE")) {
-    nfilename = "preunfolded/PERUGIA11/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/PERUGIA11mpiHi/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  }
-  else {
-    splitDifference = false;
-    nfilename = "preunfolded/" + nominal + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-    sfilename = "preunfolded/" + systematic + "/" + m_channel + "/HypTTBar1stJetMass_UnfoldingHistos.root";
-  }
-
-  TFile * nominalfile = OpenFile(nfilename,"read");
-  TFile * systematicfile = OpenFile(sfilename,"read");
-  LOG(logDEBUG2) << "Opened " << sfilename;
-
-  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
+  if(systematic.Contains("HAD")) { nominal = "POWHEG"; systematic = "MCATNLO"; }
+  else if(systematic.Contains("CR")) { nominal = "PERUGIA11"; systematic = "PERUGIA11NoCR"; }
+  else if(systematic.Contains("UE")) { nominal = "PERUGIA11"; systematic = "PERUGIA11mpiHi"; }
+  else { splitDifference = false; }
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
-  TH1D * nominalReco = static_cast<TH1D*>(nominalfile->Get("aRecHist"));
-  TH1D * varReco = static_cast<TH1D*>(systematicfile->Get("aRecHist"));
+  deltaRec = calcSampleDifference(nominal,systematic,"aRecHist");
+  deltaBgr = calcSampleDifference(nominal,systematic,"aBgrHist");
+  deltaTtbgr = calcSampleDifference(nominal,systematic,"aTtBgrHist");
 
-  TH1D * nominalBgr = static_cast<TH1D*>(nominalfile->Get("aBgrHist"));
-  TH1D * varBgr = static_cast<TH1D*>(systematicfile->Get("aBgrHist"));
-
-  TH1D * nominalTtbgr = static_cast<TH1D*>(nominalfile->Get("aTtBgrHist"));
-  TH1D * varTtbgr = static_cast<TH1D*>(systematicfile->Get("aTtBgrHist"));
-
-  for(Int_t bin = 1; bin <= nominalReco->GetNbinsX(); bin++) {
-    Double_t rec = nominalReco->GetBinContent(bin) - varReco->GetBinContent(bin);
-    Double_t bgr = nominalBgr->GetBinContent(bin) - varBgr->GetBinContent(bin);
-    Double_t ttbgr = nominalTtbgr->GetBinContent(bin) - varTtbgr->GetBinContent(bin);
-
+  for(size_t i = 0; i < deltaRec.size(); ++i) {
     if(splitDifference) { 
-      rec = TMath::Abs(rec)/2;
-      bgr = TMath::Abs(bgr)/2;
-      ttbgr = TMath::Abs(ttbgr)/2;
-      if(systematic.Contains("UP")) { rec *= -1; bgr *= -1; ttbgr *= -1; }
+      deltaRec.at(i) = TMath::Abs(deltaRec.at(i))/2;
+      deltaBgr.at(i) = TMath::Abs(deltaBgr.at(i))/2;
+      deltaTtbgr.at(i) = TMath::Abs(deltaTtbgr.at(i))/2;
+      if(systematicUp) { deltaRec.at(i) *= -1; deltaBgr.at(i) *= -1; deltaTtbgr.at(i) *= -1; }
     }
-
-    deltaRec.push_back(rec);
-    deltaBgr.push_back(bgr);
-    deltaTtbgr.push_back(ttbgr);
-
-    LOG(logDEBUG3) << "Diff bin #" << bin << " reco: " << nominalReco->GetBinContent(bin) << " - " << varReco->GetBinContent(bin) << " = " << rec;
-    LOG(logDEBUG3) << "Diff bin #" << bin << " bgr: " << nominalBgr->GetBinContent(bin) << " - " << varBgr->GetBinContent(bin) << " dbgr=" << bgr;
-    LOG(logDEBUG3) << "Diff bin #" << bin << " ttbgr: " << nominalTtbgr->GetBinContent(bin) << " - " << varTtbgr->GetBinContent(bin) << " dbgr=" << ttbgr;
+    LOG(logDEBUG3) << "Diff bin #" << i+1 << " reco:  = " << deltaRec.at(i);
+    LOG(logDEBUG3) << "Diff bin #" << i+1 << " bgr:  = " << deltaBgr.at(i);
+    LOG(logDEBUG3) << "Diff bin #" << i+1 << " ttbgr:  = " << deltaTtbgr.at(i);
   }
-
-  delete nominalfile;
-  delete systematicfile;
 }

@@ -64,6 +64,8 @@ namespace massextractor {
   protected:
     void getControlPlots(std::vector<TH1D*> histograms);
 
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
+
     // Functions for simple summed Chi2 extraction:
     Double_t chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval);
     std::pair<TGraphErrors*,TF1*> getChiSquare(std::vector<Double_t> masses, std::vector<TH1D*> data, std::vector<TH1D*> mc);
