@@ -183,7 +183,8 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
     
     // Write background subtrated signal:
     signalHist->SetBinContent(bin-startbin+1,signal);
-    signalHist->SetBinError(bin-startbin+1,TMath::Sqrt(signal));
+    // Scale the error, so that the relative statistical error stays the same:
+    signalHist->SetBinError(bin-startbin+1,aDataHist->GetBinError(bin)*signal/aDataHist->GetBinContent(bin));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
@@ -223,10 +224,10 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
 
     // Correct the Reco events for different TTBar Cross sections (mass dependent):
     Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
-
     // Write corrected Reco:
     simulationHist->SetBinContent(bin-startbin+1,corr_reco);
-    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin));
+    // Scale the error, so that the relative statistical error stays the same:
+    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin)*corr_reco/aRecHist->GetBinContent(bin));
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
