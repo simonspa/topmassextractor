@@ -122,10 +122,8 @@ namespace massextractor {
     // Return the extracted top mass - starts the extraction procedure.
     Double_t getTopMass();
 
-    // Get symmetrized statictical error only:
-    Double_t getStatError();
-    // Get both statistical error values: up and down, separately
-    Double_t getStatError(Double_t &statPos, Double_t &statNeg);
+    // Get both statistical error values: up and down, separately. The actual return value is the symmetrized statistical error
+    virtual Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
     extractor(TString channel, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags);
     virtual ~extractor() {};
@@ -139,10 +137,14 @@ namespace massextractor {
     Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
     Double_t getPseudoData(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
 
+    Double_t m_stat_ndata;
+    Double_t m_stat_nmc;
+
+    TFile * selectInputFile(TString sample);
+
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
-    TFile * selectInputFile(TString sample);
 
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
@@ -184,8 +186,12 @@ namespace massextractor {
     std::vector<Double_t> deltaBgr;
     std::vector<Double_t> deltaTtbgr;
 
+    TString m_systematic;
+
   public:
-  extractorYieldOtherSamples(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr() {
+    Double_t getStatError(Double_t &statPos, Double_t &statNeg);
+
+  extractorYieldOtherSamples(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), deltaRec(), deltaBgr(), deltaTtbgr(), m_systematic(systematic) {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
