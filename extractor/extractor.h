@@ -83,18 +83,28 @@ namespace massextractor {
     // Minimization of the global Chi2 for extraction of the final mass value:
     Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 
+    // Positive and negative statistical uncertainty on the extracted mass
+    //calculated from varying the minimal Chi2 by +1 in either direction
     Double_t statErrorPos;
     Double_t statErrorNeg;
+    // The extracted mass of the top quark in GeV
     Double_t extractedMass;
 
+    // Path to parent folder of all input files
     TString m_inputpath;
+    // Output path where histograms and PDFs as well as systematics tables will be stored
     TString m_outputpath;
 
+    // The channel this extraction is performed on (ee, emu, mumu, combined)
     TString m_channel;
+    // The sample we are using for this extraxtion
     TString m_sample;
+    // Vector of all variations of the sample we are using, representing the 7 mass values
     std::vector<TString> samples;
+    // Bin boundaries of the histograms under unvesigation. Calculated and filles in getSignalHistogram
     std::vector<Double_t> bin_boundaries;
 
+    // Flag for separating runs in systematic variations from the actual mass extraction with nominal MC sample
     bool m_isSystematicVariation;
 
     // Storing the settings flags:
