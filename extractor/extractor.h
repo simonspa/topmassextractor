@@ -117,9 +117,7 @@ namespace massextractor {
     // Return the extracted top mass - starts the extraction procedure.
     Double_t getTopMass();
 
-    // Get symmetrized statictical error only:
-    Double_t getStatError();
-    // Get both statistical error values: up and down, separately
+    // Get both statistical error values: up and down, separately. The actual return value is the symmetrized statistical error
     virtual Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
     extractor(TString channel, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags);

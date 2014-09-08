@@ -365,12 +365,6 @@ Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
   return x_chi2min;
 }
 
-Double_t extractor::getStatError() {
-
-  // Just return the statistical error calculated from chi2:
-  return (statErrorPos+statErrorNeg)/2;
-}
-
 Double_t extractor::getStatError(Double_t &statPos, Double_t &statNeg) {
 
   // Just return the statistical error calculated from chi2:
