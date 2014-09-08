@@ -131,6 +131,9 @@ void extractorYield::setClosureSample(TString closure) {
     pseudoData->SetBinContent(bin,pdata);
   }
 
+  // Set the original number of events of this closure sample (no weights):
+  pseudoData->SetEntries(aRecHist->GetEntries() + aBgrHist->GetEntries());
+
   delete closureFile;
 }
 
