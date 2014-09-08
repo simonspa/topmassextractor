@@ -367,9 +367,16 @@ Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
 
 Double_t extractor::getStatError(Double_t &statPos, Double_t &statNeg) {
 
-  // Just return the statistical error calculated from chi2:
-  statPos = statErrorPos;
-  statNeg = statErrorNeg;
+  if(m_isSystematicVariation) {
+    // Statictical error in systematic variation for variations of the nominal sample - set to something tiny:
+    statPos = statErrorPos*0.01;
+    statNeg = statErrorNeg*0.01;
+  }
+  else {
+    // Just return the statistical error calculated from chi2:
+    statPos = statErrorPos;
+    statNeg = statErrorNeg;
+  }
   return (statErrorPos+statErrorNeg)/2;
 }
 
