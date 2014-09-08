@@ -120,7 +120,7 @@ namespace massextractor {
     // Get symmetrized statictical error only:
     Double_t getStatError();
     // Get both statistical error values: up and down, separately
-    Double_t getStatError(Double_t &statPos, Double_t &statNeg);
+    virtual Double_t getStatError(Double_t &statPos, Double_t &statNeg);
 
     extractor(TString channel, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags);
     virtual ~extractor() {};
