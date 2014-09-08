@@ -154,6 +154,9 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
   TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
+  // Store the total number of events (no weights applied) to later scale the statistical uncertainty:
+  m_stat_ndata = aDataHist->GetEntries();
+
   // Create a new histogram with the same binning:
   Int_t nbins = aDataHist->GetNbinsX();
   Int_t startbin = 1;
@@ -312,6 +315,11 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
   else if(systematic.Contains("UE")) { nominal = "PERUGIA11"; systematic = "PERUGIA11mpiHi"; }
   else { splitDifference = false; }
 
+  // Get the total number of events (no weights applied) to later scale the statistical uncertainty:
+  TFile * sysFile = selectInputFile(systematic);
+  m_stat_nmc = static_cast<TH1D*>(sysFile->Get("aRecHist"))->GetEntries() + static_cast<TH1D*>(sysFile->Get("aBgrHist"))->GetEntries();
+  delete sysFile;
+
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
   deltaRec = calcSampleDifference(nominal,systematic,"aRecHist");
   deltaBgr = calcSampleDifference(nominal,systematic,"aBgrHist");
@@ -328,4 +336,17 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
     LOG(logDEBUG3) << "Diff bin #" << i+1 << " bgr:  = " << deltaBgr.at(i);
     LOG(logDEBUG3) << "Diff bin #" << i+1 << " ttbgr:  = " << deltaTtbgr.at(i);
   }
+}
+
+Double_t extractorYieldOtherSamples::getStatError(Double_t &statPos, Double_t &statNeg) {
+
+  Double_t scaleFactor = m_stat_ndata/m_stat_nmc;
+  LOG(logINFO) << "Events in samples: " << (doClosure ? "Pseudo Data" : "Data" ) << ": " << m_stat_ndata << ", "
+	       << m_systematic << ": " << m_stat_nmc
+	       << " - Statistics Scale Factor: " << scaleFactor;
+
+  statPos = statErrorPos*scaleFactor;
+  statNeg = statErrorNeg*scaleFactor;
+
+  return (statPos+statNeg)/2;
 }
