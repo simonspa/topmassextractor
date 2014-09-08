@@ -71,7 +71,7 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   else {
     // Scale the reco according to the different TTBar Cross sections (mass dependent):
     Double_t corr_reco = reco*X;
-    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco << " X=" << X;
 
     // Return the reco event count corrected by the ttbar Xsec at given mass:
     return corr_reco;
