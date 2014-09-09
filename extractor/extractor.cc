@@ -107,10 +107,10 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   }
 
   LOG(logDEBUG2) << "Prepared for fitting, " << scanPoints.size() << " scan points in [" << xmin << "," << xmax << "]";
-
-  mc_stat->Fit("pol2","Q","",xmin,xmax);
+  mc_stat->Fit("pol2","F EX0 S Q","",xmin,xmax);
   TF1 * mc_statFit = mc_stat->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
+
   TGraphErrors *mc_statconf = new TGraphErrors(mc_stat->GetN());
   // Add additional point, just for drawing:
   mc_statconf->SetPoint(0,mc_stat->GetX()[0] - 1, 0);
@@ -119,7 +119,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   // Compute the confidence intervals at the x points of the created graph
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(mc_statconf);
 
-  data->Fit("pol2","Q","",xmin,xmax);
+  data->Fit("pol2","F Q","",xmin,xmax);
   TF1 * dataFit = data->GetFunction("pol2");
   (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
 
