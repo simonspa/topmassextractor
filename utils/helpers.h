@@ -33,6 +33,10 @@ namespace massextractor {
 
   std::vector<Double_t> getBinningFromHistogram(TH1D * histo, Int_t startbin=1, Int_t nbins=0);
 
+  // Splitting a string at tokens:
+  std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+  std::vector<std::string> split(const std::string &s, char delim);
+
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */
