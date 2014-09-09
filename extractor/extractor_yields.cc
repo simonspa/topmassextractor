@@ -347,7 +347,7 @@ void extractorYield::getPredictionUncertainties() {
   m_prediction_errors_bgr.clear();
   m_prediction_errors_ttbgr.clear();
 
-  LOG(logDEBUG2) << "Preparing theory prediction uncertainties for " << m_sample;
+  LOG(logDEBUG) << "Preparing theory prediction uncertainties for " << m_sample;
 
   std::vector<Double_t> aRecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","aRecHist");
   std::vector<Double_t> aBgrMatchUp = calcSampleDifference(m_sample,"MATCH_UP","aBgrHist");
@@ -367,20 +367,21 @@ void extractorYield::getPredictionUncertainties() {
 
   // Take the theory prediction errors into account:
   for(size_t i = 0; i < aRecMatchUp.size(); ++i) {
-    Double_t rec_up = TMath::Sqrt(aRecMatchUp.at(i)*aRecMatchUp.at(i) + aRecScaleUp.at(i)*aRecScaleUp.at(i));
-    Double_t bgr_up = TMath::Sqrt(aBgrMatchUp.at(i)*aBgrMatchUp.at(i) + aBgrScaleUp.at(i)*aBgrScaleUp.at(i));
-    Double_t ttbgr_up = TMath::Sqrt(aTtBgrMatchUp.at(i)*aTtBgrMatchUp.at(i) + aTtBgrScaleUp.at(i)*aTtBgrScaleUp.at(i));
+    //Symmetrized errors for up/down:
+    Double_t rec_match = (TMath::Abs(aRecMatchUp.at(i)) + TMath::Abs(aRecMatchDown.at(i)))/2;
+    Double_t bgr_match = (TMath::Abs(aBgrMatchUp.at(i)) + TMath::Abs(aBgrMatchDown.at(i)))/2;
+    Double_t ttbgr_match = (TMath::Abs(aTtBgrMatchUp.at(i)) + TMath::Abs(aTtBgrMatchDown.at(i)))/2;
 
-    Double_t rec_down = TMath::Sqrt(aRecMatchDown.at(i)*aRecMatchDown.at(i) + aRecScaleDown.at(i)*aRecScaleDown.at(i));
-    Double_t bgr_down = TMath::Sqrt(aBgrMatchDown.at(i)*aBgrMatchDown.at(i) + aBgrScaleDown.at(i)*aBgrScaleDown.at(i));
-    Double_t ttbgr_down = TMath::Sqrt(aTtBgrMatchDown.at(i)*aTtBgrMatchDown.at(i) + aTtBgrScaleDown.at(i)*aTtBgrScaleDown.at(i));
+    Double_t rec_scale = (TMath::Abs(aRecScaleUp.at(i)) + TMath::Abs(aRecScaleDown.at(i)))/2;
+    Double_t bgr_scale = (TMath::Abs(aBgrScaleUp.at(i)) + TMath::Abs(aBgrScaleDown.at(i)))/2;
+    Double_t ttbgr_scale = (TMath::Abs(aTtBgrScaleUp.at(i)) + TMath::Abs(aTtBgrScaleDown.at(i)))/2;
 
-    m_prediction_errors_rec.push_back(std::make_pair(rec_up,rec_down));
-    m_prediction_errors_bgr.push_back(std::make_pair(bgr_up,bgr_down));
-    m_prediction_errors_ttbgr.push_back(std::make_pair(ttbgr_up,ttbgr_down));
-    LOG(logDEBUG3) << "Prediction errors: bin #" << i+1 << " reco=+" << rec_up << "-" << rec_down 
-		   << " bgr=+" << bgr_up << "-" << bgr_down
-		   << " ttbgr=+" << ttbgr_up << "-" << ttbgr_down;
+    m_prediction_errors_rec.push_back(std::make_pair(rec_match,rec_scale));
+    m_prediction_errors_bgr.push_back(std::make_pair(bgr_match,bgr_scale));
+    m_prediction_errors_ttbgr.push_back(std::make_pair(ttbgr_match,ttbgr_scale));
+    LOG(logDEBUG) << "Pred.err. #" << i+1 << " reco = " << rec_match << " & " << rec_scale 
+		   << ", bgr = " << bgr_match << " & " << bgr_scale
+		  << ", ttbgr = " << ttbgr_match << " & " << ttbgr_scale;
   }
 }
 
