@@ -232,8 +232,20 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
     Double_t corr_reco = getReco(bin, mass,aRecHist->GetBinContent(bin),aBgrHist->GetBinContent(bin),aTtBgrHist->GetBinContent(bin));
     // Write corrected Reco:
     simulationHist->SetBinContent(bin-startbin+1,corr_reco);
-    // Scale the error, so that the relative statistical error stays the same:
-    simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin)*corr_reco/aRecHist->GetBinContent(bin));
+    if((flags & FLAG_NO_THEORYPREDICITION_ERRORS) == 0) {
+      Double_t err_match = corr_reco - getReco(bin,mass,aRecHist->GetBinContent(bin)+m_prediction_errors_rec.at(bin-startbin).first,
+				  aBgrHist->GetBinContent(bin)+m_prediction_errors_bgr.at(bin-startbin).first,
+				  aTtBgrHist->GetBinContent(bin)+m_prediction_errors_ttbgr.at(bin-startbin).first);
+      Double_t err_scale = corr_reco - getReco(bin,mass,aRecHist->GetBinContent(bin)+m_prediction_errors_rec.at(bin-startbin).second,
+				  aBgrHist->GetBinContent(bin)+m_prediction_errors_bgr.at(bin-startbin).second,
+				  aTtBgrHist->GetBinContent(bin)+m_prediction_errors_ttbgr.at(bin-startbin).second);
+      Double_t error = TMath::Sqrt(aRecHist->GetBinError(bin)*corr_reco/aRecHist->GetBinContent(bin) + err_match*err_match + err_scale*err_scale);
+      simulationHist->SetBinError(bin-startbin+1,error);
+    }
+    else {
+      // Scale the error, so that the relative statistical error stays the same, no prediction errors:
+      simulationHist->SetBinError(bin-startbin+1,aRecHist->GetBinError(bin)*corr_reco/aRecHist->GetBinContent(bin));
+    }
   }
 
   if((flags & FLAG_NORMALIZE_YIELD) != 0) {
