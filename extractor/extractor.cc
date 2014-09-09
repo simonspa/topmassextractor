@@ -171,6 +171,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     chi2_graph->Draw("AP");
     DrawDecayChLabel(getChannelLabel(m_channel),bin,bin_boundaries);
     DrawCMSLabels();
+    rescaleGraph(chi2_graph,1.25);
     chi2_graph->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
@@ -196,6 +197,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
 
     mc_statconf->Draw("A E3");
     mc_stat->Draw("SAME P");
+    rescaleGraph(mc_statconf);
     mc_stat->Write(mc_statname);
 
     data->SetPoint(0,data->GetX()[0] - 1,data->GetY()[0]);
@@ -260,6 +262,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     chi2sum->Draw("AP");
     DrawDecayChLabel(getChannelLabel(m_channel));
     DrawCMSLabels();
+    rescaleGraph(chi2sum);
     chi2sum->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }

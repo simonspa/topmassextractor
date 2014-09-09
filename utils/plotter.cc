@@ -4,6 +4,7 @@
 #include <TGraphErrors.h>
 #include <TString.h>
 #include <TLegend.h>
+#include <TMath.h>
 
 #include "plotter.h"
 
@@ -354,4 +355,11 @@ void massextractor::setLegendStyle(TLegend *leg) {
   leg->SetTextSize(0.04);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
+}
+
+void massextractor::rescaleGraph(TGraphErrors * g, Double_t up, Double_t down) {
+  
+  Double_t low = TMath::MinElement(g->GetN(),g->GetY())*down;
+  Double_t high = TMath::MaxElement(g->GetN(),g->GetY())*up;
+  g->GetYaxis()->SetRangeUser(low,high);
 }

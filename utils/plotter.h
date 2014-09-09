@@ -17,4 +17,5 @@ namespace massextractor {
   void setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg, bool closure=false);
   void setLegendStyle(TLegend *leg);
 
+  void rescaleGraph(TGraphErrors * g, Double_t up=1.2, Double_t down=0.95);
 }
