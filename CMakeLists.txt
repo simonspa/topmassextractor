@@ -33,6 +33,7 @@ SET(extractor_sources
   "extractor/extractor_diffxs.cc"
   "extractor/extractor_yields.cc"
   "utils/plotter.cc"
+  "utils/latex.cc"
   "utils/helpers.cc")
 
 ADD_LIBRARY(extractor SHARED ${extractor_sources})
