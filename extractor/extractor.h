@@ -80,6 +80,9 @@ namespace massextractor {
     TGraphErrors * createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc, Int_t bin, TGraphErrors* firstFit = NULL, TGraphErrors* secondFit = NULL);
     virtual std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
 
+    void getTrueConfidenceIntervals(Int_t n, Int_t ndim, const Double_t* x, Double_t* ci, Double_t cl = 0.95);
+    void getTrueConfidenceIntervals(TGraphErrors * gr, Double_t cl = 0.95);
+
     // Minimization of the global Chi2 for extraction of the final mass value:
     Double_t getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare);
 

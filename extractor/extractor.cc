@@ -64,6 +64,25 @@ void extractor::shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshi
   }
 }
 
+void extractor::getTrueConfidenceIntervals(TGraphErrors * gr, Double_t cl) {
+  getTrueConfidenceIntervals(gr->GetN(),1,gr->GetX(), gr->GetEY(), cl);
+  for (Int_t i=0; i<gr->GetN(); i++)
+    gr->SetPoint(i, gr->GetX()[i], ((TF1*)(TVirtualFitter::GetFitter())->GetUserFunc())->Eval(gr->GetX()[i]));
+}
+
+void extractor::getTrueConfidenceIntervals(Int_t n, Int_t ndim, const Double_t* x, Double_t* ci, Double_t cl) {
+
+  // Get the confidence intervals from root:
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(n,ndim,x,ci,cl);
+  // Get the fit function:
+  TF1 *f = dynamic_cast<TF1*>((TVirtualFitter::GetFitter())->GetUserFunc());
+  // Divide the entries by Chi2/NDF of the fit again:
+  for(Int_t i = 0; i < n; i++) {
+    ci[i] = ci[i]/TMath::Sqrt(f->GetChisquare()/f->GetNDF());
+  }
+
+}
+
 TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc_stat, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
@@ -109,7 +128,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   LOG(logDEBUG2) << "Prepared for fitting, " << scanPoints.size() << " scan points in [" << xmin << "," << xmax << "]";
   mc_stat->Fit("pol2","F EX0 S Q","",xmin,xmax);
   TF1 * mc_statFit = mc_stat->GetFunction("pol2");
-  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
+  getTrueConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalMC.at(0),confidenceLevel);
 
   TGraphErrors *mc_statconf = new TGraphErrors(mc_stat->GetN());
   // Add additional point, just for drawing:
@@ -117,11 +136,11 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   for (Int_t i = 1; i <= mc_stat->GetN(); i++) { mc_statconf->SetPoint(i, mc_stat->GetX()[i-1], 0); }
   mc_statconf->SetPoint(mc_stat->GetN(),mc_stat->GetX()[mc_stat->GetN()-1] + 1, 0);
   // Compute the confidence intervals at the x points of the created graph
-  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(mc_statconf);
+  getTrueConfidenceIntervals(mc_statconf,confidenceLevel);
 
   data->Fit("pol2","F Q","",xmin,xmax);
   TF1 * dataFit = data->GetFunction("pol2");
-  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
+  getTrueConfidenceIntervals(scanPoints.size(),1,&scanPoints.at(0),&confIntervalData.at(0),confidenceLevel);
 
   // Pick fixed error for data from middle point:
   Double_t fixedError = data->GetErrorY(data->GetN()/2);
