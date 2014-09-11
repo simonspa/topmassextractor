@@ -65,11 +65,12 @@ namespace massextractor {
     virtual TString getQuantity() = 0;
     virtual TString getRootFilename() = 0;
     virtual TFile * selectInputFile(TString sample) = 0;
+    virtual TFile * selectInputFileTheory(Double_t mass, TString sample) = 0;
 
   protected:
     void getControlPlots(std::vector<TH1D*> histograms);
 
-    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram, bool theory = false);
 
     // Functions for simple summed Chi2 extraction:
     Double_t chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval);
@@ -154,6 +155,7 @@ namespace massextractor {
     Double_t m_stat_nmc;
 
     TFile * selectInputFile(TString sample);
+    TFile * selectInputFileTheory(Double_t /*mass*/, TString sample) { return selectInputFile(sample); }
 
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
