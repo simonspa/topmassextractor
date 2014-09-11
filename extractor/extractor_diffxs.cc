@@ -364,10 +364,10 @@ void extractorDiffXSec::getPredictionUncertainties() {
 
   // Take the theory prediction errors into account:
   for(size_t i = 0; i < aDiffXSecMatchUp.size(); ++i) {
-    Double_t dxsec_up = TMath::Sqrt(aDiffXSecMatchUp.at(i)*aDiffXSecMatchUp.at(i) + aDiffXSecScaleUp.at(i)*aDiffXSecScaleUp.at(i));
-    Double_t dxsec_down = TMath::Sqrt(aDiffXSecMatchDown.at(i)*aDiffXSecMatchDown.at(i) + aDiffXSecScaleDown.at(i)*aDiffXSecScaleDown.at(i));
+    Double_t dxsec_match = (TMath::Abs(aDiffXSecMatchUp.at(i)) + TMath::Abs(aDiffXSecMatchDown.at(i)))/2;
+    Double_t dxsec_scale = (TMath::Abs(aDiffXSecScaleUp.at(i)) + TMath::Abs(aDiffXSecScaleDown.at(i)))/2;
 
-    m_prediction_errors.push_back(std::make_pair(dxsec_up,dxsec_down));
-    LOG(logDEBUG3) << "Prediction errors: bin #" << i+1 << " diffxs = +" << dxsec_up << " -" << dxsec_down;
+    m_prediction_errors.push_back(std::make_pair(dxsec_match,dxsec_scale));
+    LOG(logDEBUG3) << "Pred. err #" << i+1 << " diffxs = " << dxsec_match << " & " << dxsec_scale;
   }
 }
