@@ -500,7 +500,7 @@ std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString s
   // Input files:
   TFile * nominalfile = selectInputFile(nominal);
   TFile * systematicfile = selectInputFile(systematic);
-  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
+  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic << ", hist " << histogram;
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
   TH1D * nominalHistogram = static_cast<TH1D*>(nominalfile->Get(histogram));
