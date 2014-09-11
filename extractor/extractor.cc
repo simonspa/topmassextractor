@@ -493,13 +493,17 @@ Double_t extractor::getTopMass() {
   return extractedMass;
 }
 
-std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString systematic, TString histogram) {
+std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString systematic, TString histogram, bool theory) {
 
   std::vector<Double_t> difference;
 
   // Input files:
-  TFile * nominalfile = selectInputFile(nominal);
-  TFile * systematicfile = selectInputFile(systematic);
+  TFile * nominalfile, * systematicfile;
+  if(theory) nominalfile = selectInputFileTheory(nominalmass,nominal);
+  else nominalfile = selectInputFile(nominal);
+  if(theory) systematicfile = selectInputFileTheory(nominalmass,systematic);
+  else systematicfile = selectInputFile(systematic);
+
   LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic;
 
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
