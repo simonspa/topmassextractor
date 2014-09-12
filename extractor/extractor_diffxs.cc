@@ -185,13 +185,19 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample) {
 
   TString filename;
-  if(getMassFromSample(sample) < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
-  else if(getMassFromSample(sample) < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
-  else if(getMassFromSample(sample) < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
-  else if(getMassFromSample(sample) < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
-  else if(getMassFromSample(sample) < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
-  else if(getMassFromSample(sample) < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
-  else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
+  if(sample.Contains("MASS") || sample == "Nominal") {
+    if(getMassFromSample(sample) < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
+    else if(getMassFromSample(sample) < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
+    else if(getMassFromSample(sample) < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
+    else if(getMassFromSample(sample) < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
+    else if(getMassFromSample(sample) < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
+    else if(getMassFromSample(sample) < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
+    else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
+  }
+  else if(sample.Contains("MATCH_UP")) filename = "_ttbarsignalplustau_matchingup.root";
+  else if(sample.Contains("MATCH_DOWN")) filename = "_ttbarsignalplustau_matchingdown.root";
+  else if(sample.Contains("SCALE_UP")) filename = "_ttbarsignalplustau_scaleup.root";
+  else if(sample.Contains("SCALE_DOWN")) filename = "_ttbarsignalplustau_scaledown.root";
 
   // Input files for Differential Cross section mass extraction: NLO curves
   TString path = "selectionRoot/" + sample + "/" + channel + "/" + channel + filename;
