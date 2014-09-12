@@ -499,9 +499,9 @@ std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString s
 
   // Input files:
   TFile * nominalfile, * systematicfile;
-  if(theory) nominalfile = selectInputFileTheory(nominalmass,nominal);
+  if(theory) nominalfile = selectInputFileTheory(m_channel,nominal);
   else nominalfile = selectInputFile(nominal);
-  if(theory) systematicfile = selectInputFileTheory(nominalmass,systematic);
+  if(theory) systematicfile = selectInputFileTheory(m_channel,systematic);
   else systematicfile = selectInputFile(systematic);
 
   LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic << ", hist " << histogram;

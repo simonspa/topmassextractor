@@ -127,12 +127,12 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   LOG(logDEBUG) << "Looking for mass " << mass << " files, found " << channels.size() << " files to be summed.";
 
   TH1D* aMcHist;
-  TFile * input = selectInputFileTheory(mass, channels.front());
+  TFile * input = selectInputFileTheory(channels.front(), getSampleFromMass(m_sample,mass,true));
   aMcHist = dynamic_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass")->Clone());
   delete input;
 
   for(std::vector<TString>::iterator ch = channels.begin()+1; ch != channels.end(); ++ch) {
-    TFile * input2 = selectInputFileTheory(mass, *ch);
+    TFile * input2 = selectInputFileTheory(*ch, getSampleFromMass(m_sample,mass,true));
     aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
@@ -182,19 +182,19 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   return simulationHist;
 }
 
-TFile * extractorDiffXSec::selectInputFileTheory(Double_t mass, TString sample) {
+TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample) {
 
   TString filename;
-  if(mass < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
-  else if(mass < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
-  else if(mass < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
-  else if(mass < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
-  else if(mass < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
-  else if(mass < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
+  if(getMassFromSample(sample) < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
+  else if(getMassFromSample(sample) < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
+  else if(getMassFromSample(sample) < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
+  else if(getMassFromSample(sample) < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
+  else if(getMassFromSample(sample) < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
+  else if(getMassFromSample(sample) < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
   else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
 
   // Input files for Differential Cross section mass extraction: NLO curves
-  TString path = "selectionRoot/" + sample + "/" + m_channel + "/" + m_channel + filename;
+  TString path = "selectionRoot/" + sample + "/" + channel + "/" + channel + filename;
   LOG(logDEBUG) << "Getting NLO curve from " << path;
   TFile * input = OpenFile(path,"read");
   LOG(logDEBUG) << "Successfully opened file " << path;
@@ -368,6 +368,6 @@ void extractorDiffXSec::getPredictionUncertainties() {
     Double_t dxsec_scale = (TMath::Abs(aDiffXSecScaleUp.at(i)) + TMath::Abs(aDiffXSecScaleDown.at(i)))/2;
 
     m_prediction_errors.push_back(std::make_pair(dxsec_match,dxsec_scale));
-    LOG(logDEBUG3) << "Pred. err #" << i+1 << " diffxs = " << dxsec_match << " & " << dxsec_scale;
+    LOG(logDEBUG) << "Pred. err #" << i+1 << " diffxs = " << dxsec_match << " & " << dxsec_scale;
   }
 }

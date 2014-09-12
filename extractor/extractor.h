@@ -65,7 +65,7 @@ namespace massextractor {
     virtual TString getQuantity() = 0;
     virtual TString getRootFilename() = 0;
     virtual TFile * selectInputFile(TString sample) = 0;
-    virtual TFile * selectInputFileTheory(Double_t mass, TString sample) = 0;
+    virtual TFile * selectInputFileTheory(TString channel, TString sample) = 0;
 
   protected:
     void getControlPlots(std::vector<TH1D*> histograms);
@@ -155,7 +155,7 @@ namespace massextractor {
     Double_t m_stat_nmc;
 
     TFile * selectInputFile(TString sample);
-    TFile * selectInputFileTheory(Double_t /*mass*/, TString sample) { return selectInputFile(sample); }
+    TFile * selectInputFileTheory(TString /*channel*/, TString sample) { return selectInputFile(sample); }
 
   private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
@@ -241,7 +241,7 @@ namespace massextractor {
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFile(TString sample);
-    TFile * selectInputFileTheory(Double_t mass, TString sample);
+    TFile * selectInputFileTheory(TString channel, TString sample);
 
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors;
     void getPredictionUncertainties();
