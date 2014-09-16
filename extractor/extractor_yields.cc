@@ -403,23 +403,23 @@ void extractorYield::getPredictionUncertainties() {
   m_prediction_errors_bgr.clear();
   m_prediction_errors_ttbgr.clear();
 
-  LOG(logDEBUG) << "Preparing theory prediction uncertainties for " << m_sample;
+  LOG(logDEBUG) << "Preparing theory prediction uncertainties.";
 
-  std::vector<Double_t> aRecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","aRecHist");
-  std::vector<Double_t> aBgrMatchUp = calcSampleDifference(m_sample,"MATCH_UP","aBgrHist");
-  std::vector<Double_t> aTtBgrMatchUp = calcSampleDifference(m_sample,"MATCH_UP","aTtBgrHist");
+  std::vector<Double_t> aRecMatchUp = calcSampleDifference("Nominal","MATCH_UP","aRecHist");
+  std::vector<Double_t> aBgrMatchUp = calcSampleDifference("Nominal","MATCH_UP","aBgrHist");
+  std::vector<Double_t> aTtBgrMatchUp = calcSampleDifference("Nominal","MATCH_UP","aTtBgrHist");
 
-  std::vector<Double_t> aRecScaleUp = calcSampleDifference(m_sample,"SCALE_UP","aRecHist");
-  std::vector<Double_t> aBgrScaleUp = calcSampleDifference(m_sample,"SCALE_UP","aBgrHist");
-  std::vector<Double_t> aTtBgrScaleUp = calcSampleDifference(m_sample,"SCALE_UP","aTtBgrHist");
+  std::vector<Double_t> aRecScaleUp = calcSampleDifference("Nominal","SCALE_UP","aRecHist");
+  std::vector<Double_t> aBgrScaleUp = calcSampleDifference("Nominal","SCALE_UP","aBgrHist");
+  std::vector<Double_t> aTtBgrScaleUp = calcSampleDifference("Nominal","SCALE_UP","aTtBgrHist");
 
-  std::vector<Double_t> aRecMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","aRecHist");
-  std::vector<Double_t> aBgrMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","aBgrHist");
-  std::vector<Double_t> aTtBgrMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","aTtBgrHist");
+  std::vector<Double_t> aRecMatchDown = calcSampleDifference("Nominal","MATCH_DOWN","aRecHist");
+  std::vector<Double_t> aBgrMatchDown = calcSampleDifference("Nominal","MATCH_DOWN","aBgrHist");
+  std::vector<Double_t> aTtBgrMatchDown = calcSampleDifference("Nominal","MATCH_DOWN","aTtBgrHist");
 
-  std::vector<Double_t> aRecScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","aRecHist");
-  std::vector<Double_t> aBgrScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","aBgrHist");
-  std::vector<Double_t> aTtBgrScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","aTtBgrHist");
+  std::vector<Double_t> aRecScaleDown = calcSampleDifference("Nominal","SCALE_DOWN","aRecHist");
+  std::vector<Double_t> aBgrScaleDown = calcSampleDifference("Nominal","SCALE_DOWN","aBgrHist");
+  std::vector<Double_t> aTtBgrScaleDown = calcSampleDifference("Nominal","SCALE_DOWN","aTtBgrHist");
 
   // Take the theory prediction errors into account:
   for(size_t i = 0; i < aRecMatchUp.size(); ++i) {

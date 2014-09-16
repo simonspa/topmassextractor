@@ -412,13 +412,13 @@ std::vector<Double_t> extractorDiffXSec::calcSampleDifference(TString nominal, T
 void extractorDiffXSec::getPredictionUncertainties() {
 
   m_prediction_errors.clear();
-  LOG(logDEBUG2) << "Preparing theory prediction uncertainties for " << m_sample;
+  LOG(logDEBUG2) << "Preparing theory prediction uncertainties.";
 
-  std::vector<Double_t> aDiffXSecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","VisGenTTBar1stJetMass");
-  std::vector<Double_t> aDiffXSecScaleUp = calcSampleDifference(m_sample,"SCALE_UP","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecMatchUp = calcSampleDifference("Nominal","MATCH_UP","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecScaleUp = calcSampleDifference("Nominal","SCALE_UP","VisGenTTBar1stJetMass");
 
-  std::vector<Double_t> aDiffXSecMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","VisGenTTBar1stJetMass");
-  std::vector<Double_t> aDiffXSecScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecMatchDown = calcSampleDifference("Nominal","MATCH_DOWN","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecScaleDown = calcSampleDifference("Nominal","SCALE_DOWN","VisGenTTBar1stJetMass");
 
   // Take the theory prediction errors into account:
   for(size_t i = 0; i < aDiffXSecMatchUp.size(); ++i) {
