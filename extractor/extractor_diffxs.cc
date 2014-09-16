@@ -404,6 +404,8 @@ std::vector<Double_t> extractorDiffXSec::calcSampleDifference(TString nominal, T
 
   delete nominalfile;
   delete systematicfile;
+  delete binningfile;
+
   return difference;
 }
 

@@ -493,34 +493,6 @@ Double_t extractor::getTopMass() {
   return extractedMass;
 }
 
-std::vector<Double_t> extractor::calcSampleDifference(TString nominal, TString systematic, TString histogram) {
-
-  std::vector<Double_t> difference;
-
-  // Input files:
-  TFile * nominalfile, * systematicfile;
-  nominalfile = selectInputFile(nominal);
-  systematicfile = selectInputFile(systematic);
-
-  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic << ", hist " << histogram;
-
-  // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
-  TH1D * nominalHistogram = static_cast<TH1D*>(nominalfile->Get(histogram));
-  TH1D * systHistogram = static_cast<TH1D*>(systematicfile->Get(histogram));
-
-  // Calculate the difference:
-  for(Int_t bin = 1; bin <= nominalHistogram->GetNbinsX(); bin++) {
-
-    Double_t diff = static_cast<Double_t>(nominalHistogram->GetBinContent(bin)) - static_cast<Double_t>(systHistogram->GetBinContent(bin));
-    difference.push_back(diff);
-    LOG(logDEBUG3) << "Hist " << histogram << ": diff bin #" << bin << " " << nominalHistogram->GetBinContent(bin) << " - " << systHistogram->GetBinContent(bin) << " = " << diff;
-  }
-
-  delete nominalfile;
-  delete systematicfile;
-  return difference;
-}
-
 extractor::extractor(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : 
   statErrorPos(0),
   statErrorNeg(0),
