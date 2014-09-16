@@ -362,17 +362,29 @@ std::vector<Double_t> extractorDiffXSec::calcSampleDifference(TString nominal, T
 
   std::vector<Double_t> difference;
 
+  std::vector<TString> channels;
+  if(m_channel == "combined") { channels.push_back("ee"); channels.push_back("emu"); channels.push_back("mumu"); }
+  else channels.push_back(m_channel);
+  LOG(logDEBUG) << "Found " << channels.size() << " files to be summed.";
+
   // Input files:
   TFile * nominalfile, * systematicfile, *binningfile;
-  nominalfile = selectInputFileTheory(m_channel,nominal);
-  systematicfile = selectInputFileTheory(m_channel,systematic);
   binningfile = selectInputFile(nominal);
-
   LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic << ", hist " << histogram;
 
+  nominalfile = selectInputFileTheory(channels.front(),nominal);
+  systematicfile = selectInputFileTheory(channels.front(),systematic);
   // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
-  TH1D * nominalHistogram = static_cast<TH1D*>(nominalfile->Get(histogram));
-  TH1D * systHistogram = static_cast<TH1D*>(systematicfile->Get(histogram));
+  TH1D * nominalHistogram = static_cast<TH1D*>(nominalfile->Get(histogram)->Clone());
+  TH1D * systHistogram = static_cast<TH1D*>(systematicfile->Get(histogram)->Clone());
+
+  for(std::vector<TString>::iterator ch = channels.begin()+1; ch != channels.end(); ++ch) {
+    nominalfile = selectInputFileTheory(*ch, nominal);
+    systematicfile = selectInputFileTheory(*ch, systematic);
+    nominalHistogram->Add(dynamic_cast<TH1D*>(nominalfile->Get(histogram)));
+    systHistogram->Add(dynamic_cast<TH1D*>(systematicfile->Get(histogram)));
+  }
+
   TH1D * nominalHistBinned, * systHistBinned;
 
   // Rebin both nominal and systematic histograms:
