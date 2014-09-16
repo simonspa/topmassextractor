@@ -70,7 +70,7 @@ namespace massextractor {
   protected:
     void getControlPlots(std::vector<TH1D*> histograms);
 
-    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram, bool theory = false);
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
     // Functions for simple summed Chi2 extraction:
     Double_t chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval);
@@ -252,6 +252,8 @@ namespace massextractor {
     std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Function for fetching covariance matrix and inverting it:
     TMatrixD * getInverseCovMatrix(TString sample);
+
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
     Double_t unfoldingMass;
 

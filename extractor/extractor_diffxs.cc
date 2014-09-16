@@ -357,16 +357,66 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
   return cov;
 }
 
+
+std::vector<Double_t> extractorDiffXSec::calcSampleDifference(TString nominal, TString systematic, TString histogram) {
+
+  std::vector<Double_t> difference;
+
+  // Input files:
+  TFile * nominalfile, * systematicfile, *binningfile;
+  nominalfile = selectInputFileTheory(m_channel,nominal);
+  systematicfile = selectInputFileTheory(m_channel,systematic);
+  binningfile = selectInputFile(nominal);
+
+  LOG(logDEBUG) << "Difference: " << nominal << " to " << systematic << ", hist " << histogram;
+
+  // Calculate (NOMINAL MASS - SYS_UP/DOWN) difference for every bin:
+  TH1D * nominalHistogram = static_cast<TH1D*>(nominalfile->Get(histogram));
+  TH1D * systHistogram = static_cast<TH1D*>(systematicfile->Get(histogram));
+  TH1D * nominalHistBinned, * systHistBinned;
+
+  // Rebin both nominal and systematic histograms:
+  TH1D * aDiffXSecHist = dynamic_cast<TH1D*>(binningfile->Get("unfoldedHistNorm"));
+  Int_t nbins = aDiffXSecHist->GetNbinsX();
+  std::vector<Double_t> Xbins = getBinningFromHistogram(aDiffXSecHist);
+
+  // Globally scaling the MC statistical errors by getting the overall weight from Intergal() and GetEntries():
+  nominalHistBinned = dynamic_cast<TH1D*>(nominalHistogram->Rebin(nbins,"madgraphplot",&Xbins.front()));
+  systHistBinned = dynamic_cast<TH1D*>(systHistogram->Rebin(nbins,"madgraphplot",&Xbins.front()));
+
+  for (Int_t bin=0; bin < nbins; bin++) {
+    // Divide rebinned histogram's bin content by bin width factor (new/old):
+    nominalHistBinned->SetBinError(bin+1,sqrt(nominalHistBinned->GetBinContent(bin+1))/((Xbins.at(bin+1)-Xbins.at(bin))/nominalHistogram->GetBinWidth(1)));
+    systHistBinned->SetBinError(bin+1,sqrt(systHistBinned->GetBinContent(bin+1))/((Xbins.at(bin+1)-Xbins.at(bin))/systHistogram->GetBinWidth(1)));
+
+    nominalHistBinned->SetBinContent(bin+1,nominalHistBinned->GetBinContent(bin+1)/((Xbins.at(bin+1)-Xbins.at(bin))/nominalHistogram->GetBinWidth(1)));
+    systHistBinned->SetBinContent(bin+1,systHistBinned->GetBinContent(bin+1)/((Xbins.at(bin+1)-Xbins.at(bin))/systHistogram->GetBinWidth(1)));
+  }
+  nominalHistBinned->Scale(1./nominalHistBinned->Integral("width"));
+  systHistBinned->Scale(1./systHistBinned->Integral("width"));
+
+  // Calculate the difference:
+  for(Int_t bin = 1; bin <= nominalHistBinned->GetNbinsX(); bin++) {
+    Double_t diff = static_cast<Double_t>(nominalHistBinned->GetBinContent(bin)) - static_cast<Double_t>(systHistBinned->GetBinContent(bin));
+    difference.push_back(diff);
+    LOG(logDEBUG3) << "Hist " << histogram << ": diff bin #" << bin << " " << nominalHistBinned->GetBinContent(bin) << " - " << systHistBinned->GetBinContent(bin) << " = " << diff;
+  }
+
+  delete nominalfile;
+  delete systematicfile;
+  return difference;
+}
+
 void extractorDiffXSec::getPredictionUncertainties() {
 
   m_prediction_errors.clear();
   LOG(logDEBUG2) << "Preparing theory prediction uncertainties for " << m_sample;
 
-  std::vector<Double_t> aDiffXSecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","VisGenTTBar1stJetMass",true);
-  std::vector<Double_t> aDiffXSecScaleUp = calcSampleDifference(m_sample,"SCALE_UP","VisGenTTBar1stJetMass",true);
+  std::vector<Double_t> aDiffXSecMatchUp = calcSampleDifference(m_sample,"MATCH_UP","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecScaleUp = calcSampleDifference(m_sample,"SCALE_UP","VisGenTTBar1stJetMass");
 
-  std::vector<Double_t> aDiffXSecMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","VisGenTTBar1stJetMass",true);
-  std::vector<Double_t> aDiffXSecScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","VisGenTTBar1stJetMass",true);
+  std::vector<Double_t> aDiffXSecMatchDown = calcSampleDifference(m_sample,"MATCH_DOWN","VisGenTTBar1stJetMass");
+  std::vector<Double_t> aDiffXSecScaleDown = calcSampleDifference(m_sample,"SCALE_DOWN","VisGenTTBar1stJetMass");
 
   // Take the theory prediction errors into account:
   for(size_t i = 0; i < aDiffXSecMatchUp.size(); ++i) {
