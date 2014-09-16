@@ -380,7 +380,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Standard flag settings: Chi2 fit, no Covariance, normalized.
-  flags = FLAG_CHISQUARE_FROM_FITS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_YIELD;
+  flags = FLAG_CHISQUARE_FROM_FITS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_YIELD | FLAG_DONT_SUBTRACT_BACKGROUND;
   // Check and assign the flags:
   for(std::vector<std::string>::iterator tok = flagtokens.begin(); tok != flagtokens.end(); ++tok) {
     if(*tok == "fit") { flags |= FLAG_CHISQUARE_FROM_FITS; }
@@ -393,6 +393,7 @@ int main(int argc, char* argv[]) {
     else if(*tok == "nonorm") { flags &= ~FLAG_NORMALIZE_YIELD; }
     else if(*tok == "lastbin") { flags |= FLAG_LASTBIN_EXTRACTION; }
     else if(*tok == "bgr") { flags |= FLAG_DONT_SUBTRACT_BACKGROUND; }
+    else if(*tok == "nobgr") { flags &= ~FLAG_DONT_SUBTRACT_BACKGROUND; }
     else if(*tok == "nopred") { flags |= FLAG_NO_THEORYPREDICTION_ERRORS; }
     else if(*tok == "mcstat") { flags |= FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR; }
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
