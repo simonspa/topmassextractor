@@ -23,6 +23,7 @@ namespace massextractor {
     if((flags&FLAG_RETURN_FITMIN) != 0) { os << "FLAG_RETURN_FITMIN, "; flags -= FLAG_RETURN_FITMIN; }
     if((flags&FLAG_DONT_USE_COVARIANCE) != 0) { os << "FLAG_DONT_USE_COVARIANCE, "; flags -= FLAG_DONT_USE_COVARIANCE; }
     if((flags&FLAG_DONT_SUBTRACT_BACKGROUND) != 0) { os << "FLAG_DONT_SUBTRACT_BACKGROUND, "; flags -= FLAG_DONT_SUBTRACT_BACKGROUND; }
+    if((flags&FLAG_NO_THEORYPREDICTION_ERRORS) != 0) { os << "FLAG_NO_THEORYPREDICTION_ERRORS, "; flags -= FLAG_NO_THEORYPREDICTION_ERRORS; }
 
     if(flags != 0) os << "Unknown flag: " << flags;
     return os.str();

@@ -166,7 +166,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     simulationHist->SetBinContent(bin+1-startbin,aMcBinned->GetBinContent(bin));
-    if((flags & FLAG_NO_THEORYPREDICITION_ERRORS) == 0) {
+    if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) {
       Double_t err_match = aMcBinned->GetBinError(bin) + m_prediction_errors.at(bin-startbin).first;
       Double_t err_scale = aMcBinned->GetBinError(bin) + m_prediction_errors.at(bin-startbin).second;
       Double_t error = TMath::Sqrt(aMcBinned->GetBinError(bin)*aMcBinned->GetBinError(bin) + err_match*err_match + err_scale*err_scale);

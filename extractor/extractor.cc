@@ -442,7 +442,7 @@ Double_t extractor::getTopMass() {
   std::vector<Double_t> masses;
 
   // Calculate the theory prediction errors to nominal sample:
-  if((flags & FLAG_NO_THEORYPREDICITION_ERRORS) == 0) { getPredictionUncertainties(); }
+  if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) { getPredictionUncertainties(); }
 
   for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
 

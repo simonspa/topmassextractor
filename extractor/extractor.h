@@ -47,7 +47,7 @@ namespace massextractor {
 #define FLAG_DONT_SUBTRACT_BACKGROUND 0x200
 
   // Exclude theory predicition errors from bin-by-bin MC fit:
-#define FLAG_NO_THEORYPREDICITION_ERRORS 0x400
+#define FLAG_NO_THEORYPREDICTION_ERRORS 0x400
 
   // Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
 #define FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR 0x800
