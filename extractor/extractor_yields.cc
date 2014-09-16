@@ -56,22 +56,21 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   Double_t bgr_other = bgr - ttbgr;
 
   // Scale factor (normalizing to data):
-  if(scaling_data.size() < static_cast<size_t>(bin)) { 
-    LOG(logCRITICAL) << "Data fror scaling missing!";
+  if(mcScalingFactor < 0.0001) {
+    LOG(logCRITICAL) << "Data for scaling missing!";
     throw(1);
   }
-  Double_t X = (reco + ttbgr)/(scaling_data.at(bin-1) - bgr_other);
 
   if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
     // Return a full pseudo data set including scaled backgrounds:
-    Double_t reco_data = (reco + ttbgr)*X + bgr_other;
-    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data << " X=" << X;
+    Double_t reco_data = (reco + ttbgr)*mcScalingFactor + bgr_other;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data;
     return reco_data;
   }
   else {
     // Scale the reco according to the different TTBar Cross sections (mass dependent):
-    Double_t corr_reco = reco*X;
-    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco << " X=" << X;
+    Double_t corr_reco = reco*mcScalingFactor;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
 
     // Return the reco event count corrected by the ttbar Xsec at given mass:
     return corr_reco;
@@ -175,11 +174,12 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   // Store the binning for global use:
   bin_boundaries = Xbins;
 
+  // Calculate the scaling factor from the histogram integrals: X = (reco + ttbgr)/(data - bgr_other);
+  mcScalingFactor = (aRecHist->Integral() + aTtBgrHist->Integral())/(aDataHist->Integral() - aBgrHist->Integral() + aTtBgrHist->Integral());
+  LOG(logDEBUG) << "mcScalingFactor = " << mcScalingFactor;
+
   // Iterate over all bins:
   for(Int_t bin = startbin; bin <= nbins; bin++) {
-
-    // Store the pure data numbers for MC scaling:
-    scaling_data.push_back(aDataHist->GetBinContent(bin));
 
     // Get signal corrected by ttbar background:
     Double_t signal = getSignal(bin, mass, aDataHist->GetBinContent(bin),
