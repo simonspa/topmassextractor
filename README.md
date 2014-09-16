@@ -32,6 +32,7 @@ with the following possible command line arguments:
   * `-o [path]`: output path, where all histograms, tables and PDFs will be stored.
   * `-c [ee|emu|mumu|combined]`: select the channel to run on. Of no argument is given, extraction from all channels is performed.
   * `-s`: run on all systematic variations. Without this flag, only the nominal sample is evaluated and the mass extracted.
+  * `-l [filename]`: in addition to screen output, also write logging messages to file given by `filename`.
   * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! (I.e. 
 
 # Flags / Flag Tokens #
@@ -43,11 +44,12 @@ The following flag tokens for the `-f` command line argument are currently suppo
   * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
   * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
   * `mcstat`: Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
+  * `pred | nopred`: Enable disable inclusion of theory prediction uncertainties in the MC statistical error for all extractions. The theory prediction uncertainties taken into account are Q^2 scale and Matching, the errors are calculated by taking the sample difference to nominal and added in quadrature to the statistical error. Default is `pred`.
 
 The following flags only apply for the `yield` mode:
 
   * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
-  * `bgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds.
+  * `bgr | nobgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds. Default is `bgr`.
 
 The following flags only apply for the `diffxs` mode:
 
