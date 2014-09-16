@@ -214,7 +214,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
       DiffSystOutputFile << systab->writeSystematicsTableUpDown("HAD_UP", diff, var_stat_pos+var_stat_pos2, var_stat_neg+var_stat_neg2);
-      LOG(logINFO) << "HAD - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
+      LOG(logRESULT) << "HAD - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2;
@@ -226,7 +226,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
       DiffSystOutputFile << systab->writeSystematicsTableUpDown("CR_UP", diff, var_stat_pos+var_stat_pos2, var_stat_neg+var_stat_neg2);
-      LOG(logINFO) << "CR - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
+      LOG(logRESULT) << "CR - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2;
@@ -242,7 +242,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       var2->getStatError(var_stat_pos2,var_stat_neg2);
       var2->getStatError(var_stat_pos3,var_stat_neg3);
       DiffSystOutputFile << systab->writeSystematicsTableUpDown("UE_UP", diff, var_stat_pos+var_stat_pos2+var_stat_pos3, var_stat_neg+var_stat_neg2+var_stat_neg3);
-      LOG(logINFO) << "UE - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2+var_stat_pos3) << "-" << (var_stat_neg+var_stat_neg2+var_stat_neg3);
+      LOG(logRESULT) << "UE - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2+var_stat_pos3) << "-" << (var_stat_neg+var_stat_neg2+var_stat_neg3);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2; delete var3;
@@ -252,7 +252,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
       diff = (Double_t)topmass - pdf->getTopMass();
       pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logINFO) << "PDF_UP - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+      LOG(logRESULT) << "PDF_UP - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
       if(diff > 0) total_syst_pos += diff*diff;
       else total_syst_neg += diff*diff;
       DiffSystOutputFile << systab->writeSystematicsTableUp("PDF_UP", diff, var_stat_pos, var_stat_neg);
@@ -260,7 +260,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
       diff = (Double_t)topmass - pdf->getTopMass();
       pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logINFO) << "PDF_DOWN - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+      LOG(logRESULT) << "PDF_DOWN - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
       if(diff > 0) total_syst_pos += diff*diff;
       else total_syst_neg += diff*diff;
       DiffSystOutputFile << systab->writeSystematicsTableDown(diff, var_stat_pos, var_stat_neg);
@@ -277,7 +277,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 	LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
 	Double_t delta = (Double_t)topmass-topmass_variation;
 	variation_diffxs->getStatError(var_stat_pos,var_stat_neg);
-	LOG(logINFO) << *syst << ": delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
 	if(delta > 0) total_syst_pos += delta*delta;
 	else total_syst_neg += delta*delta;
 
