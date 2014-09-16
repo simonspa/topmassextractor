@@ -443,13 +443,13 @@ void extractorYield::getPredictionUncertainties() {
 
 Double_t extractorYieldOtherSamples::getStatError(Double_t &statPos, Double_t &statNeg) {
 
-  Double_t scaleFactor = m_stat_ndata/m_stat_nmc;
+  Double_t statisticsScaleFactor = m_stat_ndata/m_stat_nmc;
   LOG(logINFO) << "Events in samples: " << (doClosure ? "Pseudo Data" : "Data" ) << ": " << m_stat_ndata << ", "
 	       << m_systematic << ": " << m_stat_nmc
-	       << " - Statistics Scale Factor: " << scaleFactor;
+	       << " - Statistics Scale Factor: " << statisticsScaleFactor;
 
-  statPos = statErrorPos*scaleFactor;
-  statNeg = statErrorNeg*scaleFactor;
+  statPos = statErrorPos*statisticsScaleFactor;
+  statNeg = statErrorNeg*statisticsScaleFactor;
 
   return (statPos+statNeg)/2;
 }

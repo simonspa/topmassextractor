@@ -168,7 +168,10 @@ namespace massextractor {
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
     void getPredictionUncertainties();
 
-    inline TString getQuantity() { return "Events"; }
+    inline TString getQuantity() { 
+      if((flags &FLAG_NORMALIZE_YIELD) != 0) return "Events";
+      else return "Events (norm.)";
+    }
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
     Double_t mcScalingFactor;
