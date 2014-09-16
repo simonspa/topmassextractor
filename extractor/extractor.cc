@@ -362,10 +362,29 @@ Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
     TGraphErrors * graph = finalChiSquare.first;
     double* y = graph->GetY();
     double* x = graph->GetX();
-    Int_t locmin = TMath::LocMin(graph->GetN(),y);
-    chi2min = y[locmin];
-    x_chi2min = x[locmin];
-   
+
+    bool firstmaximum = false, minimized = false;
+    // This scanning approach requires the graph to first have a maximum and then the minimum we are looking for (excludes global minima at the edges):
+    for(Int_t i = 1; i < graph->GetN(); i++) {
+      if(y[i] < y[i-1] && !firstmaximum) {
+	LOG(logDEBUG2) << "Found first maximum at " << x[i-1];
+	firstmaximum = true;
+      }
+      if(y[i] > y[i-1] && firstmaximum) {
+	LOG(logDEBUG2) << "Found center minimum at " << x[i-1];
+	chi2min = y[i-1];
+	x_chi2min = x[i-1];
+	minimized = true;
+	break;
+      }
+    }
+
+    // We could not find a minimum in this graph!
+    if(!minimized) {
+      LOG(logCRITICAL) << "No suitable minimum found in this distribution!";
+      // FIXME for now, just keep on running...
+    }
+
     Double_t scanGranularity = 0.005; // GeV
     Double_t scanDistance = 3; // GeV
     // Get left and right bound by scanning the graph and returning the value where Chi2=Chi2Min+1:
