@@ -310,6 +310,8 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString("INFO");
+  FILE* logfile;
+
   TString outputpath = "ExtractionResults";
   TString inputpath = "";
   bool closure = true;
@@ -340,7 +342,13 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-s")) { syst = true; }
     // Select the channel to run on:
     else if(!strcmp(argv[i],"-c")) { channel = string(argv[++i]); }
-    // Read and tokeinze the flags::
+    // Allow additional logging to file:
+    else if(!strcmp(argv[i],"-l")) {
+      logfile = fopen(argv[++i], "a");
+      unilog::SetLogOutput::Stream() = logfile;
+      unilog::SetLogOutput::Duplicate() = true;
+    }
+    // Read and tokeinze the flags:
     else if(!strcmp(argv[i],"-f")) { flagtokens = split(string(argv[++i]), ','); }
     else { LOG(logERROR) << "Unrecognized command line argument \"" << argv[i] << "\".";}
   }
