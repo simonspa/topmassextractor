@@ -188,7 +188,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
     chi2_graph->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(m_channel),bin,bin_boundaries);
+    DrawDecayChLabel(m_channel,bin,bin_boundaries);
     DrawCMSLabels();
     rescaleGraph(chi2_graph,1.25);
     chi2_graph->Write(gname);
@@ -224,7 +224,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     data->Draw("SAME L E3");
     data->Write(dataname);
 
-    DrawDecayChLabel(getChannelLabel(m_channel),bin, bin_boundaries);
+    DrawDecayChLabel(m_channel,bin, bin_boundaries);
     DrawCMSLabels();
     leg->Draw();
 
@@ -279,7 +279,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(m_channel));
+    DrawDecayChLabel(m_channel);
     DrawCMSLabels();
     rescaleGraph(chi2sum);
     chi2sum->Write(gname);
@@ -330,7 +330,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> mass
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
     chisquare->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(m_channel));
+    DrawDecayChLabel(m_channel);
     DrawCMSLabels();
     chisquare->Write(name);
     c->Write(name + "_c");
@@ -443,7 +443,7 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
     }
   }
 
-  DrawDecayChLabel(getChannelLabel(m_channel));
+  DrawDecayChLabel(m_channel);
   DrawCMSLabels();
   c->Write(canvastitle);
   if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + canvastitle + ".pdf"); }

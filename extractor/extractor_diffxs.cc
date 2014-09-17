@@ -299,7 +299,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum->Draw("AP");
-    DrawDecayChLabel(getChannelLabel(m_channel));
+    DrawDecayChLabel(m_channel);
     DrawCMSLabels();
     chi2sum->Write(gname);
     c->Write(cname);
