@@ -259,7 +259,7 @@ void massextractor::DrawDecayChLabel(TString decaychannel, Int_t bin, std::vecto
     }
 
     TPaveText *decch = new TPaveText();
-    decch->AddText(decaychannel);
+    decch->AddText(getChannelLabel(decaychannel));
 
     decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
     decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
@@ -362,4 +362,15 @@ void massextractor::rescaleGraph(TGraphErrors * g, Double_t up, Double_t down) {
   Double_t low = TMath::MinElement(g->GetN(),g->GetY())*down;
   Double_t high = TMath::MaxElement(g->GetN(),g->GetY())*up;
   g->GetYaxis()->SetRangeUser(low,high);
+}
+
+TString massextractor::getChannelLabel(TString channel) {
+ 
+  TString label = channel;
+  if(channel =="ee") { label = "ee"; }
+  if(channel =="mumu"){ label = "#mu#mu"; }
+  if(channel =="emu"){ label = "e#mu"; }
+  if(channel =="combined"){ label = "Dilepton Combined"; }
+
+  return label;
 }

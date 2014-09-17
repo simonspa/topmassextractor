@@ -67,17 +67,6 @@ std::vector<Double_t> massextractor::getBinningFromHistogram(TH1D * histo, Int_t
   return binning;
 }
 
-TString massextractor::getChannelLabel(TString channel) {
- 
-  TString label = "";
-  if(channel =="ee") { label = "ee"; }
-  if(channel =="mumu"){ label = "#mu#mu"; }
-  if(channel =="emu"){ label = "e#mu"; }
-  if(channel =="combined"){ label = "Dilepton Combined"; }
-
-  return label;
-}
-
 TString massextractor::getSampleLabel(TString systematic) {
 
   TString label = "";

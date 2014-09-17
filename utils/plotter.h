@@ -18,4 +18,5 @@ namespace massextractor {
   void setLegendStyle(TLegend *leg);
 
   void rescaleGraph(TGraphErrors * g, Double_t up=1.2, Double_t down=0.95);
+  TString getChannelLabel(TString channel);
 }
