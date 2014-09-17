@@ -119,23 +119,23 @@ TString extractor::getSampleFromMass(TString sample, Double_t mass, bool nominal
     if(nominal) { fullSampleName = "MASS_DOWN_1GEV"; }
     else { fullSampleName = sample + "_1NEG"; }
   }
+  // Nominal mass:
+  else if(mass < (nominalmass+0.5)) {
+    if(nominal) { fullSampleName = "Nominal"; }
+    else { fullSampleName = sample; }
+  }
   // Variations up:
-  else if(mass > (nominalmass+5.5)) {
+  else if(mass < (nominalmass+1.5)) {
     if(nominal) { fullSampleName = "MASS_UP_1GEV"; }
     else { fullSampleName = sample + "_1POS"; }
   }
-  else if(mass > (nominalmass+2.5)) {
+  else if(mass < (nominalmass+3.5)) {
     if(nominal) { fullSampleName = "MASS_UP_3GEV"; }
     else { fullSampleName = sample + "_3POS"; }
   }
-  else if(mass > (nominalmass+0.5)) {
+  else if(mass < (nominalmass+6.5)) {
     if(nominal) { fullSampleName = "MASS_UP_6GEV"; }
     else { fullSampleName = sample + "_6POS"; }
-  }
-  // Nominal mass:
-  else {
-    if(nominal) { fullSampleName = "Nominal"; }
-    else { fullSampleName = sample; }
   }
 
   return fullSampleName;
