@@ -33,6 +33,7 @@ with the following possible command line arguments:
   * `-c [ee|emu|mumu|combined]`: select the channel to run on. Of no argument is given, extraction from all channels is performed.
   * `-s`: run on all systematic variations. Without this flag, only the nominal sample is evaluated and the mass extracted.
   * `-l [filename]`: in addition to screen output, also write logging messages to file given by `filename`.
+  * `-m [sample name]`: select the sample to be used as closure data (only has an effect without `-d`). Possible sample names are `MASS_DOWN_{6,3,1}GEV`, `Nominal`, `MASS_UP_{1,3,6}GEV`
   * `-f [token[,token]]`: allows specification of runtime flags. Multiple flags can be given using comma as separator. Do not include any blanks! (I.e. 
 
 # Flags / Flag Tokens #

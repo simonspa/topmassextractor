@@ -74,6 +74,7 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
     Double_t total_stat_neg;
     mass_samples->getStatError(total_stat_pos,total_stat_neg);
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
+    LOG(logRESULT) << "Nominal: mass = " << topmass << " GeV +" << total_stat_pos << "-" << total_stat_neg;
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
@@ -197,6 +198,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
     Double_t total_stat_neg;
     mass_diffxs->getStatError(total_stat_pos,total_stat_neg);
     LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
+    LOG(logRESULT) << "Nominal: mass = " << topmass << " GeV +" << total_stat_pos << "-" << total_stat_neg;
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
@@ -314,12 +316,14 @@ int main(int argc, char* argv[]) {
 
   TString outputpath = "ExtractionResults";
   TString inputpath = "";
-  bool closure = true;
   std::string type, channel;
 
   std::vector<std::string> flagtokens;
   uint32_t flags = 0;
   bool syst = false;
+
+  bool closure = true;
+  TString closure_sample = "Nominal";
 
   for (int i = 1; i < argc; i++) {
     // select to either extract from yield of differential cross section:
@@ -348,6 +352,8 @@ int main(int argc, char* argv[]) {
       unilog::SetLogOutput::Stream() = logfile;
       unilog::SetLogOutput::Duplicate() = true;
     }
+    // Mass sample to be used for closure test:
+    else if(!strcmp(argv[i],"-m")) { closure_sample = string(argv[++i]); }
     // Read and tokeinze the flags:
     else if(!strcmp(argv[i],"-f")) { flagtokens = split(string(argv[++i]), ','); }
     else { LOG(logERROR) << "Unrecognized command line argument \"" << argv[i] << "\".";}
@@ -394,13 +400,13 @@ int main(int argc, char* argv[]) {
     else if(*tok == "lastbin") { flags |= FLAG_LASTBIN_EXTRACTION; }
     else if(*tok == "bgr") { flags |= FLAG_DONT_SUBTRACT_BACKGROUND; }
     else if(*tok == "nobgr") { flags &= ~FLAG_DONT_SUBTRACT_BACKGROUND; }
+    else if(*tok == "pred") { flags &= ~FLAG_NO_THEORYPREDICTION_ERRORS; }
     else if(*tok == "nopred") { flags |= FLAG_NO_THEORYPREDICTION_ERRORS; }
     else if(*tok == "mcstat") { flags |= FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR; }
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
   }
   LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);
 
-  TString closure_sample = "Nominal";
   Double_t unfolding_mass = nominalmass;
 
   try {
