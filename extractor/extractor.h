@@ -49,8 +49,8 @@ namespace massextractor {
   // Exclude theory predicition errors from bin-by-bin MC fit:
 #define FLAG_NO_THEORYPREDICTION_ERRORS 0x400
 
-  // Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
-#define FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR 0x800
+  // Flag to explicitly exclude/ignore the statistical error on the MC sample in the chi2 calculation. If set, just the data statistical errors (convoluted with whatever has been used for unfolding) are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the mass or any systematic uncertainties.
+#define FLAG_IGNORE_MC_STATERR 0x800
 
   class extractor {
 
@@ -187,9 +187,13 @@ namespace massextractor {
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
 	LOG(unilog::logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
-		      << "NORMALIZE_YIELD in favor for extracting from last bin only.";
+			      << "NORMALIZE_YIELD in favor for extracting from last bin only.";
 	flags &= ~FLAG_NORMALIZE_YIELD;
       }
+
+      // Remove potential "ignore MC error" flag:
+      flags &= ~FLAG_IGNORE_MC_STATERR;
+      LOG(unilog::logWARNING) << "Removed FLAG_IGNORE_MC_STATERR, this should never be used for Yield extraction!";
     };
     void setClosureSample(TString closure);
   };
@@ -274,6 +278,8 @@ namespace massextractor {
 	flags |= FLAG_NO_THEORYPREDICTION_ERRORS;
 	LOG(unilog::logDEBUG) << "Removed theory prediction errors for HAD variations: FLAG_NO_THEORYPREDICTION_ERRORS";
       }
+
+      if((flags&FLAG_IGNORE_MC_STATERR) != 0) { LOG(unilog::logWARNING) << "This run will ignore all statistical (and theory prediction) errors assigned to the MC sample!"; }
     };
     void setUnfoldingMass(Double_t mass);
   };

@@ -44,7 +44,6 @@ The following flag tokens for the `-f` command line argument are currently suppo
   * `root`: Do create and store histograms and canvases into an output Root file.
   * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory.
   * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
-  * `mcstat`: Flag to explicitly exclude the statistical error on data in the chi2 calculation for systematic variation samples. If set, just the MC statistical errors are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the systematic uncertainties.
   * `pred | nopred`: Enable disable inclusion of theory prediction uncertainties in the MC statistical error for all extractions. The theory prediction uncertainties taken into account are Q^2 scale and Matching, the errors are calculated by taking the sample difference to nominal and added in quadrature to the statistical error. Default is `pred`.
 
 The following flags only apply for the `yield` mode:
@@ -55,3 +54,4 @@ The following flags only apply for the `yield` mode:
 The following flags only apply for the `diffxs` mode:
 
   * `cov | nocov`: enable or disable calculation of bin-to-bin correlations using the covariance matrix from unfolding.
+  * `mcstat`: Flag to explicitly exclude/ignore the statistical error on the MC sample in the chi2 calculation. If set, just the data statistical errors (convoluted with whatever has been used for unfolding) are taken into account. This should only be used to evaluate the statistical errors of systematic variations when extracting from differential cross-section, not to extract the mass or any systematic uncertainties.

@@ -402,7 +402,7 @@ int main(int argc, char* argv[]) {
     else if(*tok == "nobgr") { flags &= ~FLAG_DONT_SUBTRACT_BACKGROUND; }
     else if(*tok == "pred") { flags &= ~FLAG_NO_THEORYPREDICTION_ERRORS; }
     else if(*tok == "nopred") { flags |= FLAG_NO_THEORYPREDICTION_ERRORS; }
-    else if(*tok == "mcstat") { flags |= FLAG_EXCLUDE_DATA_IN_VARIATION_STATERR; }
+    else if(*tok == "mcstat") { flags |= FLAG_IGNORE_MC_STATERR; }
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
   }
   LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);
