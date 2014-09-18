@@ -268,6 +268,12 @@ namespace massextractor {
   public:
   extractorDiffXSec(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags), unfoldingMass(nominalmass) {
       LOG(unilog::logDEBUG) << "Extracting from Differential Cross Section.";
+
+      // For HAD_UP, HAD_DOWN variations don't add the prediction uncertainties:
+      if(sample.Contains("POWHEG") || sample.Contains("MCATNLO")) {
+	flags |= FLAG_NO_THEORYPREDICTION_ERRORS;
+	LOG(unilog::logDEBUG) << "Removed theory prediction errors for HAD variations: FLAG_NO_THEORYPREDICTION_ERRORS";
+      }
     };
     void setUnfoldingMass(Double_t mass);
   };
