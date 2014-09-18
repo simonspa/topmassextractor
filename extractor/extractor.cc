@@ -386,7 +386,7 @@ Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
     }
 
     Double_t scanGranularity = 0.005; // GeV
-    Double_t scanDistance = 3; // GeV
+    Double_t scanDistance = 5; // GeV
     // Get left and right bound by scanning the graph and returning the value where Chi2=Chi2Min+1:
     for(x_left = x_chi2min; x_left > x_chi2min - scanDistance; x_left -= scanGranularity) { if(graph->Eval(x_left) >= chi2min+1) break; }
     for(x_right = x_chi2min; x_right < x_chi2min + scanDistance; x_right += scanGranularity) { if(graph->Eval(x_right) >= chi2min+1) break; }
