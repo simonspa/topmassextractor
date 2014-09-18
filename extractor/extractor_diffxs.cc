@@ -201,7 +201,6 @@ TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample
 
   // Input files for Differential Cross section mass extraction: NLO curves
   TString path = "selectionRoot/" + sample + "/" + channel + "/" + channel + filename;
-  LOG(logDEBUG) << "Getting NLO curve from " << path;
   TFile * input = OpenFile(path,"read");
   LOG(logDEBUG) << "Successfully opened file " << path;
   return input;
