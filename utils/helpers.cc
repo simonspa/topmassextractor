@@ -216,3 +216,7 @@ std::vector<std::string> massextractor::split(const std::string &s, char delim) 
   split(s, delim, elems);
   return elems;
 }
+
+Double_t massextractor::systStatErr(Double_t nominalStatErr, Double_t systStatErr) {
+  return TMath::Abs(systStatErr - nominalStatErr);
+}

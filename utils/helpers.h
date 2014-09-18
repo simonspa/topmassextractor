@@ -38,6 +38,9 @@ namespace massextractor {
   std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
   std::vector<std::string> split(const std::string &s, char delim);
 
+  // Helper to calculate the stat. error on systematics for DiffXSec:
+  Double_t systStatErr(Double_t nominalStatErr, Double_t systStatErr);
+
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */
