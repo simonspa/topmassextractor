@@ -204,7 +204,7 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
     Double_t total_syst_neg = 0;
     Double_t var_stat_pos, var_stat_neg;
     Double_t var_stat_pos2, var_stat_neg2;
-    if(syst) {    
+    if(syst) {
       // Systematic Variations with own samples:
       extractorDiffXSec * var, * var2;
       Double_t diff = 0;
@@ -215,8 +215,14 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
-      DiffSystOutputFile << systab->writeSystematicsTableUpDown("HAD_UP", diff, var_stat_pos+var_stat_pos2, var_stat_neg+var_stat_neg2);
-      LOG(logRESULT) << "HAD - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
+      LOG(logINFO) << "POWHEG - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logINFO) << "MCATNLO - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+      DiffSystOutputFile << systab->writeSystematicsTableUpDown("HAD_UP", diff, 
+								systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2),
+								systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2));
+      LOG(logRESULT) << "HAD- " << *ch << ": delta = " << diff << " GeV "
+		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)
+		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2;
@@ -227,8 +233,14 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
-      DiffSystOutputFile << systab->writeSystematicsTableUpDown("CR_UP", diff, var_stat_pos+var_stat_pos2, var_stat_neg+var_stat_neg2);
-      LOG(logRESULT) << "CR - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2) << "-" << (var_stat_neg+var_stat_neg2);
+      LOG(logINFO) << "PERUGIA11NoCR - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logINFO) << "PERUGIA11 - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+      DiffSystOutputFile << systab->writeSystematicsTableUpDown("CR_UP", diff,
+								systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2),
+								systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2));
+      LOG(logRESULT) << "CR - " << *ch << ": delta = " << diff << " GeV "
+		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)
+		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2;
@@ -242,9 +254,16 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       Double_t var_stat_pos3, var_stat_neg3;
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
-      var2->getStatError(var_stat_pos3,var_stat_neg3);
-      DiffSystOutputFile << systab->writeSystematicsTableUpDown("UE_UP", diff, var_stat_pos+var_stat_pos2+var_stat_pos3, var_stat_neg+var_stat_neg2+var_stat_neg3);
-      LOG(logRESULT) << "UE - " << *ch << ": delta = " << diff << " GeV +" << (var_stat_pos+var_stat_pos2+var_stat_pos3) << "-" << (var_stat_neg+var_stat_neg2+var_stat_neg3);
+      var3->getStatError(var_stat_pos3,var_stat_neg3);
+      LOG(logINFO) << "PERUGIA11mpiHi - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logINFO) << "PERUGIA11TeV - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+      LOG(logINFO) << "PERUGIA11 - " << *ch << ": minimum Chi2 @ m_t=" << var3->getTopMass() << " +" << var_stat_pos3 << " -" << var_stat_neg3;
+      DiffSystOutputFile << systab->writeSystematicsTableUpDown("UE_UP", diff,
+								systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)+systStatErr(total_stat_pos,var_stat_pos3),
+								systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2)+systStatErr(total_stat_neg,var_stat_neg3));
+      LOG(logRESULT) << "UE - " << *ch << ": delta = " << diff << " GeV "
+		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)+systStatErr(total_stat_pos,var_stat_pos3)
+		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2)+systStatErr(total_stat_neg,var_stat_neg3);
       total_syst_pos += diff*diff;
       total_syst_neg += diff*diff;
       delete var; delete var2; delete var3;
@@ -254,18 +273,28 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
       diff = (Double_t)topmass - pdf->getTopMass();
       pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logRESULT) << "PDF_UP - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+      LOG(logINFO) << "PDF_UP - " << *ch << ": minimum Chi2 @ m_t=" << pdf->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logRESULT) << "PDF_UP - " << *ch << ": delta = " << diff << " GeV "
+		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos)
+		     << "-" << systStatErr(total_stat_neg,var_stat_neg);
       if(diff > 0) total_syst_pos += diff*diff;
       else total_syst_neg += diff*diff;
-      DiffSystOutputFile << systab->writeSystematicsTableUp("PDF_UP", diff, var_stat_pos, var_stat_neg);
+      DiffSystOutputFile << systab->writeSystematicsTableUp("PDF_UP", diff,
+							    systStatErr(total_stat_pos,var_stat_pos),
+							    systStatErr(total_stat_neg,var_stat_neg));
 
       pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
       diff = (Double_t)topmass - pdf->getTopMass();
       pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logRESULT) << "PDF_DOWN - " << *ch << ": delta = " << diff << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+      LOG(logINFO) << "PDF_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << pdf->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logRESULT) << "PDF_DOWN - " << *ch << ": delta = " << diff << " GeV "
+		     << "+" << systStatErr(total_stat_pos,var_stat_pos)
+		     << "-" << systStatErr(total_stat_neg,var_stat_neg);
       if(diff > 0) total_syst_pos += diff*diff;
       else total_syst_neg += diff*diff;
-      DiffSystOutputFile << systab->writeSystematicsTableDown(diff, var_stat_pos, var_stat_neg);
+      DiffSystOutputFile << systab->writeSystematicsTableDown(diff,
+							      systStatErr(total_stat_pos,var_stat_pos),
+							      systStatErr(total_stat_neg,var_stat_neg));
 
       // Systematic Variations produced by varying nominal samples:
       Double_t btag_syst_pos = 0, btag_syst_neg = 0;
@@ -276,22 +305,26 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 	variation_diffxs->setUnfoldingMass(unfoldingMass);
 
 	Double_t topmass_variation = variation_diffxs->getTopMass();
-	LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation;
-	Double_t delta = (Double_t)topmass-topmass_variation;
 	variation_diffxs->getStatError(var_stat_pos,var_stat_neg);
-	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+	LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation << " +" << var_stat_pos << " -" << var_stat_neg;
+	Double_t delta = (Double_t)topmass-topmass_variation;
+	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
 	if(delta > 0) total_syst_pos += delta*delta;
 	else total_syst_neg += delta*delta;
 
 	if(syst->Contains("BTAG")) {
 	  if(delta > 0) btag_syst_pos += delta*delta;
 	  else btag_syst_neg += delta*delta;
-	  btag_stat_pos += var_stat_pos;
-	  btag_stat_neg += var_stat_neg;
+	  btag_stat_pos += systStatErr(total_stat_pos,var_stat_pos);
+	  btag_stat_neg += systStatErr(total_stat_neg,var_stat_neg);
 	}
 	else {
-	  if(syst->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp(*syst, delta, var_stat_pos, var_stat_neg);
-	  else DiffSystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg);
+	  if(syst->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp(*syst, delta, 
+											 systStatErr(total_stat_pos,var_stat_pos),
+											 systStatErr(total_stat_neg,var_stat_neg));
+	  else DiffSystOutputFile << systab->writeSystematicsTableDown(delta,
+								       systStatErr(total_stat_pos,var_stat_pos),
+								       systStatErr(total_stat_neg,var_stat_neg));
 	}
       }
       DiffSystOutputFile << systab->writeSystematicsTableUp("BTAG", TMath::Sqrt(btag_syst_pos), btag_stat_pos/12, btag_stat_neg/12)

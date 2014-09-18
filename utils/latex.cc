@@ -26,18 +26,37 @@ std::string table::writeSystematicsTableDown(Double_t delta, Double_t stat_up, D
   if(TMath::Abs(delta) < 0.01) { out << "< 0.01"; }
   else { out << std::setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta; }
   out << "}$ & ";
-  if(stat_pos > 0.015 && stat_neg > 0.015) { out << "$^{+" << stat_pos << "}_{-" << stat_neg << "}$"; }
+
+  if(stat_pos > 0.015 && stat_neg > 0.015) { }
+  out << "$^{+";
+  if(TMath::Abs(stat_pos) < 0.01) { out << "< 0.01"; }
+  else { out << std::setprecision(2) << std::fixed << stat_pos; }
+  out << "}_{-";
+  if(TMath::Abs(stat_neg) < 0.01) { out << "< 0.01"; }
+  else { out << std::setprecision(2) << std::fixed << stat_neg; }
+  out << "}$";
+ 
   out << " \\\\" << std::endl;
   temp_up = 0; temp_down = 0;
   return out.str();
 }
+
 std::string table::writeSystematicsTableUpDown(TString syst, Double_t delta, Double_t stat_pos, Double_t stat_neg) {
   std::stringstream out;
   out << massextractor::getSampleLabel(syst) << " & $";
   if(TMath::Abs(delta) < 0.01) { out << "< 0.01"; }
   else { out << "\\pm " << std::setprecision(2) << std::fixed << TMath::Abs(delta); }
   out << "$ & ";  
-  if(stat_pos > 0.015 && stat_neg > 0.015) { out << "$^{+" << stat_pos << "}_{-" << stat_neg << "}$"; }
+
+  if(stat_pos > 0.015 && stat_neg > 0.015) { }
+  out << "$^{+";
+  if(TMath::Abs(stat_pos) < 0.01) { out << "< 0.01"; }
+  else { out << std::setprecision(2) << std::fixed << stat_pos; }
+  out << "}_{-";
+  if(TMath::Abs(stat_neg) < 0.01) { out << "< 0.01"; }
+  else { out << std::setprecision(2) << std::fixed << stat_neg; }
+  out << "}$";
+ 
   out << " \\\\" << std::endl;
   return out.str();
 }
