@@ -165,10 +165,6 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
   std::vector<TString> systematics;
   systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
   systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
-  // If we only take one mass for unfolding, we need to add this as systematic error:
-  if((flags & FLAG_UNFOLD_ALLMASSES) == 0) {
-    systematics.push_back("MASS_UP"); systematics.push_back("MASS_DOWN");
-  }
   systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
   systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
