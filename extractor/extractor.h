@@ -262,12 +262,13 @@ namespace massextractor {
     // Function for fetching covariance matrix and inverting it:
     TMatrixD * getInverseCovMatrix(TString sample);
 
-    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
-
     Double_t unfoldingMass;
 
     inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
+
+  protected:
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
   public:
   extractorDiffXSec(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags), unfoldingMass(nominalmass) {
