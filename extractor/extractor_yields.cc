@@ -77,6 +77,35 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   }
 }
 
+Double_t extractorYieldPrediction::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  Int_t sign = 0;
+  if(m_systematic.Contains("UP")) { sign = 1; }
+  else if(m_systematic.Contains("DOWN")) { sign = -1; }
+
+  if(m_systematic.Contains("MATCH")) {
+    LOG(logDEBUG3) << (sign > 0 ? "Add" : "Subtract") << " Match Prediction: " 
+		   << reco << (sign > 0 ? "+" : "-") 
+		   << m_prediction_errors_rec.at(bin-1).first
+		   << "=" << (reco + sign*m_prediction_errors_rec.at(bin-1).first);
+    return extractorYield::getReco(bin, mass,
+				   reco + sign*m_prediction_errors_rec.at(bin-1).first,
+				   bgr + sign*m_prediction_errors_bgr.at(bin-1).first,
+				   ttbgr + sign*m_prediction_errors_ttbgr.at(bin-1).first);
+  }
+  else if(m_systematic.Contains("SCALE")) {
+    LOG(logDEBUG3) << (sign > 0 ? "Add" : "Subtract") << " Scale Prediction: " 
+		   << reco << (sign > 0 ? "+" : "-") 
+		   << m_prediction_errors_rec.at(bin-1).second
+		   << "=" << (reco + sign*m_prediction_errors_rec.at(bin-1).second);
+    return extractorYield::getReco(bin, mass,
+				   reco + sign*m_prediction_errors_rec.at(bin-1).second,
+				   bgr + sign*m_prediction_errors_bgr.at(bin-1).second,
+				   ttbgr + sign*m_prediction_errors_ttbgr.at(bin-1).second);
+  }
+  else return extractorYield::getReco(bin, mass, reco, bgr, ttbgr);
+}
+
 Double_t extractorYield::getPseudoData(Int_t /*bin*/, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);

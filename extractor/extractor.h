@@ -232,6 +232,23 @@ namespace massextractor {
     };
   };
 
+  class extractorYieldPrediction : public extractorYield {
+
+  private:
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+    TString m_systematic;
+  public:
+  extractorYieldPrediction(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), m_systematic(systematic) {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
+      // Request prediction errors to be calculated:
+      m_requestPredictionErrors = true;
+      LOG(unilog::logDEBUG) << "Running for Prediction systematics: " << systematic;
+    };
+  };
+
   class extractorYieldBackground : public extractorYield {
 
   private:
