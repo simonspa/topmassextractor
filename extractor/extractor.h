@@ -111,6 +111,9 @@ namespace massextractor {
     // Flag for separating runs in systematic variations from the actual mass extraction with nominal MC sample
     bool m_isSystematicVariation;
 
+    // Flag for requesting calculation of prediction errors. Is set by constructor if FLAG_NO_THEORYPREDICTION_ERRORS is not present. Can also be set by derived classes that need prediction errors:
+    bool m_requestPredictionErrors;
+
     // Storing the settings flags:
     uint32_t flags;
 
