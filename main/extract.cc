@@ -80,6 +80,27 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
     Double_t total_syst_neg = 0;
     Double_t var_stat_pos, var_stat_neg;
     if(syst) {
+      // Theory Prediction Uncertainty:
+      for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
+	if(syst->Contains("MATCH") || syst->Contains("SCALE")) {
+	  LOG(logDEBUG) << "Getting prediction error for " << (*syst) << "...";
+	  extractorYieldPrediction * prediction_samples = new extractorYieldPrediction(*ch,"Nominal", inputpath, outputpath, flags,(*syst));
+	  if(closure) prediction_samples->setClosureSample(closure_sample);
+
+	  Double_t topmass_prediction = prediction_samples->getTopMass();
+	  LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_prediction;
+	  Double_t delta = (Double_t)topmass-topmass_prediction;
+	  prediction_samples->getStatError(var_stat_pos,var_stat_neg);
+	  LOG(logRESULT) << *syst << "_PRED: delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
+	  if(delta > 0) total_syst_pos += delta*delta;
+	  else total_syst_neg += delta*delta;
+
+	  if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst+"_PRED", delta, var_stat_pos, var_stat_neg);	}
+	  else { SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg); }
+	  delete prediction_samples;
+	}
+      }
+
       // Systematic Variations with own samples:
       for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
@@ -98,24 +119,6 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst, delta, var_stat_pos, var_stat_neg);	}
 	else { SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg); }
 	delete matchscale_samples;
-
-	if(syst->Contains("MATCH") || syst->Contains("SCALE")) {
-	  LOG(logDEBUG) << "Getting prediction error for " << (*syst) << "...";
-	  extractorYieldPrediction * prediction_samples = new extractorYieldPrediction(*ch,"Nominal", inputpath, outputpath, flags,(*syst));
-	  if(closure) prediction_samples->setClosureSample(closure_sample);
-
-	  Double_t topmass_prediction = prediction_samples->getTopMass();
-	  LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_prediction;
-	  delta = (Double_t)topmass-topmass_prediction;
-	  prediction_samples->getStatError(var_stat_pos,var_stat_neg);
-	  LOG(logRESULT) << *syst << "_PRED: delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
-	  if(delta > 0) total_syst_pos += delta*delta;
-	  else total_syst_neg += delta*delta;
-
-	  if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst+"_PRED", delta, var_stat_pos, var_stat_neg);	}
-	  else { SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg); }
-	  delete prediction_samples;
-	}
       }
 
       // Getting DrellYan/Background variations:
