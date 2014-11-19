@@ -347,6 +347,8 @@ Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Doubl
 Double_t extractorYieldOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics variation for every bin:
+  LOG(logDEBUG3) << "Subtracting difference to Nominal: "
+		 << reco << "-" << deltaRec.at(bin-1) << "=" << (reco-deltaRec.at(bin-1));
   reco -= deltaRec.at(bin-1);
   bgr -= deltaBgr.at(bin-1);
   ttbgr -= deltaTtbgr.at(bin-1);
@@ -396,9 +398,7 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
       deltaTtbgr.at(i) = TMath::Abs(deltaTtbgr.at(i))/2;
       if(systematicUp) { deltaRec.at(i) *= -1; deltaBgr.at(i) *= -1; deltaTtbgr.at(i) *= -1; }
     }
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " reco:  = " << deltaRec.at(i);
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " bgr:  = " << deltaBgr.at(i);
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " ttbgr:  = " << deltaTtbgr.at(i);
+    LOG(logDEBUG3) << "Diff bin #" << i+1 << " reco=" << deltaRec.at(i) << " bgr=" << deltaBgr.at(i) << " ttbgr=" << deltaTtbgr.at(i);
   }
 }
 
