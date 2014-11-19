@@ -156,8 +156,12 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
   TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
-  // Store the total number of events (no weights applied) to later scale the statistical uncertainty:
-  m_stat_ndata = aDataHist->GetEntries();
+  // Store the total number of events (no weights applied) to later scale the statistical uncertainty. 
+  // m_stat_ndata = aDataHist->GetEntries();
+  // For this, always take the number of events from the data sample
+  // - otherwise we end up with ridiculously large errors just because
+  // the MC samples are larger.
+  m_stat_ndata = dynamic_cast<TH1D*>(histos->Get("aDataHist"))->GetEntries();
 
   // Create a new histogram with the same binning:
   Int_t nbins = aDataHist->GetNbinsX();
