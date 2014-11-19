@@ -163,9 +163,6 @@ namespace massextractor {
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
 
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
     void getPredictionUncertainties();
 
     inline TString getQuantity() { 
@@ -176,13 +173,18 @@ namespace massextractor {
 
     Double_t mcScalingFactor;
 
+  protected:
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
+
   public:
   extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) 
     : extractor(ch, sample, inputpath, outputpath, steeringFlags),
+      mcScalingFactor(0),
       m_prediction_errors_rec(),
       m_prediction_errors_bgr(),
-      m_prediction_errors_ttbgr(),
-      mcScalingFactor(0) {
+      m_prediction_errors_ttbgr() {
 
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
