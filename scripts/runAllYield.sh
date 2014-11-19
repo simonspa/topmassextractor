@@ -8,6 +8,6 @@ GLOBALFLAGS="nopred"
 
 ../bin/extract -t yield -i /nfs/dust/cms/user/spanns/ResultsPseudo172OldKinReco_2_finebinning -v $VERBOSITY -s -f $GLOBALFLAGS,bgr,nonorm -o /nfs/dust/cms/user/spanns/ExtractedPlotsPAS2/yield-fine-bgr
 
-../bin/extract -t yield -i /nfs/dust/cms/user/spanns/ResultsPseudo172OldKinReco_2_finebinning -v $VERBOSITY -s -f $GLOBALFLAGS,nopred,norm -o /nfs/dust/cms/user/spanns/ExtractedPlotsPAS2/yield-fine-norm
+../bin/extract -t yield -i /nfs/dust/cms/user/spanns/ResultsPseudo172OldKinReco_2_finebinning -v $VERBOSITY -s -f $GLOBALFLAGS,norm -o /nfs/dust/cms/user/spanns/ExtractedPlotsPAS2/yield-fine-norm
 
 ../bin/extract -t yield -i /nfs/dust/cms/user/spanns/ResultsPseudo172OldKinReco_2_finebinning -v $VERBOSITY -s -f $GLOBALFLAGS,norm,bgr -o /nfs/dust/cms/user/spanns/ExtractedPlotsPAS2/yield-fine-norm-bgr
