@@ -197,8 +197,10 @@ namespace massextractor {
       }
 
       // Remove potential "ignore MC error" flag:
-      flags &= ~FLAG_IGNORE_MC_STATERR;
-      LOG(unilog::logWARNING) << "Removed FLAG_IGNORE_MC_STATERR, this should never be used for Yield extraction!";
+      if((flags & FLAG_IGNORE_MC_STATERR) != 0) {
+	LOG(unilog::logWARNING) << "Removed FLAG_IGNORE_MC_STATERR, this should never be used for Yield extraction!";
+	flags &= ~FLAG_IGNORE_MC_STATERR;
+      }
     };
     void setClosureSample(TString closure);
   };
