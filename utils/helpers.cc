@@ -73,6 +73,11 @@ TString massextractor::getSampleLabel(TString systematic) {
   if(systematic.Contains("Nominal")) { label = "Nominal"; }
   else if(systematic.Contains("BTAG")) { label = "B-Tagging"; }
   else if(systematic.Contains("JER")) { label = "Jet Energy Resolution"; }
+  else if(systematic.Contains("JES_MPF")) { label = "Jet Energy Scale (MPF)"; }
+  else if(systematic.Contains("JES_INTERCAL")) { label = "Jet Energy Scale (Intercalibration)"; }
+  else if(systematic.Contains("JES_FLAVOR")) { label = "Jet Energy Scale (Flavor)"; }
+  else if(systematic.Contains("JES_BJES")) { label = "Jet Energy Scale (bJES)"; }
+  else if(systematic.Contains("JES_UNCCORR")) { label = "Jet Energy Scale (Uncorrelated)"; }
   else if(systematic.Contains("JES")) { label = "Jet Energy Scale"; }
   else if(systematic.Contains("PU")) { label = "Pile-Up"; }
   else if(systematic.Contains("TRIG")) { label = "Trigger Eff."; }
