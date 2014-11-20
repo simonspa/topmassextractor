@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <TMath.h>
 
 #include "latex.h"
 #include "helpers.h"
@@ -61,12 +62,16 @@ std::string table::writeSystematicsTableUpDown(TString syst, Double_t delta, Dou
   return out.str();
 }
 
-std::string table::writeSystematicsTableSummary(TString channel, Double_t topmass, Double_t total_stat_pos, Double_t total_stat_neg, Double_t total_syst_pos, Double_t total_syst_neg) {
+std::string table::writeSystematicsTableSummary(TString channel, Double_t topmass, Double_t total_stat_pos, Double_t total_stat_neg, Double_t total_syst_pos, Double_t total_syst_neg, Double_t total_theo_pos, Double_t total_theo_neg) {
   std::stringstream out;
   out << "\\hline" << std::endl;
+  out << "Total exp. syst. & $^{+" << std::setprecision(2) << std::fixed << total_syst_pos << "}_{-" << total_syst_neg << "}$ & \\\\" << std::endl;
+  out << "Total theo. syst. & $^{+" << std::setprecision(2) << std::fixed << total_theo_pos << "}_{-" << total_theo_neg << "}$ & \\\\" << std::endl;
+  out << "\\hline" << std::endl;
   out << "Stat. & $^{" << std::setprecision(2) << std::fixed << "+" << total_stat_pos << "}_{-" << total_stat_neg << "}$ & \\\\" << std::endl;
-  out << "Total syst. & $^{+" << total_syst_pos << "}_{-" << total_syst_neg << "}$ & \\\\" << std::endl;
-  out << "%Channel " << channel << ": m_t = " << std::setprecision(2) << std::fixed << topmass << std::setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) GeV" << std::endl;
+  out << "Total syst. & $^{+" << TMath::Sqrt(total_theo_pos*total_theo_pos + total_syst_pos*total_syst_pos) 
+      << "}_{-" << TMath::Sqrt(total_theo_neg*total_theo_neg + total_syst_neg*total_syst_neg) << "}$ & \\\\" << std::endl;
+  out << "%Channel " << channel << ": m_t = " << std::setprecision(2) << std::fixed << topmass << std::setprecision(2) << std::fixed << " +" << total_stat_pos << " -" << total_stat_neg << " (stat) +" << total_syst_pos << " -" << total_syst_neg << " (syst) +" << total_theo_pos << " -" << total_theo_neg << " (theo) GeV" << std::endl;
   out << "\\hline" << std::endl;
   return out.str();
 }

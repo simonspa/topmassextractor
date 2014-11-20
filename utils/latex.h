@@ -12,7 +12,7 @@ namespace latex {
     std::string writeSystematicsTableUp(TString syst, Double_t delta, Double_t stat_up = 0, Double_t stat_down = 0);
     std::string writeSystematicsTableDown(Double_t delta, Double_t stat_up, Double_t stat_down);
     std::string writeSystematicsTableUpDown(TString syst, Double_t delta, Double_t stat_pos = 0, Double_t stat_neg = 0);
-    std::string writeSystematicsTableSummary(TString channel, Double_t topmass, Double_t total_stat_pos, Double_t total_stat_neg, Double_t total_syst_pos, Double_t total_syst_neg);
+    std::string writeSystematicsTableSummary(TString channel, Double_t topmass, Double_t total_stat_pos, Double_t total_stat_neg, Double_t total_syst_pos, Double_t total_syst_neg, Double_t total_theo_pos, Double_t total_theo_neg);
 
   private:
     Double_t temp_up;

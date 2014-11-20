@@ -78,6 +78,8 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
+    Double_t total_theo_pos = 0;
+    Double_t total_theo_neg = 0;
     Double_t var_stat_pos, var_stat_neg;
     if(syst) {
       // Systematic Variations with own samples:
@@ -92,8 +94,15 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	Double_t delta = (Double_t)topmass-topmass_variation;
 	matchscale_samples->getStatError(var_stat_pos,var_stat_neg);
 	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
-	if(delta > 0) total_syst_pos += delta*delta;
-	else total_syst_neg += delta*delta;
+	
+	if(syst->Contains("MATCH") || syst->Contains("SCALE")) {
+	  if(delta > 0) total_theo_pos += delta*delta;
+	  else total_theo_neg += delta*delta;
+	}
+	else {
+	  if(delta > 0) total_syst_pos += delta*delta;
+	  else total_syst_neg += delta*delta;
+	}
 
 	if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst, delta, var_stat_pos, var_stat_neg);	}
 	else { SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg); }
@@ -151,8 +160,11 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 
     total_syst_pos = TMath::Sqrt(total_syst_pos);
     total_syst_neg = TMath::Sqrt(total_syst_neg);
-    LOG(logRESULT) << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg);
-    SystOutputFile << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg);
+    total_theo_pos = TMath::Sqrt(total_theo_pos);
+    total_theo_neg = TMath::Sqrt(total_theo_neg);
+
+    LOG(logRESULT) << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg, total_theo_pos, total_theo_neg);
+    SystOutputFile << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg, total_theo_pos, total_theo_neg);
 
     SystOutputFile.close();
     delete mass_samples;
@@ -202,6 +214,8 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 
     Double_t total_syst_pos = 0;
     Double_t total_syst_neg = 0;
+    Double_t total_theo_pos = 0;
+    Double_t total_theo_neg = 0;
     Double_t var_stat_pos, var_stat_neg;
     Double_t var_stat_pos2, var_stat_neg2;
     if(syst) {
@@ -216,8 +230,8 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 	LOG(logINFO) << *pred << "_PRED - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation << " +" << var_stat_pos << " -" << var_stat_neg;
 	Double_t delta = (Double_t)topmass-topmass_variation;
 	LOG(logRESULT) << *pred << "_PRED: delta = " << delta << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
-	if(delta > 0) total_syst_pos += delta*delta;
-	else total_syst_neg += delta*delta;
+	if(delta > 0) total_theo_pos += delta*delta;
+	else total_theo_neg += delta*delta;
 
 	if(pred->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp((*pred)+"_PRED", delta, 
 										       systStatErr(total_stat_pos,var_stat_pos),
@@ -355,8 +369,11 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 
     total_syst_pos = TMath::Sqrt(total_syst_pos);
     total_syst_neg = TMath::Sqrt(total_syst_neg);
-    LOG(logRESULT) << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg);
-    DiffSystOutputFile << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg);
+    total_theo_pos = TMath::Sqrt(total_theo_pos);
+    total_theo_neg = TMath::Sqrt(total_theo_neg);
+
+    LOG(logRESULT) << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg,total_theo_pos,total_theo_neg);
+    DiffSystOutputFile << systab->writeSystematicsTableSummary(*ch, topmass, total_stat_pos, total_stat_neg, total_syst_pos, total_syst_neg,total_theo_pos,total_theo_neg);
 
     DiffSystOutputFile.close();
     delete mass_diffxs;
