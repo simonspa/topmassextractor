@@ -256,7 +256,7 @@ namespace massextractor {
     void getPredictionUncertainties();
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
-    Double_t getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) { return 0; };
+    virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr=0, Double_t ttbgr=0);
 
     std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Function for fetching covariance matrix and inverting it:

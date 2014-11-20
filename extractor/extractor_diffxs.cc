@@ -118,6 +118,10 @@ Double_t extractorDiffXSecScaled::getSignal(Int_t bin, Double_t /*mass*/, Double
   return (1+scaleFactors.at(bin))*data;
 }
 
+Double_t extractorDiffXSec::getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  return reco;
+}
+
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
 
   std::vector<TString> channels;
@@ -135,6 +139,11 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     TFile * input2 = selectInputFileTheory(*ch, getSampleFromMass(m_sample,mass,true));
     aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
+  }
+
+  // Run Reco calculation (we might need to alter the numbers...)
+  for(Int_t bin = 0; bin < aMcHist->GetNbinsX(); bin++) {
+    aMcHist->SetBinContent(bin+1,getReco(bin+1,mass,aMcHist->GetBinContent(bin+1)));
   }
 
   TH1D* aMcBinned;
