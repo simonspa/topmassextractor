@@ -280,18 +280,19 @@ namespace massextractor {
     void getPredictionUncertainties();
 
     virtual Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
-    Double_t getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) { return 0; };
+    virtual Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr=0, Double_t ttbgr=0);
 
     std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Function for fetching covariance matrix and inverting it:
     TMatrixD * getInverseCovMatrix(TString sample);
 
-    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
-
     Double_t unfoldingMass;
 
     inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
+
+  protected:
+    std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
   public:
   extractorDiffXSec(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) : extractor(ch, sample, inputpath, outputpath, steeringFlags), unfoldingMass(nominalmass) {
@@ -324,6 +325,25 @@ namespace massextractor {
 
       LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
       prepareScaleFactors(scale);
+    };
+  };
+
+  class extractorDiffXSecPrediction : public extractorDiffXSec {
+
+  private:
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+    void prepareShiftFactors(TString systematic);
+    std::vector<Double_t> m_shiftFactors;
+
+  public:
+  extractorDiffXSecPrediction(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags), m_shiftFactors() {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
+      LOG(unilog::logDEBUG) << "Running Theory Prediction error " << sample << ", shifting MC using " << scale;
+      prepareShiftFactors(scale);
     };
   };
 }
