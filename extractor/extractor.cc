@@ -343,7 +343,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> mass
 
 Double_t extractor::getMinimum(std::pair<TGraphErrors*,TF1*> finalChiSquare) {
   
-  Double_t chi2min, x_chi2min, x_left, x_right;
+  Double_t chi2min, x_chi2min = 0.0, x_left, x_right;
 
   if((flags & FLAG_RETURN_FITMIN) != 0) {
     // Return the fit function's minimum:
