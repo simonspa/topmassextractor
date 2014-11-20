@@ -162,6 +162,10 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 
 void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst) {
 
+  std::vector<TString> predictions;
+  predictions.push_back("MATCH_UP"); predictions.push_back("MATCH_DOWN");
+  predictions.push_back("SCALE_UP"); predictions.push_back("SCALE_DOWN");
+
   std::vector<TString> systematics;
   systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
   systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
@@ -201,6 +205,28 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
     Double_t var_stat_pos, var_stat_neg;
     Double_t var_stat_pos2, var_stat_neg2;
     if(syst) {
+      // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
+      for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
+	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
+	extractorDiffXSecPrediction * variation_diffxs = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,*pred);
+	variation_diffxs->setUnfoldingMass(unfoldingMass);
+
+	Double_t topmass_variation = variation_diffxs->getTopMass();
+	variation_diffxs->getStatError(var_stat_pos,var_stat_neg);
+	LOG(logINFO) << *pred << "_PRED - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation << " +" << var_stat_pos << " -" << var_stat_neg;
+	Double_t delta = (Double_t)topmass-topmass_variation;
+	LOG(logRESULT) << *pred << "_PRED: delta = " << delta << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
+	if(delta > 0) total_syst_pos += delta*delta;
+	else total_syst_neg += delta*delta;
+
+	if(pred->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp((*pred)+"_PRED", delta, 
+										       systStatErr(total_stat_pos,var_stat_pos),
+										       systStatErr(total_stat_neg,var_stat_neg));
+	else DiffSystOutputFile << systab->writeSystematicsTableDown(delta,
+								     systStatErr(total_stat_pos,var_stat_pos),
+								     systStatErr(total_stat_neg,var_stat_neg));
+      }
+
       // Systematic Variations with own samples:
       extractorDiffXSec * var, * var2;
       Double_t diff = 0;
