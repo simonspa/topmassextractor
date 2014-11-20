@@ -459,10 +459,6 @@ void extractorDiffXSecPrediction::prepareShiftFactors(TString systematic) {
 
   m_shiftFactors.clear();
 
-  Int_t sign = 0;
-  if(systematic.Contains("UP")) { sign = 1; }
-  else if(systematic.Contains("DOWN")) { sign = -1; }
-
   if(!systematic.Contains("MATCH") && !systematic.Contains("SCALE")) {
     LOG(logWARNING) << "Systematic " << systematic << " can't be used as theory prediction error.";
     return;
