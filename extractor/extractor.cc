@@ -460,8 +460,8 @@ Double_t extractor::getTopMass() {
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
 
-  // Calculate the theory prediction errors to nominal sample:
-  if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) { getPredictionUncertainties(); }
+  // Calculate the theory prediction errors to nominal sample if requested:
+  if(m_requestPredictionErrors) { getPredictionUncertainties(); }
 
   for(std::vector<TString>::iterator sample = samples.begin(); sample != samples.end(); ++sample) {
 
@@ -523,6 +523,7 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   samples(),
   bin_boundaries(),
   m_isSystematicVariation(false),
+  m_requestPredictionErrors(false),
   flags(steeringFlags),
   doClosure(false) {
 
@@ -557,6 +558,11 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
     samples.push_back(sample+"_1POS");
     samples.push_back(sample+"_3POS");
     samples.push_back(sample+"_6POS");
+  }
+
+  // Settle the request to calculate theory prediction errors if we need it:
+  if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) { 
+    m_requestPredictionErrors = true;
   }
 
   LOG(logDEBUG) << "Reading input files from \"" << m_inputpath << "\".";

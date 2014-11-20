@@ -111,6 +111,9 @@ namespace massextractor {
     // Flag for separating runs in systematic variations from the actual mass extraction with nominal MC sample
     bool m_isSystematicVariation;
 
+    // Flag for requesting calculation of prediction errors. Is set by constructor if FLAG_NO_THEORYPREDICTION_ERRORS is not present. Can also be set by derived classes that need prediction errors:
+    bool m_requestPredictionErrors;
+
     // Storing the settings flags:
     uint32_t flags;
 
@@ -163,9 +166,6 @@ namespace massextractor {
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
 
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
-    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
     void getPredictionUncertainties();
 
     inline TString getQuantity() { 
@@ -176,13 +176,18 @@ namespace massextractor {
 
     Double_t mcScalingFactor;
 
+  protected:
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
+    std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
+
   public:
   extractorYield(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags) 
     : extractor(ch, sample, inputpath, outputpath, steeringFlags),
+      mcScalingFactor(0),
       m_prediction_errors_rec(),
       m_prediction_errors_bgr(),
-      m_prediction_errors_ttbgr(),
-      mcScalingFactor(0) {
+      m_prediction_errors_ttbgr() {
 
       if((flags & FLAG_NORMALIZE_YIELD) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
@@ -192,8 +197,10 @@ namespace massextractor {
       }
 
       // Remove potential "ignore MC error" flag:
-      flags &= ~FLAG_IGNORE_MC_STATERR;
-      LOG(unilog::logWARNING) << "Removed FLAG_IGNORE_MC_STATERR, this should never be used for Yield extraction!";
+      if((flags & FLAG_IGNORE_MC_STATERR) != 0) {
+	LOG(unilog::logWARNING) << "Removed FLAG_IGNORE_MC_STATERR, this should never be used for Yield extraction!";
+	flags &= ~FLAG_IGNORE_MC_STATERR;
+      }
     };
     void setClosureSample(TString closure);
   };
@@ -222,6 +229,23 @@ namespace massextractor {
 
       LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
       calcDifferenceToNominal(sample,systematic);
+    };
+  };
+
+  class extractorYieldPrediction : public extractorYield {
+
+  private:
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+    TString m_systematic;
+  public:
+  extractorYieldPrediction(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), m_systematic(systematic) {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
+      // Request prediction errors to be calculated:
+      m_requestPredictionErrors = true;
+      LOG(unilog::logDEBUG) << "Running for Prediction systematics: " << systematic;
     };
   };
 

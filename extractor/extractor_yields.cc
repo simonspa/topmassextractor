@@ -77,6 +77,35 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   }
 }
 
+Double_t extractorYieldPrediction::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  Int_t sign = 0;
+  if(m_systematic.Contains("UP")) { sign = 1; }
+  else if(m_systematic.Contains("DOWN")) { sign = -1; }
+
+  if(m_systematic.Contains("MATCH")) {
+    LOG(logDEBUG3) << (sign > 0 ? "Add" : "Subtract") << " Match Prediction: " 
+		   << reco << (sign > 0 ? "+" : "-") 
+		   << m_prediction_errors_rec.at(bin-1).first
+		   << "=" << (reco + sign*m_prediction_errors_rec.at(bin-1).first);
+    return extractorYield::getReco(bin, mass,
+				   reco + sign*m_prediction_errors_rec.at(bin-1).first,
+				   bgr + sign*m_prediction_errors_bgr.at(bin-1).first,
+				   ttbgr + sign*m_prediction_errors_ttbgr.at(bin-1).first);
+  }
+  else if(m_systematic.Contains("SCALE")) {
+    LOG(logDEBUG3) << (sign > 0 ? "Add" : "Subtract") << " Scale Prediction: " 
+		   << reco << (sign > 0 ? "+" : "-") 
+		   << m_prediction_errors_rec.at(bin-1).second
+		   << "=" << (reco + sign*m_prediction_errors_rec.at(bin-1).second);
+    return extractorYield::getReco(bin, mass,
+				   reco + sign*m_prediction_errors_rec.at(bin-1).second,
+				   bgr + sign*m_prediction_errors_bgr.at(bin-1).second,
+				   ttbgr + sign*m_prediction_errors_ttbgr.at(bin-1).second);
+  }
+  else return extractorYield::getReco(bin, mass, reco, bgr, ttbgr);
+}
+
 Double_t extractorYield::getPseudoData(Int_t /*bin*/, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
@@ -156,8 +185,12 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
   TH1D * aTtBgrHist = static_cast<TH1D*>(histos->Get("aTtBgrHist"));
   TH1D * aBgrHist = static_cast<TH1D*>(histos->Get("aBgrHist"));
 
-  // Store the total number of events (no weights applied) to later scale the statistical uncertainty:
-  m_stat_ndata = aDataHist->GetEntries();
+  // Store the total number of events (no weights applied) to later scale the statistical uncertainty. 
+  // m_stat_ndata = aDataHist->GetEntries();
+  // For this, always take the number of events from the data sample
+  // - otherwise we end up with ridiculously large errors just because
+  // the MC samples are larger.
+  m_stat_ndata = dynamic_cast<TH1D*>(histos->Get("aDataHist"))->GetEntries();
 
   // Create a new histogram with the same binning:
   Int_t nbins = aDataHist->GetNbinsX();
@@ -314,6 +347,8 @@ Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Doubl
 Double_t extractorYieldOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics variation for every bin:
+  LOG(logDEBUG3) << "Subtracting difference to Nominal: "
+		 << reco << "-" << deltaRec.at(bin-1) << "=" << (reco-deltaRec.at(bin-1));
   reco -= deltaRec.at(bin-1);
   bgr -= deltaBgr.at(bin-1);
   ttbgr -= deltaTtbgr.at(bin-1);
@@ -363,9 +398,7 @@ void extractorYieldOtherSamples::calcDifferenceToNominal(TString nominal, TStrin
       deltaTtbgr.at(i) = TMath::Abs(deltaTtbgr.at(i))/2;
       if(systematicUp) { deltaRec.at(i) *= -1; deltaBgr.at(i) *= -1; deltaTtbgr.at(i) *= -1; }
     }
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " reco:  = " << deltaRec.at(i);
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " bgr:  = " << deltaBgr.at(i);
-    LOG(logDEBUG3) << "Diff bin #" << i+1 << " ttbgr:  = " << deltaTtbgr.at(i);
+    LOG(logDEBUG3) << "Diff bin #" << i+1 << " reco=" << deltaRec.at(i) << " bgr=" << deltaBgr.at(i) << " ttbgr=" << deltaTtbgr.at(i);
   }
 }
 
