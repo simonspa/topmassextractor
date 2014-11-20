@@ -449,3 +449,30 @@ void extractorDiffXSec::getPredictionUncertainties() {
     LOG(logDEBUG) << "Pred. err #" << i+1 << " diffxs = " << dxsec_match << " & " << dxsec_scale;
   }
 }
+
+Double_t extractorDiffXSecPrediction::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  // Shift the values up/down by the calculated difference:
+  return (reco + m_shiftFactors.at(bin-1));
+}
+
+void extractorDiffXSecPrediction::prepareShiftFactors(TString systematic) {
+
+  m_shiftFactors.clear();
+
+  Int_t sign = 0;
+  if(systematic.Contains("UP")) { sign = 1; }
+  else if(systematic.Contains("DOWN")) { sign = -1; }
+
+  if(!systematic.Contains("MATCH") && !systematic.Contains("SCALE")) {
+    LOG(logWARNING) << "Systematic " << systematic << " can't be used as theory prediction error.";
+    return;
+  }
+
+  LOG(logDEBUG2) << "Preparing theroy prediction uncertainty factors for " << systematic;
+  m_shiftFactors = calcSampleDifference("Nominal",systematic,"VisGenTTBar1stJetMass");
+
+  std::stringstream sv;
+  for(std::vector<Double_t>::iterator sf = m_shiftFactors.begin(); sf != m_shiftFactors.end(); ++sf) { sv << *sf << " "; }
+  LOG(logDEBUG2) << "Factors for every bin: " << sv.str();
+}
+

@@ -303,5 +303,24 @@ namespace massextractor {
       prepareScaleFactors(scale);
     };
   };
+
+  class extractorDiffXSecPrediction : public extractorDiffXSec {
+
+  private:
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+    void prepareShiftFactors(TString systematic);
+    std::vector<Double_t> m_shiftFactors;
+
+  public:
+  extractorDiffXSecPrediction(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString scale) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags), m_shiftFactors() {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+
+      LOG(unilog::logDEBUG) << "Running Theory Prediction error " << sample << ", shifting MC using " << scale;
+      prepareShiftFactors(scale);
+    };
+  };
 }
 #endif /* MASSEXTRACTOR_H */
