@@ -93,6 +93,8 @@ TString massextractor::getSampleLabel(TString systematic) {
   else if(systematic.Contains("UE")) { label = "Underlying Event"; }
   else if(systematic.Contains("PDF")) { label = "PDF"; }
 
+  if(systematic.Contains("PRED")) label += " (Theory)";
+
   return label;
 }
 
