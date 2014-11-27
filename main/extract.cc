@@ -20,7 +20,7 @@ using namespace massextractor;
 using namespace unilog;
 
 
-void extract_yield(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst) {
+void extract_yield(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
 
   // #######################################
   // ###              YIELD              ###
@@ -82,6 +82,9 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
     Double_t total_theo_neg = 0;
     Double_t var_stat_pos, var_stat_neg;
     if(syst) {
+      // We are processing systematic variations. Maybe user requested histograms for all of them?
+      if(fulltake) { flags |= FLAG_STORE_HISTOGRAMS; }
+
       // Systematic Variations with own samples:
       for(std::vector<TString>::iterator syst = syst_on_nominal.begin(); syst != syst_on_nominal.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
@@ -172,7 +175,7 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
   return;
 }
 
-void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst) {
+void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> predictions;
   predictions.push_back("MATCH_UP"); predictions.push_back("MATCH_DOWN");
@@ -219,6 +222,9 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
     Double_t var_stat_pos, var_stat_neg;
     Double_t var_stat_pos2, var_stat_neg2;
     if(syst) {
+      // We are processing systematic variations. Maybe user requested histograms for all of them?
+      if(fulltake) { flags |= FLAG_STORE_HISTOGRAMS; }
+ 
       // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
       for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
 	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
@@ -394,6 +400,9 @@ int main(int argc, char* argv[]) {
   uint32_t flags = 0;
   bool syst = false;
 
+  // If this bool is set, PDFs for *all* systematics are produced (many!)
+  bool fulltake = false;
+
   bool closure = true;
   TString closure_sample = "Nominal";
 
@@ -464,6 +473,7 @@ int main(int argc, char* argv[]) {
     if(*tok == "fit") { flags |= FLAG_CHISQUARE_FROM_FITS; }
     if(*tok == "nofit") { flags &= ~FLAG_CHISQUARE_FROM_FITS; }
     else if(*tok == "pdf") { flags |= FLAG_STORE_PDFS; }
+    else if(*tok == "pdfall") { flags |= FLAG_STORE_PDFS; fulltake = true; }
     else if(*tok == "root") { flags |= FLAG_STORE_HISTOGRAMS; }
     else if(*tok == "cov") { flags &= ~FLAG_DONT_USE_COVARIANCE; }
     else if(*tok == "nocov") { flags |= FLAG_DONT_USE_COVARIANCE; }
@@ -482,8 +492,8 @@ int main(int argc, char* argv[]) {
   Double_t unfolding_mass = nominalmass;
 
   try {
-    if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst);
-    else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst);
+    if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,fulltake);
+    else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst,fulltake);
   }
   catch(...) {
     LOG(logCRITICAL) << "Mass extraction failed.";
