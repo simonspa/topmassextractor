@@ -456,6 +456,7 @@ Double_t extractor::getTopMass() {
   // Just return mass if extraction has been executed already:
   if(extractedMass > 0) { return extractedMass; }
 
+  LOG(logDEBUG) << "Will write all output data into: " << m_outputpath;
   std::vector<TH1D*> data_hists;
   std::vector<TH1D*> mc_hists;
   std::vector<Double_t> masses;
@@ -563,6 +564,13 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   // Settle the request to calculate theory prediction errors if we need it:
   if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) { 
     m_requestPredictionErrors = true;
+  }
+
+  // Adapt the output path for files if we look at systematics.
+  // If sample is "Nominal" but still a systematic, the child class should take
+  // care of setting the output path.
+  if(m_isSystematicVariation && m_sample != "Nominal") {
+    m_outputpath += "/" + m_sample;
   }
 
   LOG(logDEBUG) << "Reading input files from \"" << m_inputpath << "\".";

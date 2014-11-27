@@ -101,7 +101,7 @@ namespace massextractor {
 
     // The channel this extraction is performed on (ee, emu, mumu, combined)
     TString m_channel;
-    // The sample we are using for this extraxtion
+    // The sample we are using for this extraction
     TString m_sample;
     // Vector of all variations of the sample we are using, representing the 7 mass values
     std::vector<TString> samples;
@@ -226,6 +226,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
+      m_outputpath += "/" + m_systematic;
 
       LOG(unilog::logDEBUG) << "Running for Match/Scale systematics: " << systematic;
       calcDifferenceToNominal(sample,systematic);
@@ -242,6 +243,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
+      m_outputpath += "/" + m_systematic;
 
       // Request prediction errors to be calculated:
       m_requestPredictionErrors = true;
@@ -262,6 +264,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
+      m_outputpath += "/" + systematic;
 
       LOG(unilog::logDEBUG) << "Running for BG/DY systematics: " << systematic;
       prepareScaleFactor(systematic);
@@ -322,6 +325,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
+      m_outputpath += "/" + scale;
 
       LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
       prepareScaleFactors(scale);
@@ -341,6 +345,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
+      m_outputpath += "/" + scale;
 
       LOG(unilog::logDEBUG) << "Running Theory Prediction error " << sample << ", shifting MC using " << scale;
       prepareShiftFactors(scale);
