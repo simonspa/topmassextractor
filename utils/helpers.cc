@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <sys/stat.h>
 #include <Riostream.h>
 #include <TH1D.h>
 #include <TH2D.h>
@@ -13,6 +14,7 @@
 #include <TLegend.h>
 #include <TF1.h>
 #include <TString.h>
+#include <TSystem.h>
 #include <TCanvas.h>
 #include <TROOT.h>
 #include <TPaveText.h>
@@ -31,6 +33,8 @@ using namespace massextractor;
 TFile * extractor::OpenFile(TString name, TString mode, bool output) {
 
   TString path;
+  struct stat sb;
+
   if(output) path = m_outputpath;
   else path = m_inputpath;
 
@@ -42,6 +46,10 @@ TFile * extractor::OpenFile(TString name, TString mode, bool output) {
       throw 1;
     }
     inputFileStream.close();
+  }
+  // If we want to write a file check that the folder exists:
+  else if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+    gSystem->MakeDirectory(path);
   }
 
   TFile * file = TFile::Open(path + "/" + name,mode);
