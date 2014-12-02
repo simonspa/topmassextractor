@@ -180,7 +180,7 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	}
 	else if(syst->Contains("FLAVOR")) {}
 	else {
-	  if(syst->Contains("JES")) {
+	  if(syst->Contains("JES") && !syst->Contains("JES_UP") && !syst->Contains("JES_DOWN")) {
 	    if(delta > 0) total_jes_pos += delta*delta;
 	    else total_jes_neg += delta*delta;
 	  }
