@@ -46,6 +46,17 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
   syst_bg.push_back("BG_DOWN");
 
   systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
+
+  /*systematics.push_back("JES_MPF_UP"); systematics.push_back("JES_MPF_DOWN");
+  systematics.push_back("JES_INTERCAL_UP"); systematics.push_back("JES_INTERCAL_DOWN");
+  systematics.push_back("JES_UNCORR_UP"); systematics.push_back("JES_UNCORR_DOWN");
+  systematics.push_back("JES_BJES_UP"); systematics.push_back("JES_BJES_DOWN");
+
+  systematics.push_back("JES_FLAVOR_GLUON_UP"); systematics.push_back("JES_FLAVOR_GLUON_DOWN");
+  systematics.push_back("JES_FLAVOR_QUARK_UP"); systematics.push_back("JES_FLAVOR_QUARK_DOWN");
+  systematics.push_back("JES_FLAVOR_CHARM_UP"); systematics.push_back("JES_FLAVOR_CHARM_DOWN");
+  systematics.push_back("JES_FLAVOR_BOTTOM_UP"); systematics.push_back("JES_FLAVOR_BOTTOM_DOWN");*/
+
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
   systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
   systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
@@ -133,6 +144,10 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
       // Systematic Variations produced by varying nominal samples:
       Double_t btag_syst_pos = 0, btag_syst_neg = 0;
       Double_t btag_stat_pos = 0, btag_stat_neg = 0;
+      Double_t jes_flavor_pos = 0, jes_flavor_neg = 0;
+      Double_t jes_flavor_stat_pos = 0, jes_flavor_stat_neg = 0;
+
+      Double_t total_jes_pos = 0, total_jes_neg = 0;
       for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
 	extractorYield * variation_samples = new extractorYield(*ch,*syst,inputpath, outputpath, flags);
@@ -143,8 +158,19 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	Double_t delta = (Double_t)topmass-topmass_variation;
 	variation_samples->getStatError(var_stat_pos,var_stat_neg);
 	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << var_stat_pos << "-" << var_stat_neg;
-	if(delta > 0) total_syst_pos += delta*delta;
-	else total_syst_neg += delta*delta;
+
+	if(syst->Contains("FLAVOR")) {
+	  // Adding up linearly, preserving the sign:
+	  if(delta > 0) jes_flavor_pos += delta;
+	  else jes_flavor_neg += delta;
+	  jes_flavor_stat_pos += var_stat_pos;
+	  jes_flavor_stat_neg += var_stat_neg;
+	}
+	else {
+	  // All others are summed quadratically directly to the total uncertainty:
+	  if(delta > 0) total_syst_pos += delta*delta;
+	  else total_syst_neg += delta*delta;
+	}
 
 	if(syst->Contains("BTAG")) {
 	  if(delta > 0) btag_syst_pos += delta*delta;
@@ -152,11 +178,29 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 	  btag_stat_pos += var_stat_pos;
 	  btag_stat_neg += var_stat_neg;
 	}
+	else if(syst->Contains("FLAVOR")) {}
 	else {
+	  if(syst->Contains("JES")) {
+	    if(delta > 0) total_jes_pos += delta*delta;
+	    else total_jes_neg += delta*delta;
+	  }
 	  if(syst->Contains("UP")) SystOutputFile << systab->writeSystematicsTableUp(*syst, delta, var_stat_pos, var_stat_neg);
 	  else SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg);
 	}
       }
+      SystOutputFile << systab->writeSystematicsTableUp("JES_FLAVOR", TMath::Sqrt(jes_flavor_pos), jes_flavor_stat_pos/4, jes_flavor_stat_neg/4)
+		     << systab->writeSystematicsTableDown(TMath::Sqrt(jes_flavor_neg), jes_flavor_stat_pos/4, jes_flavor_stat_neg/4);
+
+      // Add JES_FLAVOR to the total uncertainty:
+      total_syst_pos += jes_flavor_pos*jes_flavor_pos;
+      total_syst_neg += jes_flavor_neg*jes_flavor_neg;
+      total_jes_pos += jes_flavor_pos*jes_flavor_pos;
+      total_jes_neg += jes_flavor_neg*jes_flavor_neg;
+
+      // Also writing the summed JES uncertainty for comparison, not added again (is already...)
+      SystOutputFile << systab->writeSystematicsTableUp("JES", TMath::Sqrt(total_jes_pos), 0, 0)
+		     << systab->writeSystematicsTableDown(TMath::Sqrt(total_jes_neg), 0, 0);
+
       SystOutputFile << systab->writeSystematicsTableUp("BTAG", TMath::Sqrt(btag_syst_pos), btag_stat_pos/12, btag_stat_neg/12)
 		     << systab->writeSystematicsTableDown(TMath::Sqrt(btag_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
     }
