@@ -25,6 +25,7 @@ namespace massextractor {
     if((flags&FLAG_DONT_SUBTRACT_BACKGROUND) != 0) { os << "FLAG_DONT_SUBTRACT_BACKGROUND, "; flags -= FLAG_DONT_SUBTRACT_BACKGROUND; }
     if((flags&FLAG_NO_THEORYPREDICTION_ERRORS) != 0) { os << "FLAG_NO_THEORYPREDICTION_ERRORS, "; flags -= FLAG_NO_THEORYPREDICTION_ERRORS; }
     if((flags&FLAG_IGNORE_MC_STATERR) != 0) { os << "FLAG_IGNORE_MC_STATERR, "; flags -= FLAG_IGNORE_MC_STATERR; }
+    if((flags&FLAG_INFINITE_DATA_STATISTICS) != 0) { os << "FLAG_INFINITE_DATA_STATISTICS, "; flags -= FLAG_INFINITE_DATA_STATISTICS; }
 
     if(flags != 0) os << "Unknown flag: " << flags;
     return os.str();
