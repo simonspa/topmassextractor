@@ -531,6 +531,81 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 }
 
 void extract_diffxsec_stats(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
+
+  // here we need to use two different input paths since the statistical errors have already been changed (for the inf. stat. data set)
+  // before the unfolding (appending "_infstat" to the input path)
+
+  std::vector<TString> systematics;
+  systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
+  systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
+  systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
+  systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
+  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
+  systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
+  systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
+  systematics.push_back("KIN_UP"); systematics.push_back("KIN_DOWN");
+  systematics.push_back("LEPT_UP"); systematics.push_back("LEPT_DOWN");
+  systematics.push_back("BTAG_UP"); systematics.push_back("BTAG_DOWN");
+  systematics.push_back("BTAG_LJET_UP"); systematics.push_back("BTAG_LJET_DOWN");
+  systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
+  systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
+  systematics.push_back("BTAG_LJET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
+  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
+
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+
+    std::ofstream DiffSystOutputFile(outputpath + "/MassFitDiffXSecSystematicsStats_" + *ch + ".txt", std::ofstream::trunc);
+    latex::table * systab = new latex::table();
+    DiffSystOutputFile << "Top Mass, Channel: " << *ch << endl;
+    DiffSystOutputFile << "Systematic &  & Stat. error on Variation \\\\" << endl;
+    DiffSystOutputFile << "\\hline" << std::endl;
+
+    Double_t normal_stat_pos, normal_stat_neg;
+    Double_t inf_stat_pos, inf_stat_neg;
+
+    if(syst) {
+      // Systematic Variations produced by varying nominal samples:
+      Double_t btag_stat_pos = 0, btag_stat_neg = 0;
+      
+      for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
+	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+
+	extractorDiffXSec * diffxs_normal = new extractorDiffXSec(*ch,*syst,inputpath, outputpath, flags);
+	diffxs_normal->setUnfoldingMass(unfoldingMass);
+	diffxs_normal->getTopMass();
+	diffxs_normal->getStatError(normal_stat_pos,normal_stat_neg);
+
+	extractorDiffXSec * diffxs_inf = new extractorDiffXSec(*ch,*syst,inputpath + "_infstat", outputpath, flags);
+	diffxs_inf->setUnfoldingMass(unfoldingMass);
+	diffxs_inf->getTopMass();
+	diffxs_inf->getStatError(inf_stat_pos,inf_stat_neg);
+
+	delete diffxs_normal;
+	delete diffxs_inf;
+
+	if(syst->Contains("BTAG")) {
+	  LOG(logINFO) << *syst << " - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+	  btag_stat_pos += systStatErr(normal_stat_pos,inf_stat_pos);
+	  btag_stat_neg += systStatErr(normal_stat_neg,inf_stat_neg);
+	}
+	else {
+	  LOG(logRESULT) << *syst << " - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+	  if(syst->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp(*syst, 0, 
+											 systStatErr(normal_stat_pos,inf_stat_pos),
+											 systStatErr(normal_stat_neg,inf_stat_neg));
+	  else DiffSystOutputFile << systab->writeSystematicsTableDown(0,
+								       systStatErr(normal_stat_pos,inf_stat_pos),
+								       systStatErr(normal_stat_neg,inf_stat_neg));
+	}
+      }
+
+      LOG(logRESULT) << "BTAG - " << *ch << ": stat. unc: +" << btag_stat_pos/12 << "-" << btag_stat_neg/12;
+      DiffSystOutputFile << systab->writeSystematicsTableUp("BTAG", 0, btag_stat_pos/12, btag_stat_neg/12)
+			 << systab->writeSystematicsTableDown(0, btag_stat_pos/12, btag_stat_neg/12);
+    }
+
+    DiffSystOutputFile.close();
+  }
   return;
 }
 
