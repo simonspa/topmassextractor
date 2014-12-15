@@ -295,9 +295,13 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
 }
 
 Double_t extractor::chiSquare(const Double_t center, const Double_t center_widthsquared, const Double_t eval_widthsquared, const Double_t eval) {
-  // Do not take the "center" statictical error into account when running on systematic variation sample:
+  // Do not take the "center" statictical error into account if this flag is set:
   if((flags & FLAG_IGNORE_MC_STATERR) != 0) {
     return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(eval_widthsquared);
+  }
+  // Do not take the "eval" statistical error into account if this flag is set:
+  else if((flags & FLAG_INFINITE_DATA_STATISTICS) != 0) {
+    return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(center_widthsquared);
   }
   else {
     return static_cast<Double_t>(static_cast<Double_t>(eval - center)*static_cast<Double_t>(eval - center))/static_cast<Double_t>(center_widthsquared + eval_widthsquared);
@@ -571,6 +575,10 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   // care of setting the output path.
   if(m_isSystematicVariation && m_sample != "Nominal") {
     m_outputpath += "/" + m_sample;
+  }
+
+  if((flags&FLAG_INFINITE_DATA_STATISTICS) != 0) { 
+    LOG(logWARNING) << "This run will assume infinite statistics for the data sample!";
   }
 
   LOG(logDEBUG) << "Reading input files from \"" << m_inputpath << "\".";

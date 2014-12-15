@@ -52,6 +52,9 @@ namespace massextractor {
   // Flag to explicitly exclude/ignore the statistical error on the MC sample in the chi2 calculation. If set, just the data statistical errors (convoluted with whatever has been used for unfolding) are taken into account. This should only be used to evaluate the statistical errors of systematic variations, not to extract the mass or any systematic uncertainties.
 #define FLAG_IGNORE_MC_STATERR 0x800
 
+  // Flag to explicitly set the statistical uncertainty on data (signal histogram) to zero (or something super tiny) to pretend having infinite statistics in data
+#define FLAG_INFINITE_DATA_STATISTICS 0x1000
+
   class extractor {
 
   private:
