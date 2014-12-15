@@ -157,6 +157,7 @@ void extractorYield::setClosureSample(TString closure) {
     LOG(logDEBUG) << "Closure: Bin #" << bin << " sig=" << aRecHist->GetBinContent(bin) << " pdat=" << pdata;
     // Write pseudo data with background:
     pseudoData->SetBinContent(bin,pdata);
+    pseudoData->SetBinError(bin,aRecHist->GetBinError(bin));
   }
 
   // Set the original number of events of this closure sample (no weights):
