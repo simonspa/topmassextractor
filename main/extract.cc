@@ -220,6 +220,104 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
   return;
 }
 
+void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
+
+  std::vector<TString> syst_bg;
+  syst_bg.push_back("BG_UP"); syst_bg.push_back("BG_DOWN");
+
+  std::vector<TString> systematic;
+  systematic.push_back("MATCH_UP"); systematic.push_back("MATCH_DOWN");
+  systematic.push_back("SCALE_UP"); systematic.push_back("SCALE_DOWN");
+  /*systematic.push_back("HAD_UP"); systematic.push_back("HAD_DOWN");
+  systematic.push_back("CR_UP"); systematic.push_back("CR_DOWN");
+  systematic.push_back("UE_UP"); systematic.push_back("UE_DOWN");*/
+  systematic.push_back("JER_UP"); systematic.push_back("JER_DOWN");
+  systematic.push_back("PU_UP"); systematic.push_back("PU_DOWN");
+  systematic.push_back("TRIG_UP"); systematic.push_back("TRIG_DOWN");
+  systematic.push_back("KIN_UP"); systematic.push_back("KIN_DOWN");
+  systematic.push_back("LEPT_UP"); systematic.push_back("LEPT_DOWN");
+  systematic.push_back("BTAG_UP"); systematic.push_back("BTAG_DOWN");
+  systematic.push_back("BTAG_LJET_UP"); systematic.push_back("BTAG_LJET_DOWN");
+  systematic.push_back("BTAG_PT_UP"); systematic.push_back("BTAG_PT_DOWN");
+  systematic.push_back("BTAG_ETA_UP"); systematic.push_back("BTAG_ETA_DOWN");
+  systematic.push_back("BTAG_LJET_PT_UP"); systematic.push_back("BTAG_LJET_PT_DOWN");
+  systematic.push_back("BTAG_LJET_ETA_UP"); systematic.push_back("BTAG_LJET_ETA_DOWN");
+
+  for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+
+    std::ofstream SystOutputFile(outputpath + "/MassFitRatesSystematicStats_" + *ch + ".txt", std::ofstream::trunc);
+    latex::table * systab = new latex::table();
+    SystOutputFile << "Top Mass, Channel: " << *ch << endl;
+    SystOutputFile << "Systematic & & Stat. error on Systematic \\\\" << endl;
+    SystOutputFile << "\\hline" << std::endl;
+
+    Double_t normal_stat_pos, normal_stat_neg;
+    Double_t inf_stat_pos, inf_stat_neg;
+    Double_t btag_stat_pos = 0, btag_stat_neg = 0;
+
+    if(syst) {
+      // Backgrounds first:
+      for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
+	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+
+	extractorYieldBackground * bg_normal = new extractorYieldBackground(*ch,"Nominal",inputpath, outputpath, flags,(*syst));
+	if(closure) bg_normal->setClosureSample("Nominal");
+	bg_normal->getTopMass();
+	bg_normal->getStatError(normal_stat_pos,normal_stat_neg);
+
+	extractorYieldBackground * bg_inf = new extractorYieldBackground(*ch,"Nominal",inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS,(*syst));
+	if(closure) bg_inf->setClosureSample("Nominal");
+	bg_inf->getTopMass();
+	bg_inf->getStatError(inf_stat_pos,inf_stat_neg);
+
+	LOG(logRESULT) << *syst << " - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+	if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst, 0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg)); }
+	else { SystOutputFile << systab->writeSystematicsTableDown(0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg)); }
+
+	delete bg_normal;
+	delete bg_inf;
+      }
+
+      // Other Systematic Variations
+      for(std::vector<TString>::iterator syst = systematic.begin(); syst != systematic.end(); ++syst) {
+	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
+
+	extractorYield * systematic_normal = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags);
+	if(closure) systematic_normal->setClosureSample((*syst));
+	systematic_normal->getTopMass();
+	systematic_normal->getStatError(normal_stat_pos,normal_stat_neg);
+
+	extractorYield * systematic_infstat = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS);
+	if(closure) systematic_infstat->setClosureSample((*syst));
+	systematic_infstat->getTopMass();
+	systematic_infstat->getStatError(inf_stat_pos,inf_stat_neg);
+
+	if(syst->Contains("BTAG")) {
+	  LOG(logINFO) << *syst << " - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+	  btag_stat_pos += systStatErr(normal_stat_pos,inf_stat_pos);
+	  btag_stat_neg += systStatErr(normal_stat_neg,inf_stat_neg);
+	}
+	else {
+	  LOG(logRESULT) << *syst << " - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+	  if(syst->Contains("UP")) { SystOutputFile << systab->writeSystematicsTableUp(*syst, 0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg)); }
+	  else { SystOutputFile << systab->writeSystematicsTableDown(0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg)); }
+	}
+	delete systematic_normal;
+	delete systematic_infstat;
+      }
+
+      LOG(logRESULT) << "BTAG - " << *ch << ": stat. unc: +" << btag_stat_pos/12 << "-" << btag_stat_neg/12;
+
+      SystOutputFile << systab->writeSystematicsTableUp("BTAG", 0, btag_stat_pos/12, btag_stat_neg/12)
+		     << systab->writeSystematicsTableDown(0, btag_stat_pos/12, btag_stat_neg/12);
+
+    }
+
+    SystOutputFile.close();
+  }
+  return;
+}
+
 void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> predictions;
@@ -455,7 +553,7 @@ int main(int argc, char* argv[]) {
     // select to either extract from yield of differential cross section:
     if (!strcmp(argv[i],"-t")) {
       type = string(argv[++i]);
-      if(type !=  "diffxs" && type != "yield") {
+      if(type !=  "diffxs" && type != "yield" && type != "yieldstats" && type != "diffxsstats") {
 	LOG(logERROR) << "Unknown extraction type \"" << type << "\".";
 	return 0;
       }
@@ -538,6 +636,8 @@ int main(int argc, char* argv[]) {
 
   try {
     if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,fulltake);
+    else if(type == "yieldstats") extract_yield_stats(inputpath,outputpath,channels,closure,closure_sample,flags,syst,fulltake);
+    else if(type == "diffxsstats") extract_diffxsec_stats(inputpath,outputpath,channels,unfolding_mass,flags,syst,fulltake);
     else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst,fulltake);
   }
   catch(...) {
