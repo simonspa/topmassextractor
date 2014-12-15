@@ -110,7 +110,7 @@ Double_t extractorYield::getPseudoData(Int_t /*bin*/, Double_t mass, Double_t re
 
   Double_t xsecCorrection = getTtbarXsec(mass)/getTtbarXsec(nominalmass);
 
-  // Calculate the "others backgorund" as difference between bgr and ttbgr (no xsec scaling)
+  // Calculate the "others background" as difference between bgr and ttbgr (no xsec scaling)
   Double_t bgr_other = bgr - ttbgr;
   Double_t pseudodata = (reco + ttbgr)*xsecCorrection + bgr_other;
 

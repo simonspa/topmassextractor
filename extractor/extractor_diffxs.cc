@@ -99,11 +99,13 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
     Double_t signal = getSignal(bin-startbin,mass,aDiffXSecHist->GetBinContent(bin));
-    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin) << " signal=" << signal;
-
     signalHist->SetBinContent(bin+1-startbin,signal);
     // Scale the error, so that the relative statistical error stays the same:
-    signalHist->SetBinError(bin+1-startbin,aDiffXSecHist->GetBinError(bin)*signal/aDiffXSecHist->GetBinContent(bin));
+    Double_t staterr = aDiffXSecHist->GetBinError(bin)*signal/aDiffXSecHist->GetBinContent(bin);
+    signalHist->SetBinError(bin+1-startbin,staterr);
+
+    LOG(logDEBUG3) << "Bin #" << bin << ": data=" << aDiffXSecHist->GetBinContent(bin) << "+-" << aDiffXSecHist->GetBinError(bin) 
+		   << " signal=" << signal << "+-" << staterr;
   }
 
   // Return DiffXSec signal histogram:
@@ -179,7 +181,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     else {
       simulationHist->SetBinError(bin+1-startbin,aMcBinned->GetBinError(bin));
     }
-    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << " (err=" << simulationHist->GetBinError(bin+1-startbin) << ")";
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << "+-" << simulationHist->GetBinError(bin+1-startbin);
   }
 
   LOG(logDEBUG) << "Returning Simulation histogram now.";
