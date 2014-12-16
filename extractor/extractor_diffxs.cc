@@ -139,6 +139,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   for(std::vector<TString>::iterator ch = channels.begin()+1; ch != channels.end(); ++ch) {
     TFile * input2 = selectInputFileTheory(*ch, getSampleFromMass(m_sample,mass,true));
+    // Since Sumw2() has been called for the histograms, Add() does recalc the errors correctly:
     aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
     delete input2;
   }
