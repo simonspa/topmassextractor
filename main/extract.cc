@@ -223,15 +223,15 @@ void extract_yield(TString inputpath, TString outputpath, std::vector<TString> c
 void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> syst_bg;
-  syst_bg.push_back("BG_UP"); syst_bg.push_back("BG_DOWN");
+  //syst_bg.push_back("BG_UP"); syst_bg.push_back("BG_DOWN");
 
   std::vector<TString> systematic;
-  systematic.push_back("MATCH_UP"); systematic.push_back("MATCH_DOWN");
-  systematic.push_back("SCALE_UP"); systematic.push_back("SCALE_DOWN");
+  //systematic.push_back("MATCH_UP"); systematic.push_back("MATCH_DOWN");
+  //systematic.push_back("SCALE_UP"); systematic.push_back("SCALE_DOWN");
   /*systematic.push_back("HAD_UP"); systematic.push_back("HAD_DOWN");
   systematic.push_back("CR_UP"); systematic.push_back("CR_DOWN");
   systematic.push_back("UE_UP"); systematic.push_back("UE_DOWN");*/
-  systematic.push_back("JES_UP"); systematic.push_back("JES_DOWN");
+  /*systematic.push_back("JES_UP"); systematic.push_back("JES_DOWN");
   systematic.push_back("JER_UP"); systematic.push_back("JER_DOWN");
   systematic.push_back("PU_UP"); systematic.push_back("PU_DOWN");
   systematic.push_back("TRIG_UP"); systematic.push_back("TRIG_DOWN");
@@ -242,7 +242,7 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
   systematic.push_back("BTAG_PT_UP"); systematic.push_back("BTAG_PT_DOWN");
   systematic.push_back("BTAG_ETA_UP"); systematic.push_back("BTAG_ETA_DOWN");
   systematic.push_back("BTAG_LJET_PT_UP"); systematic.push_back("BTAG_LJET_PT_DOWN");
-  systematic.push_back("BTAG_LJET_ETA_UP"); systematic.push_back("BTAG_LJET_ETA_DOWN");
+  systematic.push_back("BTAG_LJET_ETA_UP"); systematic.push_back("BTAG_LJET_ETA_DOWN");*/
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
@@ -257,6 +257,27 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
     Double_t btag_stat_pos = 0, btag_stat_neg = 0;
 
     if(syst) {
+      // Color Reconnection:
+      extractorYield * normal, * infstat;
+      normal = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags);
+      if(closure) normal->setClosureSample("PERUGIA11");
+      normal->getTopMass(); normal->getStatError(normal_stat_pos,normal_stat_neg);
+      infstat = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS);
+      if(closure) infstat->setClosureSample("PERUGIA11");
+      infstat->getTopMass(); infstat->getStatError(inf_stat_pos,inf_stat_neg);
+      LOG(logRESULT) << "CR_UP - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+      SystOutputFile << systab->writeSystematicsTableUp("CR_UP", 0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg));
+      delete normal; delete infstat;
+      normal = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags);
+      if(closure) normal->setClosureSample("PERUGIA11NoCR");
+      normal->getTopMass(); normal->getStatError(normal_stat_pos,normal_stat_neg);
+      infstat = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS);
+      if(closure) infstat->setClosureSample("PERUGIA11NoCR");
+      infstat->getTopMass(); infstat->getStatError(inf_stat_pos,inf_stat_neg);
+      LOG(logRESULT) << "CR_DOWN - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+      SystOutputFile << systab->writeSystematicsTableDown(0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg));
+      delete normal; delete infstat;
+
       // Backgrounds first:
       for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
