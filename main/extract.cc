@@ -231,6 +231,7 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
   /*systematic.push_back("HAD_UP"); systematic.push_back("HAD_DOWN");
   systematic.push_back("CR_UP"); systematic.push_back("CR_DOWN");
   systematic.push_back("UE_UP"); systematic.push_back("UE_DOWN");*/
+  systematic.push_back("JES_UP"); systematic.push_back("JES_DOWN");
   systematic.push_back("JER_UP"); systematic.push_back("JER_DOWN");
   systematic.push_back("PU_UP"); systematic.push_back("PU_DOWN");
   systematic.push_back("TRIG_UP"); systematic.push_back("TRIG_DOWN");
