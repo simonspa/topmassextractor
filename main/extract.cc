@@ -226,12 +226,10 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
   //syst_bg.push_back("BG_UP"); syst_bg.push_back("BG_DOWN");
 
   std::vector<TString> systematic;
-  //systematic.push_back("MATCH_UP"); systematic.push_back("MATCH_DOWN");
-  //systematic.push_back("SCALE_UP"); systematic.push_back("SCALE_DOWN");
-  /*systematic.push_back("HAD_UP"); systematic.push_back("HAD_DOWN");
-  systematic.push_back("CR_UP"); systematic.push_back("CR_DOWN");
-  systematic.push_back("UE_UP"); systematic.push_back("UE_DOWN");*/
-  /*systematic.push_back("JES_UP"); systematic.push_back("JES_DOWN");
+  systematic.push_back("MATCH_UP"); systematic.push_back("MATCH_DOWN");
+  systematic.push_back("SCALE_UP"); systematic.push_back("SCALE_DOWN");
+  /*systematic.push_back("HAD_UP"); systematic.push_back("HAD_DOWN");*/
+  systematic.push_back("JES_UP"); systematic.push_back("JES_DOWN");
   systematic.push_back("JER_UP"); systematic.push_back("JER_DOWN");
   systematic.push_back("PU_UP"); systematic.push_back("PU_DOWN");
   systematic.push_back("TRIG_UP"); systematic.push_back("TRIG_DOWN");
@@ -242,7 +240,7 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
   systematic.push_back("BTAG_PT_UP"); systematic.push_back("BTAG_PT_DOWN");
   systematic.push_back("BTAG_ETA_UP"); systematic.push_back("BTAG_ETA_DOWN");
   systematic.push_back("BTAG_LJET_PT_UP"); systematic.push_back("BTAG_LJET_PT_DOWN");
-  systematic.push_back("BTAG_LJET_ETA_UP"); systematic.push_back("BTAG_LJET_ETA_DOWN");*/
+  systematic.push_back("BTAG_LJET_ETA_UP"); systematic.push_back("BTAG_LJET_ETA_DOWN");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
