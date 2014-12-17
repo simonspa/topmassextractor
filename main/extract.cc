@@ -278,6 +278,26 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
       SystOutputFile << systab->writeSystematicsTableDown(0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg));
       delete normal; delete infstat;
 
+      // Underlying Event
+      normal = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags);
+      if(closure) normal->setClosureSample("PERUGIA11");
+      normal->getTopMass(); normal->getStatError(normal_stat_pos,normal_stat_neg);
+      infstat = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS);
+      if(closure) infstat->setClosureSample("PERUGIA11");
+      infstat->getTopMass(); infstat->getStatError(inf_stat_pos,inf_stat_neg);
+      LOG(logRESULT) << "UE_UP - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+      SystOutputFile << systab->writeSystematicsTableUp("UE_UP", 0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg));
+      delete normal; delete infstat;
+      normal = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags);
+      if(closure) normal->setClosureSample("PERUGIA11TeV");
+      normal->getTopMass(); normal->getStatError(normal_stat_pos,normal_stat_neg);
+      infstat = new extractorYield(*ch,"Nominal", inputpath, outputpath, flags | FLAG_INFINITE_DATA_STATISTICS);
+      if(closure) infstat->setClosureSample("PERUGIA11TeV");
+      infstat->getTopMass(); infstat->getStatError(inf_stat_pos,inf_stat_neg);
+      LOG(logRESULT) << "UE_DOWN - " << *ch << ": stat. unc: +" << systStatErr(normal_stat_pos,inf_stat_pos) << "-" << systStatErr(normal_stat_neg,inf_stat_neg);
+      SystOutputFile << systab->writeSystematicsTableDown(0, systStatErr(normal_stat_pos,inf_stat_pos), systStatErr(normal_stat_neg,inf_stat_neg));
+      delete normal; delete infstat;
+
       // Backgrounds first:
       for(std::vector<TString>::iterator syst = syst_bg.begin(); syst != syst_bg.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
