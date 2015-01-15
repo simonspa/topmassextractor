@@ -26,7 +26,7 @@ $ ../bin/extract [options]
 
 with the following possible command line arguments:
 
-  * `-t [yield|diffxs]`:  select the type of extraction, either from the total event yield (`yield`) or from the normalized differential cross section (`diffxs`)
+  * `-t [yield|diffxs|yieldstats|diffxsstats]`: select the type of extraction, either from the total event yield (`yield`) or from the normalized differential cross section (`diffxs`). Also provides the switches for calculating the statistical uncertainty on the systematic variations applied (`yieldstats` and `diffxsstats`).
   * `-v [CRITICAL|ERROR|RESULT|WARNING|INFO|DEBUG|DEBUG2-4]`: select the verbosity level of the extractor. For normal operation, running either `RESULT` or `INFO` should be fine, lower levels may produce a lot of output and slow down the process.
   * `-i [path]`: input path, should be the parent folder of the top mass analysis framework, i.e. the folder containing "preunfolded", "SelectionRoot", "SVD", "UnfoldingResults"
   * `-o [path]`: output path, where all histograms, tables and PDFs will be stored.
