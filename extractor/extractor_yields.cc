@@ -227,7 +227,7 @@ TH1D * extractorYield::getSignalHistogram(Double_t mass, TFile * histos) {
     signalHist->SetBinError(bin-startbin+1,aDataHist->GetBinError(bin)*signal/aDataHist->GetBinContent(bin));
   }
 
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) {
     signalHist->Scale(1./signalHist->Integral("width"));
     LOG(logDEBUG) << "Normalized Data hist.";
   }
@@ -283,7 +283,7 @@ TH1D * extractorYield::getSimulationHistogram(Double_t mass, TFile * histos) {
     }
   }
 
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) {
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) {
     simulationHist->Scale(1./simulationHist->Integral("width"));
     if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) {
       matchErrHist->Scale(1./matchErrHist->Integral("width"));

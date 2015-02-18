@@ -19,8 +19,8 @@ namespace massextractor {
   // Ship this flag in order to create and store histograms:
 #define FLAG_STORE_HISTOGRAMS 0x01
 
-  // Set this flag to normalize the yield distributions:
-#define FLAG_NORMALIZE_YIELD 0x02
+  // Set this flag to normalize the distributions:
+#define FLAG_NORMALIZE_DISTRIBUTIONS 0x02
 
   // Allow restriction to last bin of distributions:
 #define FLAG_LASTBIN_EXTRACTION 0x04
@@ -172,7 +172,7 @@ namespace massextractor {
     void getPredictionUncertainties();
 
     inline TString getQuantity() { 
-      if((flags &FLAG_NORMALIZE_YIELD) != 0) return "Events";
+      if((flags &FLAG_NORMALIZE_DISTRIBUTIONS) != 0) return "Events";
       else return "Events (norm.)";
     }
     inline TString getRootFilename() { return "MassFitRates.root"; }
@@ -192,11 +192,11 @@ namespace massextractor {
       m_prediction_errors_bgr(),
       m_prediction_errors_ttbgr() {
 
-      if((flags & FLAG_NORMALIZE_YIELD) != 0
+      if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0
 	 && (flags & FLAG_LASTBIN_EXTRACTION) != 0) {
 	LOG(unilog::logERROR) << "Normalization of a single bin doesn't make any sense. Dropping "
-			      << "NORMALIZE_YIELD in favor for extracting from last bin only.";
-	flags &= ~FLAG_NORMALIZE_YIELD;
+			      << "NORMALIZE_DISTRIBUTIONS in favor for extracting from last bin only.";
+	flags &= ~FLAG_NORMALIZE_DISTRIBUTIONS;
       }
 
       // Remove potential "ignore MC error" flag:

@@ -14,7 +14,7 @@ namespace massextractor {
     if(flags == 0) return "(0) ";
 
     if((flags&FLAG_STORE_HISTOGRAMS) != 0) { os << "FLAG_STORE_HISTOGRAMS, "; flags -= FLAG_STORE_HISTOGRAMS; }
-    if((flags&FLAG_NORMALIZE_YIELD) != 0) { os << "FLAG_NORMALIZE_YIELD, "; flags -= FLAG_NORMALIZE_YIELD; }
+    if((flags&FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { os << "FLAG_NORMALIZE_DISTRIBUTIONS, "; flags -= FLAG_NORMALIZE_DISTRIBUTIONS; }
     if((flags&FLAG_LASTBIN_EXTRACTION) != 0) { os << "FLAG_LASTBIN_EXTRACTION, "; flags -= FLAG_LASTBIN_EXTRACTION; }
     if((flags&FLAG_UNFOLD_ALLMASSES) != 0) { os << "FLAG_UNFOLD_ALLMASSES, "; flags -= FLAG_UNFOLD_ALLMASSES; }
     if((flags&FLAG_CHISQUARE_FROM_FITS) != 0) { os << "FLAG_CHISQUARE_FROM_FITS, "; flags -= FLAG_CHISQUARE_FROM_FITS; }

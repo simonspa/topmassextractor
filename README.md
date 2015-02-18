@@ -47,10 +47,10 @@ The following flag tokens for the `-f` command line argument are currently suppo
   * `pdfall`: If flag `root` is set, in addition store all canvases for all systematic variations processed to PDF files into the output directory. This is very slow.
   * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
   * `pred | nopred`: Enable disable inclusion of theory prediction uncertainties in the MC statistical error for all extractions. The theory prediction uncertainties taken into account are Q^2 scale and Matching, the errors are calculated by taking the sample difference to nominal and added in quadrature to the statistical error. Default is `nopred`.
+  * `norm | nonorm`: Enable/disable normalisation of the total distribution. This flag can be used for event yield and differential cross section. Default is `norm`.
 
 The following flags only apply for the `yield` mode:
 
-  * `norm | nonorm`: Enable/disable normalisation of the total event yield. Default is `norm`.
   * `bgr | nobgr`: Do not subtract the background. The data is just taken as is, from the MC signal and backgrounds, a "pseudo data" sample is produced including the backgrounds. Default is `bgr`.
 
 The following flags only apply for the `diffxs` mode:

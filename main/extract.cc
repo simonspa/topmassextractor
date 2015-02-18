@@ -729,7 +729,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Standard flag settings: Chi2 fit, no Covariance, normalized.
-  flags = FLAG_CHISQUARE_FROM_FITS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_YIELD | FLAG_DONT_SUBTRACT_BACKGROUND | FLAG_NO_THEORYPREDICTION_ERRORS;
+  flags = FLAG_CHISQUARE_FROM_FITS | FLAG_DONT_USE_COVARIANCE | FLAG_NORMALIZE_DISTRIBUTIONS | FLAG_DONT_SUBTRACT_BACKGROUND | FLAG_NO_THEORYPREDICTION_ERRORS;
   // Check and assign the flags:
   for(std::vector<std::string>::iterator tok = flagtokens.begin(); tok != flagtokens.end(); ++tok) {
     if(*tok == "fit") { flags |= FLAG_CHISQUARE_FROM_FITS; }
@@ -739,8 +739,8 @@ int main(int argc, char* argv[]) {
     else if(*tok == "root") { flags |= FLAG_STORE_HISTOGRAMS; }
     else if(*tok == "cov") { flags &= ~FLAG_DONT_USE_COVARIANCE; }
     else if(*tok == "nocov") { flags |= FLAG_DONT_USE_COVARIANCE; }
-    else if(*tok == "norm") { flags |= FLAG_NORMALIZE_YIELD; }
-    else if(*tok == "nonorm") { flags &= ~FLAG_NORMALIZE_YIELD; }
+    else if(*tok == "norm") { flags |= FLAG_NORMALIZE_DISTRIBUTIONS; }
+    else if(*tok == "nonorm") { flags &= ~FLAG_NORMALIZE_DISTRIBUTIONS; }
     else if(*tok == "lastbin") { flags |= FLAG_LASTBIN_EXTRACTION; }
     else if(*tok == "bgr") { flags |= FLAG_DONT_SUBTRACT_BACKGROUND; }
     else if(*tok == "nobgr") { flags &= ~FLAG_DONT_SUBTRACT_BACKGROUND; }

@@ -81,7 +81,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 
   // Histogram containing differential cross section from data:
   TH1D * aDiffXSecHist;
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) { aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")); }
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHistNorm")); }
   else { aDiffXSecHist = static_cast<TH1D*>(histos->Get("unfoldedHist")); }
   
 
@@ -151,7 +151,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   // Histogram containing differential cross section from data (just for the binning):
   TH1D * aDiffXSecHist;
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) { aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm")); }
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHistNorm")); }
   else { aDiffXSecHist = dynamic_cast<TH1D*>(histos->Get("unfoldedHist")); }
 
   Int_t nbins = aDiffXSecHist->GetNbinsX();
@@ -167,7 +167,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   }
   
   // Either normalize the histogram to 1:
-  if((flags & FLAG_NORMALIZE_YIELD) != 0) { aMcBinned->Scale(1./aMcBinned->Integral("width")); }
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { aMcBinned->Scale(1./aMcBinned->Integral("width")); }
   // or scale to data:
   else { aMcBinned->Scale(aDiffXSecHist->Integral("width")/aMcBinned->Integral("width")); }
   
