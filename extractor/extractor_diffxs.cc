@@ -279,23 +279,35 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     mcFits.push_back(mcFit);
   }
 
+  // Bin number (starting from 1) to be dropped in order to
+  // satistfy NDOF reduction due to the usage of normalized distributions
+  // 0 returns all bins.
+  Int_t drop_bin = 1;
+
   // Calculate the overall Chi2 using all bin correlations from covariance matrix:
   // Get the inverse covariance matrix:
-  TMatrixD * invCov = getInverseCovMatrix(m_sample);
+  TMatrixD * invCov = getInverseCovMatrix(m_sample, drop_bin);
+
   // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
   // Scanning over the fits:
   for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
     // Prepare the vector containing the (dat - mc) difference for all bins:
-    TVectorD v(dataFits.size());
+    TVectorD v(dataFits.size() - (drop_bin > 0 ? 1 : 0));
     Double_t x_dat;
     std::stringstream sv;
+    size_t output_bin = 0;
     for(size_t bin = 0; bin < dataFits.size(); bin++) {
+      // Drop bin for NDOF satisfaction:
+      if(static_cast<Int_t>(bin) == drop_bin-1) { continue; }
+
       Double_t y_dat, y_mc;
       dataFits.at(bin)->GetPoint(i,x_dat,y_dat);
       mcFits.at(bin)->GetPoint(i,x_dat,y_mc);
-      v[bin] = y_dat - y_mc;
-      sv << v[bin] << " ";
+      v[output_bin] = y_dat - y_mc;
+      sv << v[output_bin] << " ";
+      output_bin++;
     }
+
     // Do the matrix multiplication with the inverse covariance matrix:
     TVectorD v2 = v;
     v2 *= *invCov;
@@ -329,7 +341,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   return finalChiSquare;
 }
 
-TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
+TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "SVD/" + sample + "/Unfolding_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
@@ -344,7 +356,7 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
   else { LOG(logDEBUG) << "Fetched " << histogramname; }
 
   // Cut away over and underflow bins:
-  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix:";
+  LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix";
 
   // Read the matrix from file:
   TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
@@ -359,18 +371,50 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample) {
 
   // Invert the covariance matrix:
   cov->Invert();
+  LOG(logDEBUG2) << "Inverted COV matrix";
 
-  LOG(logDEBUG2) << "Inverted COV matrix:";
+  TMatrixD * covFinal;
+  // Check if we need to drop one bin. This might be necessary due to normalization which
+  // reduces the NDOF by one.
+  if(drop_bin > 0 && drop_bin <= cov->GetNrows()) {
+    covFinal = new TMatrixD(cov->GetNrows()-1, cov->GetNcols()-1);
+    LOG(logDEBUG) << "Dropping bin " << drop_bin << " from convariance matrix.";
+
+    // Now remove the additional bin:
+    Int_t cov_x = 0, cov_y = 0;
+    for(Int_t y = 0; y < covFinal->GetNcols(); y++) {
+      // Check if we need to drop this entry:
+      if(y == drop_bin-1) { cov_y++; }
+
+      for(Int_t x = 0; x < covFinal->GetNrows(); x++) {
+	// Check if we need to drop this entry:
+	if(x == drop_bin-1) { cov_x++; }
+
+	(*covFinal)(x,y) = (*cov)(cov_x,cov_y);
+	cov_x++;
+      }
+      cov_x = 0; cov_y++;
+    }
+    LOG(logDEBUG2) << "Reduced inverted COV matrix to " << covFinal->GetNrows() << "-by-" << covFinal->GetNcols();
+  }
+  else if(drop_bin > 0) {
+    LOG(logCRITICAL) << "Failed to drop COV bin" << drop_bin << ". Continue with full COV matrix.";
+    covFinal = cov;
+  }
+  else {
+    covFinal = cov;
+  }
+
   // Just printing is for debugging:
-  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+  for(Int_t y = 0; y < covFinal->GetNcols(); y++) {
     std::stringstream st;
-    for(Int_t x = 0; x < cov->GetNrows(); x++) {
-      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y); 
+    for(Int_t x = 0; x < covFinal->GetNrows(); x++) {
+      st << std::setw(15) << std::setprecision(5) << (*covFinal)(x,y); 
     }
     LOG(logDEBUG3) << st.str();
   }
 
-  return cov;
+  return covFinal;
 }
 
 
