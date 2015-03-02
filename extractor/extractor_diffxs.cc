@@ -364,14 +364,37 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
 
   // Read the matrix from file:
   TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
+  Double_t diagonal = 0;
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
     std::stringstream st;
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
       (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
       st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+      if(x == y) { diagonal += (*cov)(x,y); }
     }
     LOG(logDEBUG3) << st.str();
   }
+
+  LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant() 
+		 << " Diagonal: " << std::setprecision(5) << diagonal;
+
+  // No normalization - scale the diagonal to the number of events:
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
+
+  // Normalize the matrix with a constant factor so the diagonal is 1:
+  Double_t newdiagonal = 0;
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      (*cov)(x,y) = (*cov)(x,y)/diagonal;
+      if(x == y) { newdiagonal += (*cov)(x,y); }
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+    }
+    LOG(logDEBUG3) << st.str();
+  }
+
+  LOG(logDEBUG2) << "Normalized COV. New determinant: " << std::setprecision(5) << cov->Determinant() 
+		 << " new diagonal: " << std::setprecision(5) << newdiagonal;
 
   // Invert the covariance matrix:
   cov->Invert();
