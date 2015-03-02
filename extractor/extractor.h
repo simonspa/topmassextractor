@@ -297,7 +297,12 @@ namespace massextractor {
     // Total number of events in the input signal histogram, to be used for COV matrix normalization:
     Int_t m_nevents;
 
-    inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
+    inline TString getQuantity() { 
+      // Non-normalized diff. cross section:
+      if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
+      // Normalized diff. cross section:
+      else { return "#frac{d#sigma}{d#rho_{s}}"; }
+    }
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
   protected:
