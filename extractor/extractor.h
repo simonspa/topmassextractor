@@ -292,7 +292,10 @@ namespace massextractor {
     // Function for fetching covariance matrix and inverting it:
     TMatrixD * getInverseCovMatrix(TString sample, Int_t drop_bin);
 
+    // Mass to be used for unfolding procedure:
     Double_t unfoldingMass;
+    // Total number of events in the input signal histogram, to be used for COV matrix normalization:
+    Int_t m_nevents;
 
     inline TString getQuantity() { return "#frac{1}{#sigma} #frac{d#sigma}{d#rho_{s}}"; }
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }

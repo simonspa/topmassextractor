@@ -111,6 +111,10 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
 		   << " signal=" << signal << "+-" << staterr;
   }
 
+  // Store the total number of events in the signal histogram:
+  m_nevents = signalHist->Integral();
+  LOG(logDEBUG2) << "Signal histogram integral: " << m_nevents;
+
   // Return DiffXSec signal histogram:
   return signalHist;
 }
