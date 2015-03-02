@@ -30,16 +30,14 @@
 using namespace unilog;
 using namespace massextractor;
 
-TFile * extractor::OpenFile(TString name, TString mode, bool output) {
+TFile * extractor::OpenFile(TString name, TString mode) {
 
   TString path;
   struct stat sb;
 
-  if(output) path = m_outputpath;
-  else path = m_inputpath;
-
   // If we want to read an existing file, check first if it's there:
   if(mode == "read") {
+    path = m_inputpath;
     ifstream inputFileStream(path + "/" + name);
     if(!inputFileStream.is_open()){
       LOG(logCRITICAL) << "File \"" << path << "/" << name << "\" does not exist!";
@@ -47,9 +45,12 @@ TFile * extractor::OpenFile(TString name, TString mode, bool output) {
     }
     inputFileStream.close();
   }
-  // If we want to write a file check that the folder exists:
-  else if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
-    gSystem->MakeDirectory(path);
+  else {
+    path = m_outputpath;
+    // If we want to write a file check that the folder exists:
+    if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+      gSystem->MakeDirectory(path);
+    }
   }
 
   TFile * file = TFile::Open(path + "/" + name,mode);

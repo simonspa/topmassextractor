@@ -124,6 +124,9 @@ namespace massextractor {
     bool doClosure;
     TH1D * pseudoData;
 
+    // File pointer for output histogram ROOT file:
+    TFile * m_root_output;
+
     // Helper functions:
     void shiftGraph(TGraphErrors* ingraph, Double_t xshift, Double_t yshift);
     template<class t>
@@ -136,7 +139,7 @@ namespace massextractor {
 
     Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
-    TFile * OpenFile(TString name, TString mode, bool output = false);
+    TFile * OpenFile(TString name, TString mode);
 
   public:
     // Return the extracted top mass - starts the extraction procedure.

@@ -484,9 +484,8 @@ Double_t extractor::getTopMass() {
   }
 
   // Store the output histograms into this file:
-  TFile * output;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    output = OpenFile(getRootFilename(),"update", true);
+    m_root_output = OpenFile(getRootFilename(),"update");
     gDirectory->pwd();
   }
 
@@ -507,7 +506,7 @@ Double_t extractor::getTopMass() {
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
 
-  if(((flags & FLAG_STORE_HISTOGRAMS) != 0) && output->IsOpen()) { output->Close(); }
+  if(((flags & FLAG_STORE_HISTOGRAMS) != 0) && m_root_output->IsOpen()) { m_root_output->Close(); }
   return extractedMass;
 }
 

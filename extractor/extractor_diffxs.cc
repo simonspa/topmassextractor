@@ -441,6 +441,13 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
     LOG(logDEBUG3) << st.str();
   }
 
+  // Close the COV input file and set pointer back to output file:
+  if(input->IsOpen()) {
+    input->Close();
+    m_root_output->cd();
+  }
+
+  // Return the matrix:
   return covFinal;
 }
 
