@@ -365,21 +365,21 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
   predictions.push_back("SCALE_UP"); predictions.push_back("SCALE_DOWN");
 
   std::vector<TString> systematics;
-  systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
-  systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
-  systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
-  systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
-  systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
-  systematics.push_back("PU_UP"); systematics.push_back("PU_DOWN");
-  systematics.push_back("TRIG_UP"); systematics.push_back("TRIG_DOWN");
-  systematics.push_back("KIN_UP"); systematics.push_back("KIN_DOWN");
-  systematics.push_back("LEPT_UP"); systematics.push_back("LEPT_DOWN");
-  systematics.push_back("BTAG_UP"); systematics.push_back("BTAG_DOWN");
-  systematics.push_back("BTAG_LJET_UP"); systematics.push_back("BTAG_LJET_DOWN");
-  systematics.push_back("BTAG_PT_UP"); systematics.push_back("BTAG_PT_DOWN");
-  systematics.push_back("BTAG_ETA_UP"); systematics.push_back("BTAG_ETA_DOWN");
-  systematics.push_back("BTAG_LJET_PT_UP"); systematics.push_back("BTAG_LJET_PT_DOWN");
-  systematics.push_back("BTAG_LJET_ETA_UP"); systematics.push_back("BTAG_LJET_ETA_DOWN");
+  systematics.push_back("MATCH");
+  systematics.push_back("SCALE");
+  systematics.push_back("BG");
+  systematics.push_back("JES");
+  systematics.push_back("JER");
+  systematics.push_back("PU");
+  systematics.push_back("TRIG");
+  systematics.push_back("KIN");
+  systematics.push_back("LEPT");
+  systematics.push_back("BTAG");
+  systematics.push_back("BTAG_LJET");
+  systematics.push_back("BTAG_PT");
+  systematics.push_back("BTAG_ETA");
+  systematics.push_back("BTAG_LJET_PT");
+  systematics.push_back("BTAG_LJET_ETA");
 
   for(std::vector<TString>::iterator ch = channels.begin(); ch != channels.end(); ++ch) {
 
@@ -524,18 +524,50 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       // Systematic Variations produced by varying nominal samples:
       Double_t btag_syst_pos = 0, btag_syst_neg = 0;
       Double_t btag_stat_pos = 0, btag_stat_neg = 0;
+      Double_t stat_up_pos = 0, stat_up_neg = 0;
+      Double_t stat_down_pos = 0, stat_down_neg = 0;
       for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
-	LOG(logDEBUG) << "Getting " << (*syst) << " variation...";
-	extractorDiffXSec * variation_diffxs = new extractorDiffXSec(*ch,*syst,inputpath, outputpath, flags);
-	variation_diffxs->setUnfoldingMass(unfoldingMass);
+	LOG(logDEBUG) << "Getting " << (*syst) << "_UP/DOWN variation...";
+	
+	// Prepare the extraction modules for up and down variation:
+	extractorDiffXSec * variation_up = new extractorDiffXSec(*ch,*syst + "_UP",inputpath, outputpath, flags);
+	extractorDiffXSec * variation_down = new extractorDiffXSec(*ch,*syst + "_DOWN",inputpath, outputpath, flags);
+	variation_up->setUnfoldingMass(unfoldingMass);
+	variation_down->setUnfoldingMass(unfoldingMass);
 
-	Double_t topmass_variation = variation_diffxs->getTopMass();
-	variation_diffxs->getStatError(var_stat_pos,var_stat_neg);
-	LOG(logINFO) << *syst << " - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation << " +" << var_stat_pos << " -" << var_stat_neg;
-	Double_t delta = (Double_t)topmass-topmass_variation;
-	LOG(logRESULT) << *syst << ": delta = " << delta << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
-	if(delta > 0) total_syst_pos += delta*delta;
-	else total_syst_neg += delta*delta;
+	// Extract the top quark mass from data:
+	Double_t topmass_variation_up = variation_up->getTopMass();
+	Double_t topmass_variation_down = variation_down->getTopMass();
+	variation_up->getStatError(stat_up_pos,stat_up_neg);
+	variation_down->getStatError(stat_down_pos,stat_down_neg);
+
+	LOG(logINFO) << *syst << "_UP   - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_up << " +" << stat_up_pos << " -" << stat_up_neg;
+	LOG(logINFO) << *syst << "_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_down << " +" << stat_down_pos << " -" << stat_down_neg;
+
+	// Calculate difference to nominal extraction:
+	Double_t delta_up = (Double_t)topmass-topmass_variation_up;
+	Double_t delta_down = (Double_t)topmass-topmass_variation_down;
+
+	LOG(logRESULT) << *syst << "_UP:   delta = " << delta_up << " GeV +" << systStatErr(total_stat_pos,stat_up_pos) << "-" << systStatErr(total_stat_neg,stat_up_neg);
+	LOG(logRESULT) << *syst << "_DOWN: delta = " << delta_down << " GeV +" << systStatErr(total_stat_pos,stat_down_pos) << "-" << systStatErr(total_stat_neg,stat_down_neg);
+
+	// Check if variation go in the same direction:
+	if((delta_up < 0) == (delta_down < 0)) {
+	  // Variations have the same sign, so just take the maximum:
+	  Double_t delta = 0;
+	  if(abs(delta_up) > abs(delta_down)) { delta = delta_up; }
+	  else { delta = delta_down; }
+	  
+	  if(delta > 0) { total_syst_pos += delta*delta; }
+	  else { total_syst_neg += delta*delta; }
+	  LOG(logINFO) << "Counted maximum deviation only: delta = " << delta << " GeV";
+	}
+	else {
+	  // Variations have different sign, add them both:
+	  if(delta_up > 0) { total_syst_pos += delta_up*delta_up; total_syst_neg += delta_down*delta_down; }
+	  else { total_syst_pos += delta_down*delta_down; total_syst_neg += delta_up*delta_up; }
+	  LOG(logINFO) << "Counted both variations.";
+	}
 
 	if(syst->Contains("BTAG")) {
 	  if(delta > 0) btag_syst_pos += delta*delta;
