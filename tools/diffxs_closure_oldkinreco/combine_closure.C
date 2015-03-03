@@ -66,7 +66,7 @@ void combine_closure() {
     massextractor::setStyle(dynamic_cast<TGraphErrors*>(graphtotal));
     
     for(std::vector<TString>::iterator m = masses.begin(); m != masses.end(); ++m) {
-      TString filename = "closureDiffXSecNopred" + *m + "/MassFitDiffXSecSystematics_" + *ch + ".txt";
+      TString filename = "closureDiffXs" + *m + "/MassFitDiffXSecSystematics_" + *ch + ".txt";
       std::ifstream infile(filename);
 
       if (infile) {
@@ -104,8 +104,8 @@ void combine_closure() {
       infile.close();
     }
 
-    graphtotal->GetXaxis()->SetTitle("input m_{t} #left[GeV#right]");
-    graphtotal->GetYaxis()->SetTitle("output m_{t} #left[GeV#right]");
+    graphtotal->GetXaxis()->SetTitle("true m_{t} #left[GeV#right]");
+    graphtotal->GetYaxis()->SetTitle("measured m_{t} #left[GeV#right]");
 
     Double_t m_min = 164, m_max = 184, m_nominal = 172.5;
     graphtotal->GetXaxis()->SetLimits(m_min,m_max);
