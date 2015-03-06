@@ -113,7 +113,7 @@ void combine_closure() {
       infile.close();
     }
 
-    graphtotal->GetXaxis()->SetTitle("unfolding m_{t} #left[GeV#right]");
+    graphtotal->GetXaxis()->SetTitle("m_{t} for unfolding #left[GeV#right]");
     graphtotal->GetYaxis()->SetTitle("measured m_{t} #left[GeV#right]");
 
     Double_t m_min = 164, m_max = 184, m_nominal = 172.5;
