@@ -86,8 +86,10 @@ void extractor::getTrueConfidenceIntervals(Int_t n, Int_t ndim, const Double_t* 
 TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraphErrors* mc_stat, Int_t bin, TGraphErrors * fit1, TGraphErrors * fit2) {
 
   TGraphErrors * chi2_graph = new TGraphErrors();
+  TGraphErrors * chi2_graph_plotting = new TGraphErrors();
   TString gname = "chi2_" + m_channel + Form("_bin%i",bin);
   chi2_graph->SetTitle(gname);
+  chi2_graph_plotting->SetTitle(gname);
 
   size_t n = data->GetN();
   Double_t xmin1,xmax1,ymin1,ymax1;
@@ -98,7 +100,9 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   mc_stat->GetPoint(n-1,xmax2,ymax2);
 
   Double_t xmin = std::min(xmin1*0.995,xmin2*0.995);
-  Double_t xmax = std::min(xmax1*1.005,xmax2*1.005);
+  Double_t xmax = std::max(xmax1*1.005,xmax2*1.005);
+  Double_t xmin_plotting = std::min(xmin1,xmin2);
+  Double_t xmax_plotting = std::max(xmax1,xmax2);
   Double_t ymeana = (ymax1+ymin1)/2;
   Double_t ymeanb = (ymax2+ymin2)/2;
 
@@ -112,6 +116,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     shiftGraph(data,xshift,yshift);
     shiftGraph(mc_stat,xshift,yshift);
     xmin -= xshift; xmax -= xshift;
+    xmin_plotting -= xshift; xmax_plotting -= xshift;
   }
   // Else use input graphs directly.
 
@@ -145,6 +150,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   // Pick fixed error for data from middle point:
   Double_t fixedError = data->GetErrorY(data->GetN()/2);
 
+  size_t i_plotting = 0;
   for(size_t i = 0; i < scanPoints.size(); i++) {
     Double_t a = dataFit->EvalPar(&scanPoints.at(i));
     Double_t b = mc_statFit->EvalPar(&scanPoints.at(i));
@@ -159,6 +165,13 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     LOG(logDEBUG4) << "Scan " << i << "@" << scanPoints.at(i) << ": a=" << a << "(" << awidth << "/" << confIntervalData.at(i) << ") b=" << b << "(" << bwidth << ") chi2=" << chi2;
     chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
 
+    // Not all points go into the final plot, restrict to range between mass points:
+    if(xmin_plotting <= scanPoints.at(i) && scanPoints.at(i) <= xmax_plotting) {
+      LOG(logDEBUG4) << "Adding this as plot point";
+      chi2_graph_plotting->SetPoint(i_plotting, scanPoints.at(i), chi2);
+      i_plotting++;
+    }
+
     if(fit1) fit1->SetPoint(i, scanPoints.at(i), a);
     if(fit2) fit2->SetPoint(i, scanPoints.at(i), b);
   }
@@ -166,6 +179,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
     // Shift all graphs back to initial position:
     shiftGraph(chi2_graph,-1*xshift,0);
+    shiftGraph(chi2_graph_plotting,-1*xshift,0);
     shiftGraph(mc_statconf,-1*xshift,-1*yshift);
     shiftGraph(mc_stat,-1*xshift,-1*yshift);
     shiftGraph(data,-1*xshift,-1*yshift);
@@ -184,14 +198,14 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
 
     c = new TCanvas(cname,cname);
     c->cd();
-    chi2_graph->SetMarkerStyle(20);
-    chi2_graph->GetXaxis()->SetTitle("m_{t} [GeV]");
-    chi2_graph->GetYaxis()->SetTitle("#chi^{2}");
-    chi2_graph->Draw("AP");
+    chi2_graph_plotting->SetMarkerStyle(20);
+    chi2_graph_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2_graph_plotting->GetYaxis()->SetTitle("#chi^{2}");
+    chi2_graph_plotting->Draw("AP");
     DrawDecayChLabel(m_channel,bin,bin_boundaries);
     DrawCMSLabels();
-    rescaleGraph(chi2_graph,1.25);
-    chi2_graph->Write(gname);
+    rescaleGraph(chi2_graph_plotting,1.25);
+    chi2_graph_plotting->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
 
