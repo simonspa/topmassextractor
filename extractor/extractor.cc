@@ -167,7 +167,6 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
 
     // Not all points go into the final plot, restrict to range between mass points:
     if(xmin_plotting <= scanPoints.at(i) && scanPoints.at(i) <= xmax_plotting) {
-      LOG(logDEBUG4) << "Adding this as plot point";
       chi2_graph_plotting->SetPoint(i_plotting, scanPoints.at(i), chi2);
       i_plotting++;
     }
@@ -249,12 +248,14 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   return chi2_graph;
 }
 
-std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t> /*masses*/, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
+std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc) {
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
+  TGraphErrors * chi2sum_plotting = new TGraphErrors();
   TString gname = "chi2_" + m_channel + "_sum";
   chi2sum->SetTitle(gname);
+  chi2sum_plotting->SetTitle(gname);
 
   // Cross-check: we have the same number of rho-S bins:
   if(data.size() != mc.size()) {
@@ -275,12 +276,19 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     }
 
     // Sum them all:
+    Int_t i_plotting = 0;
     for(Int_t i = 0; i < chi2->GetN(); i++) {
       Double_t xsum,ysum,x,y;
       chi2->GetPoint(i,x,y);
       chi2sum->GetPoint(i,xsum,ysum);
       LOG(logDEBUG4) << "Adding (" << x << "/" << y << ") to (" << xsum << "/" << ysum << ")";
       chi2sum->SetPoint(i,x,y+ysum);
+      
+      // Check if this is within the range we want to plot:
+      if(masses.front() <= x && x <= masses.back()) {
+	chi2sum_plotting->SetPoint(i_plotting,x,y+ysum);
+	i_plotting++;
+      }
     }
   }
 
@@ -289,13 +297,14 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     TString cname = "chi2_" + m_channel + "_sum";
     c = new TCanvas(cname,cname);
     c->cd();
-    chi2sum->SetMarkerStyle(20);
-    chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
-    chi2sum->GetYaxis()->SetTitle("#chi^{2}");
-    chi2sum->Draw("AP");
+    chi2sum_plotting->SetMarkerStyle(20);
+    chi2sum_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2sum_plotting->GetYaxis()->SetTitle("#chi^{2}");
+    chi2sum_plotting->Draw("AP");
     DrawDecayChLabel(m_channel);
     DrawCMSLabels();
-    rescaleGraph(chi2sum);
+    rescaleGraph(chi2sum_plotting);
+    chi2sum_plotting->Write(gname);
     chi2sum->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
