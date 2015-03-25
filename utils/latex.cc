@@ -24,7 +24,8 @@ std::string table::writeSystematicsTableDown(Double_t delta, Double_t stat_up, D
   std::stringstream out;
   Double_t stat_pos = (temp_up+stat_up)/2;
   Double_t stat_neg = (temp_down+stat_down)/2;
-  if(TMath::Abs(delta) < 0.01) { out << "< 0.01"; }
+  if(TMath::Abs(delta) < 0.00001) {}
+  else if(TMath::Abs(delta) < 0.01) { out << "< 0.01"; }
   else { out << std::setprecision(2) << std::fixed <<  (delta > 0 ? "+" : "" ) << delta; }
   out << "}$ & ";
 
