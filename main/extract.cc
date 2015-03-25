@@ -361,14 +361,24 @@ void extract_yield_stats(TString inputpath, TString outputpath, std::vector<TStr
 void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> predictions;
-  predictions.push_back("MATCH_UP"); predictions.push_back("MATCH_DOWN");
-  predictions.push_back("SCALE_UP"); predictions.push_back("SCALE_DOWN");
+  predictions.push_back("MATCH");
+  predictions.push_back("SCALE");
 
   std::vector<TString> systematics;
   systematics.push_back("MATCH");
   systematics.push_back("SCALE");
   systematics.push_back("BG");
-  systematics.push_back("JES");
+  //systematics.push_back("JES");
+  systematics.push_back("JES_MPF");
+  systematics.push_back("JES_INTERCAL");
+  systematics.push_back("JES_UNCORR");
+  systematics.push_back("JES_BJES");
+
+  systematics.push_back("JES_FLAVOR_GLUON");
+  systematics.push_back("JES_FLAVOR_QUARK");
+  systematics.push_back("JES_FLAVOR_CHARM");
+  systematics.push_back("JES_FLAVOR_BOTTOM");
+
   systematics.push_back("JER");
   systematics.push_back("PU");
   systematics.push_back("TRIG");
@@ -411,23 +421,37 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
       // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
       for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
 	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
-	extractorDiffXSecPrediction * variation_diffxs = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,*pred);
-	variation_diffxs->setUnfoldingMass(unfoldingMass);
+	extractorDiffXSecPrediction * variation_diffxs_up = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_UP");
+	extractorDiffXSecPrediction * variation_diffxs_down = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_DOWN");
 
-	Double_t topmass_variation = variation_diffxs->getTopMass();
-	variation_diffxs->getStatError(var_stat_pos,var_stat_neg);
-	LOG(logINFO) << *pred << "_PRED - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation << " +" << var_stat_pos << " -" << var_stat_neg;
-	Double_t delta = (Double_t)topmass-topmass_variation;
-	LOG(logRESULT) << *pred << "_PRED: delta = " << delta << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
-	if(delta > 0) total_theo_pos += delta*delta;
-	else total_theo_neg += delta*delta;
+	variation_diffxs_up->setUnfoldingMass(unfoldingMass);
+	variation_diffxs_down->setUnfoldingMass(unfoldingMass);
 
-	if(pred->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp((*pred)+"_PRED", delta, 
+	Double_t topmass_variation_up = variation_diffxs_up->getTopMass();
+	Double_t topmass_variation_down = variation_diffxs_down->getTopMass();
+
+	variation_diffxs_up->getStatError(var_stat_pos,var_stat_neg);
+	variation_diffxs_down->getStatError(var_stat_pos2,var_stat_neg2);
+
+	LOG(logINFO) << *pred << "_UP_PRED - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_up << " +" << var_stat_pos << " -" << var_stat_neg;
+	LOG(logINFO) << *pred << "_DOWN_PRED - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+
+	Double_t delta_up = (Double_t)topmass-topmass_variation_up;
+	Double_t delta_down = (Double_t)topmass-topmass_variation_down;
+
+	LOG(logRESULT) << *pred << "_UP_PRED: delta = " << delta_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
+	LOG(logRESULT) << *pred << "_DOWN_PRED: delta = " << delta_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
+
+	getSystematicUpDownError(delta_up,delta_down,total_theo_pos,total_theo_neg);
+
+	/*
+	  if(pred->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp((*pred)+"_PRED", delta, 
 										       systStatErr(total_stat_pos,var_stat_pos),
 										       systStatErr(total_stat_neg,var_stat_neg));
 	else DiffSystOutputFile << systab->writeSystematicsTableDown(delta,
 								     systStatErr(total_stat_pos,var_stat_pos),
 								     systStatErr(total_stat_neg,var_stat_neg));
+	*/
       }
 
       // Systematic Variations with own samples:
@@ -523,8 +547,10 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 
       // Systematic Variations produced by varying nominal samples:
       Double_t btag_syst_pos = 0, btag_syst_neg = 0;
+      Double_t jes_syst_pos = 0, jes_syst_neg = 0;
+
       Double_t btag_stat_pos = 0, btag_stat_neg = 0;
-      Double_t stat_up_pos = 0, stat_up_neg = 0;
+      Double_t stat_up_pos = 0,   stat_up_neg = 0;
       Double_t stat_down_pos = 0, stat_down_neg = 0;
       for(std::vector<TString>::iterator syst = systematics.begin(); syst != systematics.end(); ++syst) {
 	LOG(logDEBUG) << "Getting " << (*syst) << "_UP/DOWN variation...";
@@ -551,41 +577,31 @@ void extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString
 	LOG(logRESULT) << *syst << "_UP:   delta = " << delta_up << " GeV +" << systStatErr(total_stat_pos,stat_up_pos) << "-" << systStatErr(total_stat_neg,stat_up_neg);
 	LOG(logRESULT) << *syst << "_DOWN: delta = " << delta_down << " GeV +" << systStatErr(total_stat_pos,stat_down_pos) << "-" << systStatErr(total_stat_neg,stat_down_neg);
 
-	// Check if variation go in the same direction:
-	if((delta_up < 0) == (delta_down < 0)) {
-	  // Variations have the same sign, so just take the maximum:
-	  Double_t delta = 0;
-	  if(abs(delta_up) > abs(delta_down)) { delta = delta_up; }
-	  else { delta = delta_down; }
-	  
-	  if(delta > 0) { total_syst_pos += delta*delta; }
-	  else { total_syst_neg += delta*delta; }
-	  LOG(logINFO) << "Counted maximum deviation only: delta = " << delta << " GeV";
-	}
-	else {
-	  // Variations have different sign, add them both:
-	  if(delta_up > 0) { total_syst_pos += delta_up*delta_up; total_syst_neg += delta_down*delta_down; }
-	  else { total_syst_pos += delta_down*delta_down; total_syst_neg += delta_up*delta_up; }
-	  LOG(logINFO) << "Counted both variations.";
-	}
+	bool systUpDown;
+	if(syst->Contains("BTAG")) { getSystematicUpDownError(delta_up,delta_down,btag_syst_pos,btag_syst_neg); }
+	else if(syst->Contains("JES_FLAVOR")) { getSystematicUpDownError(delta_up,delta_down,jes_syst_pos,jes_syst_neg); }
+	else { systUpDown = getSystematicUpDownError(delta_up,delta_down,total_syst_pos,total_syst_neg); }
 
-	if(syst->Contains("BTAG")) {
-	  if(delta > 0) btag_syst_pos += delta*delta;
-	  else btag_syst_neg += delta*delta;
-	  btag_stat_pos += systStatErr(total_stat_pos,var_stat_pos);
-	  btag_stat_neg += systStatErr(total_stat_neg,var_stat_neg);
-	}
-	else {
-	  if(syst->Contains("UP")) DiffSystOutputFile << systab->writeSystematicsTableUp(*syst, delta, 
-											 systStatErr(total_stat_pos,var_stat_pos),
-											 systStatErr(total_stat_neg,var_stat_neg));
-	  else DiffSystOutputFile << systab->writeSystematicsTableDown(delta,
-								       systStatErr(total_stat_pos,var_stat_pos),
-								       systStatErr(total_stat_neg,var_stat_neg));
+	if(!syst->Contains("BTAG") && !syst->Contains("JES_FLAVOR")) {
+	  if(systUpDown) { 
+	    if(abs(delta_up) > abs(delta_down)) { delta_down = 0; }
+	    else { delta_up = delta_down; delta_down = 0; }
+	  }
+
+	  DiffSystOutputFile << systab->writeSystematicsTableUp(*syst, delta_up, 
+								systStatErr(total_stat_pos,var_stat_pos),
+								systStatErr(total_stat_neg,var_stat_neg));
+	  DiffSystOutputFile << systab->writeSystematicsTableDown(delta_down,
+								  systStatErr(total_stat_pos,var_stat_pos),
+								  systStatErr(total_stat_neg,var_stat_neg));
 	}
       }
+      DiffSystOutputFile << systab->writeSystematicsTableUp("JES_FLAVOR", TMath::Sqrt(jes_syst_pos), btag_stat_pos/12, btag_stat_neg/12)
+			 << systab->writeSystematicsTableDown(TMath::Sqrt(jes_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
       DiffSystOutputFile << systab->writeSystematicsTableUp("BTAG", TMath::Sqrt(btag_syst_pos), btag_stat_pos/12, btag_stat_neg/12)
 			 << systab->writeSystematicsTableDown(TMath::Sqrt(btag_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
+      total_syst_pos += jes_syst_pos + btag_syst_pos;
+      total_syst_neg += jes_syst_neg + btag_syst_neg;
     }
 
     total_syst_pos = TMath::Sqrt(total_syst_pos);
