@@ -236,3 +236,29 @@ std::vector<std::string> massextractor::split(const std::string &s, char delim) 
 Double_t massextractor::systStatErr(Double_t nominalStatErr, Double_t systStatErr) {
   return TMath::Abs(systStatErr - nominalStatErr);
 }
+
+
+bool massextractor::getSystematicUpDownError(Double_t delta_up, Double_t delta_down, Double_t & total_syst_pos, Double_t & total_syst_neg) {
+
+  // Check if variation go in the same direction:
+  if((delta_up < 0) == (delta_down < 0)) {
+    // Variations have the same sign, so just take the maximum:
+    Double_t delta = 0;
+    if(abs(delta_up) > abs(delta_down)) { delta = delta_up; }
+    else { delta = delta_down; }
+    
+    if(delta > 0) { total_syst_pos += delta*delta; }
+    else { total_syst_neg += delta*delta; }
+    LOG(logINFO) << "Counted maximum deviation only: delta = " << delta << " GeV";
+    
+    return true;
+  }
+  else {
+    // Variations have different sign, add them both:
+    if(delta_up > 0) { total_syst_pos += delta_up*delta_up; total_syst_neg += delta_down*delta_down; }
+    else { total_syst_pos += delta_down*delta_down; total_syst_neg += delta_up*delta_up; }
+    LOG(logINFO) << "Counted both variations.";
+
+    return false;
+  }
+}
