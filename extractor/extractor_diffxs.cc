@@ -286,7 +286,9 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   // Bin number (starting from 1) to be dropped in order to
   // satistfy NDOF reduction due to the usage of normalized distributions
   // 0 returns all bins.
-  Int_t drop_bin = 1;
+  Int_t drop_bin;
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { drop_bin = 1; }
+  else { drop_bin = 0; }
 
   // Calculate the overall Chi2 using all bin correlations from covariance matrix:
   // Get the inverse covariance matrix:
