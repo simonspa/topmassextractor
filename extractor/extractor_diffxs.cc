@@ -434,19 +434,10 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
       }
     }
     LOG(logDEBUG2) << sigma.str();
-    
-    //DiffXSecStatErrorVecUnnorm[channelType][i] = TMath::Sqrt((perChannelDiffXSecStatError[0][i]*perChannelDiffXSecStatError[0][i])+
-    //(perChannelDiffXSecStatError[1][i]*perChannelDiffXSecStatError[1][i])+
-    //								     (perChannelDiffXSecStatError[2][i]*perChannelDiffXSecStatError[2][i])); // Just sum of squares
-
   }
 
-  /*
-  // No normalization - scale the diagonal to the number of events:
-  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
-
-  // Normalize the matrix with a constant factor so the diagonal is 1:
-  Double_t newdiagonal = 0;
+  // FIXME add MC statistical uncertainty to diagonal elements:
+  LOG(logDEBUG2) << "Added MC contributions to diagonal elements";
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
     std::stringstream st;
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
