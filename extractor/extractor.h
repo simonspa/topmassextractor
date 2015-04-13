@@ -294,8 +294,9 @@ namespace massextractor {
     std::pair<TGraphErrors*,TF1*> getFittedChiSquare(std::vector<Double_t> masses, std::vector<TGraphErrors*> data, std::vector<TGraphErrors*> mc);
     // Helper function to read matrix from file and divide bins by their width:
     TMatrixD * readMatrix(TString sample, TString channel);
-    // Function for fetching covariance matrix and inverting it:
-    TMatrixD * getInverseCovMatrix(TString sample, Int_t drop_bin);
+    // Function for fetching covariance matrix and preparing it:
+    TMatrixD * getCovMatrix(TString sample);
+    TMatrixD * invertCovMatrix(TMatrixD * cov, Int_t drop_bin);
 
     // Mass to be used for unfolding procedure:
     Double_t unfoldingMass;

@@ -290,8 +290,8 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { drop_bin = 1; }
 
   // Calculate the overall Chi2 using all bin correlations from covariance matrix:
-  // Get the inverse covariance matrix:
-  TMatrixD * invCov = getInverseCovMatrix(m_sample, drop_bin);
+  // Get the covariance matrix:
+  TMatrixD * cov = getCovMatrix(m_sample);
 
   // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
   // Scanning over the fits:
@@ -313,6 +313,9 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
       output_bin++;
     }
 
+    // Invert the Covariance matrix with the MC statistical errors from the current scan point added:
+    TMatrixD * invCov = invertCovMatrix(cov, drop_bin);
+
     // Do the matrix multiplication with the inverse covariance matrix:
     TVectorD v2 = v;
     v2 *= *invCov;
@@ -321,6 +324,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 		   << "(V:" << v.GetNoElements() << "x1, {" << sv.str() << "} "
 		   << "COV: " << invCov->GetNrows() << "x" << invCov->GetNcols() << ")";
     chi2sum->SetPoint(i,x_dat,chi2);
+    delete invCov;
   }
 
   TCanvas* c = 0;
@@ -395,7 +399,7 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
   return cov;
 }
 
-TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin) {
+TMatrixD * extractorDiffXSec::getCovMatrix(TString sample) {
 
   TMatrixD * cov;
   // Single channel - just read the information:
@@ -435,6 +439,13 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
     LOG(logDEBUG2) << sigma.str();
   }
 
+  return cov;
+}
+
+TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, Int_t drop_bin) {
+
+  TMatrixD * cov = new TMatrixD(*inputcov);
+
   // FIXME add MC statistical uncertainty to diagonal elements:
   LOG(logDEBUG2) << "Added MC contributions to diagonal elements";
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
@@ -446,11 +457,7 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
     }
     LOG(logDEBUG3) << st.str();
   }
-
-  LOG(logDEBUG2) << "Normalized COV. New determinant: " << std::setprecision(5) << cov->Determinant() 
-		 << " new diagonal: " << std::setprecision(5) << scale_diagonal;
-*/
-
+ 
   // Invert the covariance matrix:
   cov->Invert();
   LOG(logDEBUG2) << "Inverted COV matrix";
