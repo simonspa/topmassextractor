@@ -171,8 +171,14 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
       i_plotting++;
     }
 
-    if(fit1) fit1->SetPoint(i, scanPoints.at(i), a);
-    if(fit2) fit2->SetPoint(i, scanPoints.at(i), b);
+    if(fit1) {
+      fit1->SetPoint(i, scanPoints.at(i), a);
+      fit1->SetPointError(i, 0, awidth);
+    }
+    if(fit2) {
+      fit2->SetPoint(i, scanPoints.at(i), b);
+      fit2->SetPointError(i, 0, bwidth);
+    }
   }
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) { 
