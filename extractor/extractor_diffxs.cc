@@ -412,8 +412,14 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
     for(Int_t y = 0; y < cov_ee->GetNcols(); y++) {
       std::stringstream st;
       for(Int_t x = 0; x < cov_ee->GetNrows(); x++) {
-	//(*cov)(x,y) = TMath::Sqrt((*cov_ee)(x,y)*(*cov_ee)(x,y) + (*cov_emu)(x,y)*(*cov_emu)(x,y) + (*cov_mumu)(x,y)*(*cov_mumu)(x,y));
-	(*cov)(x,y) = (*cov_ee)(x,y) + (*cov_emu)(x,y) + (*cov_mumu)(x,y);
+	// If the COV is not normalized, we can just linearly add the three matrices:
+	if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) {
+	  (*cov)(x,y) = (*cov_ee)(x,y) + (*cov_emu)(x,y) + (*cov_mumu)(x,y);
+	}
+	// If the COVs are normalized we have to inverse the contributions for the sum:
+	else {
+	  (*cov)(x,y) = 1/(1/(*cov_ee)(x,y) + 1/(*cov_emu)(x,y) + 1/(*cov_mumu)(x,y));
+	}
 	st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
       }
       LOG(logDEBUG3) << st.str();
