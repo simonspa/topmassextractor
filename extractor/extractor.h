@@ -296,7 +296,7 @@ namespace massextractor {
     TMatrixD * readMatrix(TString sample, TString channel);
     // Function for fetching covariance matrix and preparing it:
     TMatrixD * getCovMatrix(TString sample);
-    TMatrixD * invertCovMatrix(TMatrixD * cov, Int_t drop_bin);
+    TMatrixD * invertCovMatrix(TMatrixD * cov, std::vector<Double_t> mcstats, Int_t drop_bin);
 
     // Mass to be used for unfolding procedure:
     Double_t unfoldingMass;

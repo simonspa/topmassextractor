@@ -298,10 +298,16 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
     // Prepare the vector containing the (dat - mc) difference for all bins:
     TVectorD v(dataFits.size() - (drop_bin > 0 ? 1 : 0));
+    std::vector<Double_t> mcstats;
+
     Double_t x_dat;
     std::stringstream sv;
     size_t output_bin = 0;
     for(size_t bin = 0; bin < dataFits.size(); bin++) {
+
+      // Store the fit error for the current scan point:
+      mcstats.push_back(mcFits.at(bin)->GetErrorY(i));
+
       // Drop bin for NDOF satisfaction:
       if(static_cast<Int_t>(bin) == drop_bin-1) { continue; }
 
@@ -314,7 +320,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     }
 
     // Invert the Covariance matrix with the MC statistical errors from the current scan point added:
-    TMatrixD * invCov = invertCovMatrix(cov, drop_bin);
+    TMatrixD * invCov = invertCovMatrix(cov, mcstats, drop_bin);
 
     // Do the matrix multiplication with the inverse covariance matrix:
     TVectorD v2 = v;
@@ -442,32 +448,43 @@ TMatrixD * extractorDiffXSec::getCovMatrix(TString sample) {
   return cov;
 }
 
-TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, Int_t drop_bin) {
+TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, std::vector<Double_t> mcstats, Int_t drop_bin) {
 
   TMatrixD * cov = new TMatrixD(*inputcov);
 
+  if(static_cast<size_t>(cov->GetNcols()) != mcstats.size()) {
+    LOG(logCRITICAL) << "Bin numbers don't match!";
+    throw(1);
+  }
+
   // FIXME add MC statistical uncertainty to diagonal elements:
-  LOG(logDEBUG2) << "Added MC contributions to diagonal elements";
+  LOG(logDEBUG3) << "Added MC contributions to diagonal elements";
+  std::stringstream mc;
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
     std::stringstream st;
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
-      (*cov)(x,y) = (*cov)(x,y)/diagonal;
-      if(x == y) { newdiagonal += (*cov)(x,y); }
-      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+      if(x == y) {
+	// Add squared mcstat error:
+	(*cov)(x,y) = (*cov)(x,y) + mcstats.at(x)*mcstats.at(x);
+	st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+	mc << std::setw(15) << std::setprecision(5) << mcstats.at(x);
+      }
+      else st << std::setw(15) << std::setprecision(5) << " ";
     }
-    LOG(logDEBUG3) << st.str();
+    LOG(logDEBUG4) << st.str();
   }
+  LOG(logDEBUG3) << "MC stat errors: " << mc.str();
  
   // Invert the covariance matrix:
   cov->Invert();
-  LOG(logDEBUG2) << "Inverted COV matrix";
+  LOG(logDEBUG3) << "Inverted COV matrix";
 
   TMatrixD * covFinal;
   // Check if we need to drop one bin. This might be necessary due to normalization which
   // reduces the NDOF by one.
   if(drop_bin > 0 && drop_bin <= cov->GetNrows()) {
     covFinal = new TMatrixD(cov->GetNrows()-1, cov->GetNcols()-1);
-    LOG(logDEBUG) << "Dropping bin " << drop_bin << " from convariance matrix.";
+    LOG(logDEBUG4) << "Dropping bin " << drop_bin << " from convariance matrix.";
 
     // Now remove the additional bin:
     Int_t cov_x = 0, cov_y = 0;
@@ -484,7 +501,7 @@ TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, Int_t drop_bi
       }
       cov_x = 0; cov_y++;
     }
-    LOG(logDEBUG2) << "Reduced inverted COV matrix to " << covFinal->GetNrows() << "-by-" << covFinal->GetNcols();
+    LOG(logDEBUG3) << "Reduced inverted COV matrix to " << covFinal->GetNrows() << "-by-" << covFinal->GetNcols();
   }
   else if(drop_bin > 0) {
     LOG(logCRITICAL) << "Failed to drop COV bin" << drop_bin << ". Continue with full COV matrix.";
@@ -500,7 +517,7 @@ TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, Int_t drop_bi
     for(Int_t x = 0; x < covFinal->GetNrows(); x++) {
       st << std::setw(15) << std::setprecision(5) << (*covFinal)(x,y); 
     }
-    LOG(logDEBUG3) << st.str();
+    LOG(logDEBUG4) << st.str();
   }
 
   // Return the matrix:
