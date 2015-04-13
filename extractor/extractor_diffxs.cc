@@ -351,7 +351,9 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "SVD/" + sample + "/Unfolding_" + channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
+  TString histogramname;
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { histogramname = "SVD_" + channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV"; }
+  else { histogramname = "SVD_" + channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOVNORM"; }
 
   TFile * input = OpenFile(filename,"read");
   LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
@@ -364,37 +366,18 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
   // Cut away over and underflow bins:
   LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix";
 
-  /*
-  // Get the Diagonal sum (sum of all events):
-  Double_t diagonal = 0;
-  for(Int_t y = 2; y < statCovNorm->GetNbinsY(); y++) {
-    std::stringstream st;
-    for(Int_t x = 2; x < statCovNorm->GetNbinsX(); x++) {
-      st << std::setw(15) << std::setprecision(5) << statCovNorm->GetBinContent(x,y);
-      if(x == y) { diagonal += statCovNorm->GetBinContent(x,y); }
-    }
-    LOG(logDEBUG3) << st.str();
-  }
-  LOG(logDEBUG2) << " Diagonal: " << std::setprecision(5) << diagonal;
-  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
-  */
-
   // Build the matrix:
   TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
-  Double_t scale_diagonal = 0;
-
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
     std::stringstream st;
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
       (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2)/(statCovNorm->GetXaxis()->GetBinWidth(x+2)*statCovNorm->GetYaxis()->GetBinWidth(y+2));
       st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
-      if(x == y) { scale_diagonal += (*cov)(x,y); }
     }
     LOG(logDEBUG3) << st.str();
   }
 
-  LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant() 
-		 << " Diagonal Sum: " << std::setprecision(5) << scale_diagonal;
+  LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant();
   LOG(logDEBUG2) << "Sqrt of COV Diagonals (stat. errors per bin): ";
   std::stringstream sigma;
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
