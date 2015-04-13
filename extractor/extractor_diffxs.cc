@@ -347,11 +347,11 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   return finalChiSquare;
 }
 
-TMatrixD * extractorDiffXSec::readMatrix(TString sample) {
+TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
-  TString filename = "SVD/" + sample + "/Unfolding_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
+  TString filename = "SVD/" + sample + "/Unfolding_" + channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
+  TString histogramname = "SVD_" + channel + "_TtBar_Mass_HypTTBar1stJetMass_" + sample + "_STATCOV";
 
   TFile * input = OpenFile(filename,"read");
   LOG(logDEBUG) << "Successfully opened covariance matrix file " << filename;
@@ -364,6 +364,7 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample) {
   // Cut away over and underflow bins:
   LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix";
 
+  /*
   // Get the Diagonal sum (sum of all events):
   Double_t diagonal = 0;
   for(Int_t y = 2; y < statCovNorm->GetNbinsY(); y++) {
@@ -376,6 +377,7 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample) {
   }
   LOG(logDEBUG2) << " Diagonal: " << std::setprecision(5) << diagonal;
   if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
+  */
 
   // Build the matrix:
   TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
@@ -383,16 +385,12 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample) {
 
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
     std::stringstream st;
-    std::stringstream fac;
-    fac << "Factors: ";
     for(Int_t x = 0; x < cov->GetNrows(); x++) {
       (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2)/(statCovNorm->GetXaxis()->GetBinWidth(x+2)*statCovNorm->GetYaxis()->GetBinWidth(y+2));
-
       st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
       if(x == y) { scale_diagonal += (*cov)(x,y); }
     }
     LOG(logDEBUG3) << st.str();
-    LOG(logDEBUG4) << fac.str();
   }
 
   LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant() 
@@ -419,9 +417,40 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
 
   TMatrixD * cov;
   // Single channel - just read the information:
-  if(sample != "combined") cov = readMatrix(sample);
+  if(m_channel != "combined") cov = readMatrix(sample,m_channel);
   // Combined channel - add up the three contributions:
-  else {}
+  else {
+    TMatrixD * cov_ee = readMatrix(sample,"ee");
+    TMatrixD * cov_emu = readMatrix(sample,"emu");
+    TMatrixD * cov_mumu = readMatrix(sample,"mumu");
+
+    // New matrix containing the sum:
+    cov = new TMatrixD(cov_ee->GetNrows(),cov_ee->GetNcols());
+    for(Int_t y = 0; y < cov_ee->GetNcols(); y++) {
+      std::stringstream st;
+      for(Int_t x = 0; x < cov_ee->GetNrows(); x++) {
+	//(*cov)(x,y) = TMath::Sqrt((*cov_ee)(x,y)*(*cov_ee)(x,y) + (*cov_emu)(x,y)*(*cov_emu)(x,y) + (*cov_mumu)(x,y)*(*cov_mumu)(x,y));
+	(*cov)(x,y) = (*cov_ee)(x,y) + (*cov_emu)(x,y) + (*cov_mumu)(x,y);
+	st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+      }
+      LOG(logDEBUG3) << st.str();
+    }
+
+    LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant();
+    LOG(logDEBUG2) << "Sqrt of COV Diagonals (stat. errors per bin): ";
+    std::stringstream sigma;
+    for(Int_t y = 0; y < cov->GetNcols(); y++) {
+      for(Int_t x = 0; x < cov->GetNrows(); x++) {
+	if(y == x) sigma << std::setw(15) << std::setprecision(5) << TMath::Sqrt((*cov)(x,y));
+      }
+    }
+    LOG(logDEBUG2) << sigma.str();
+    
+    //DiffXSecStatErrorVecUnnorm[channelType][i] = TMath::Sqrt((perChannelDiffXSecStatError[0][i]*perChannelDiffXSecStatError[0][i])+
+    //(perChannelDiffXSecStatError[1][i]*perChannelDiffXSecStatError[1][i])+
+    //								     (perChannelDiffXSecStatError[2][i]*perChannelDiffXSecStatError[2][i])); // Just sum of squares
+
+  }
 
   /*
   // No normalization - scale the diagonal to the number of events:
