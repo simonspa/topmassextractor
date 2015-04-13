@@ -347,7 +347,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
   return finalChiSquare;
 }
 
-TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin) {
+TMatrixD * extractorDiffXSec::readMatrix(TString sample) {
 
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "SVD/" + sample + "/Unfolding_" + m_channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
@@ -364,22 +364,66 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
   // Cut away over and underflow bins:
   LOG(logDEBUG2) << "Creating a " << statCovNorm->GetNbinsX()-2 << "-by-" << statCovNorm->GetNbinsY()-2 << " COV matrix";
 
-  // Read the matrix from file:
-  TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
+  // Get the Diagonal sum (sum of all events):
   Double_t diagonal = 0;
-  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+  for(Int_t y = 2; y < statCovNorm->GetNbinsY(); y++) {
     std::stringstream st;
-    for(Int_t x = 0; x < cov->GetNrows(); x++) {
-      (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2);
-      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
-      if(x == y) { diagonal += (*cov)(x,y); }
+    for(Int_t x = 2; x < statCovNorm->GetNbinsX(); x++) {
+      st << std::setw(15) << std::setprecision(5) << statCovNorm->GetBinContent(x,y);
+      if(x == y) { diagonal += statCovNorm->GetBinContent(x,y); }
     }
     LOG(logDEBUG3) << st.str();
   }
+  LOG(logDEBUG2) << " Diagonal: " << std::setprecision(5) << diagonal;
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
+
+  // Build the matrix:
+  TMatrixD * cov = new TMatrixD(statCovNorm->GetNbinsX()-2,statCovNorm->GetNbinsY()-2);
+  Double_t scale_diagonal = 0;
+
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    std::stringstream st;
+    std::stringstream fac;
+    fac << "Factors: ";
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      (*cov)(x,y) = statCovNorm->GetBinContent(x+2,y+2)/(statCovNorm->GetXaxis()->GetBinWidth(x+2)*statCovNorm->GetYaxis()->GetBinWidth(y+2));
+
+      st << std::setw(15) << std::setprecision(5) << (*cov)(x,y);
+      if(x == y) { scale_diagonal += (*cov)(x,y); }
+    }
+    LOG(logDEBUG3) << st.str();
+    LOG(logDEBUG4) << fac.str();
+  }
 
   LOG(logDEBUG2) << "COV Determinant: " << std::setprecision(5) << cov->Determinant() 
-		 << " Diagonal: " << std::setprecision(5) << diagonal;
+		 << " Diagonal Sum: " << std::setprecision(5) << scale_diagonal;
+  LOG(logDEBUG2) << "Sqrt of COV Diagonals (stat. errors per bin): ";
+  std::stringstream sigma;
+  for(Int_t y = 0; y < cov->GetNcols(); y++) {
+    for(Int_t x = 0; x < cov->GetNrows(); x++) {
+      if(y == x) sigma << std::setw(15) << std::setprecision(5) << TMath::Sqrt((*cov)(x,y));
+    }
+  }
+  LOG(logDEBUG2) << sigma.str();
 
+  // Close the COV input file and set pointer back to output file:
+  if(input->IsOpen()) {
+    input->Close();
+    m_root_output->cd();
+  }
+
+  return cov;
+}
+
+TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin) {
+
+  TMatrixD * cov;
+  // Single channel - just read the information:
+  if(sample != "combined") cov = readMatrix(sample);
+  // Combined channel - add up the three contributions:
+  else {}
+
+  /*
   // No normalization - scale the diagonal to the number of events:
   if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) { diagonal/=m_nevents; }
 
@@ -396,7 +440,8 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
   }
 
   LOG(logDEBUG2) << "Normalized COV. New determinant: " << std::setprecision(5) << cov->Determinant() 
-		 << " new diagonal: " << std::setprecision(5) << newdiagonal;
+		 << " new diagonal: " << std::setprecision(5) << scale_diagonal;
+*/
 
   // Invert the covariance matrix:
   cov->Invert();
@@ -441,12 +486,6 @@ TMatrixD * extractorDiffXSec::getInverseCovMatrix(TString sample, Int_t drop_bin
       st << std::setw(15) << std::setprecision(5) << (*covFinal)(x,y); 
     }
     LOG(logDEBUG3) << st.str();
-  }
-
-  // Close the COV input file and set pointer back to output file:
-  if(input->IsOpen()) {
-    input->Close();
-    m_root_output->cd();
   }
 
   // Return the matrix:
