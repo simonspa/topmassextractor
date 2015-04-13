@@ -457,7 +457,7 @@ TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, std::vector<D
     throw(1);
   }
 
-  // FIXME add MC statistical uncertainty to diagonal elements:
+  // Add MC statistical uncertainty to diagonal elements:
   LOG(logDEBUG3) << "Added MC contributions to diagonal elements";
   std::stringstream mc;
   for(Int_t y = 0; y < cov->GetNcols(); y++) {
