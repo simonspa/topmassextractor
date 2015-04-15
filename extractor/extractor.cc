@@ -535,7 +535,7 @@ Double_t extractor::getTopMass() {
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
 
-  if(((flags & FLAG_STORE_HISTOGRAMS) != 0) && m_root_output->IsOpen()) { m_root_output->Close(); }
+  if(m_root_output != NULL && m_root_output->IsOpen()) { m_root_output->Close(); }
   return extractedMass;
 }
 
@@ -552,7 +552,8 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
   m_isSystematicVariation(false),
   m_requestPredictionErrors(false),
   flags(steeringFlags),
-  doClosure(false) {
+  doClosure(false),
+  m_root_output(NULL) {
 
   // Do not add histograms to the directory listing:
   TH1::AddDirectory(kFALSE);

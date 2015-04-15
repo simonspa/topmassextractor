@@ -399,7 +399,7 @@ TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
   // Close the COV input file and set pointer back to output file:
   if(input->IsOpen()) {
     input->Close();
-    m_root_output->cd();
+    if(m_root_output != NULL && m_root_output->IsOpen()) m_root_output->cd();
   }
 
   return cov;
