@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
   std::string type, channel;
 
   std::vector<std::string> flagtokens;
+  std::vector<std::string> systlist;
   uint32_t flags = 0;
   bool syst = false;
 
@@ -56,7 +57,7 @@ int main(int argc, char* argv[]) {
     // Set "data" flag to run on real data instead of closure test (just yield):
     else if(!strcmp(argv[i],"-d")) { closure = false; }
     // Set systematics flag to run on systematic variation sample
-    else if(!strcmp(argv[i],"-s")) { syst = true; }
+    else if(!strcmp(argv[i],"-s")) { syst = true; systlist = split(string(argv[++i]), ','); }
     // Select the channel to run on:
     else if(!strcmp(argv[i],"-c")) { channel = string(argv[++i]); }
     // Allow additional logging to file:
@@ -86,6 +87,12 @@ int main(int argc, char* argv[]) {
     std::stringstream ch;
     for(std::vector<TString>::iterator c = channels.begin(); c != channels.end(); ++c) { ch << *c << ", "; }
     LOG(logINFO) << "Running on channels " << ch.str();
+  }
+
+  if(syst) {
+    std::stringstream ch;
+    for(std::vector<std::string>::iterator c = systlist.begin(); c != systlist.end(); ++c) { ch << *c << ", "; }
+    LOG(logINFO) << "Running on systematics " << ch.str();
   }
 
   if(gSystem->AccessPathName(inputpath)) {
@@ -124,10 +131,10 @@ int main(int argc, char* argv[]) {
   Double_t unfolding_mass = nominalmass;
 
   try {
-    if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,fulltake);
-    else if(type == "yieldstats") extract_yield_stats(inputpath,outputpath,channels,closure,closure_sample,flags,syst,fulltake);
-    else if(type == "diffxsstats") extract_diffxsec_stats(inputpath,outputpath,channels,unfolding_mass,flags,syst,fulltake);
-    else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst,fulltake);
+    if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,systlist,fulltake);
+    else if(type == "yieldstats") extract_yield_stats(inputpath,outputpath,channels,closure,closure_sample,flags,syst,systlist, fulltake);
+    else if(type == "diffxsstats") extract_diffxsec_stats(inputpath,outputpath,channels,unfolding_mass,flags,syst,systlist,fulltake);
+    else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst,systlist,fulltake);
   }
   catch(...) {
     LOG(logCRITICAL) << "Mass extraction failed.";

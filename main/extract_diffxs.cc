@@ -19,7 +19,7 @@ using namespace std;
 using namespace massextractor;
 using namespace unilog;
 
-void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, std::vector<std::string> systlist, bool fulltake) {
 
   std::vector<TString> predictions;
   predictions.push_back("MATCH");
@@ -30,7 +30,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   systematics.push_back("SCALE");
   systematics.push_back("BG");
   //systematics.push_back("JES");
-  systematics.push_back("JES_MPF");
+  /*systematics.push_back("JES_MPF");
   systematics.push_back("JES_INTERCAL");
   systematics.push_back("JES_UNCORR");
   systematics.push_back("JES_BJES");
@@ -39,6 +39,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   systematics.push_back("JES_FLAVOR_QUARK");
   systematics.push_back("JES_FLAVOR_CHARM");
   systematics.push_back("JES_FLAVOR_BOTTOM");
+  */
 
   systematics.push_back("JER");
   systematics.push_back("PU");
@@ -279,7 +280,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   return;
 }
 
-void massextractor::extract_diffxsec_stats(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_diffxsec_stats(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, std::vector<std::string> systlist, bool fulltake) {
 
   // here we need to use two different input paths since the statistical errors have already been changed (for the inf. stat. data set)
   // before the unfolding (appending "_infstat" to the input path)
