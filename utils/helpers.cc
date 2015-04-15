@@ -76,37 +76,6 @@ std::vector<Double_t> massextractor::getBinningFromHistogram(TH1D * histo, Int_t
   return binning;
 }
 
-TString massextractor::getSampleLabel(TString systematic) {
-
-  TString label = "";
-  if(systematic.Contains("Nominal")) { label = "Nominal"; }
-  else if(systematic.Contains("BTAG")) { label = "B-Tagging"; }
-  else if(systematic.Contains("JER")) { label = "Jet Energy Resolution"; }
-  else if(systematic.Contains("JES_MPF")) { label = "JES: MPF"; }
-  else if(systematic.Contains("JES_INTERCAL")) { label = "JES: Intercalibration"; }
-  else if(systematic.Contains("JES_UNCORR")) { label = "JES: Uncorrelated"; }
-  else if(systematic.Contains("JES_BJES")) { label = "JES: bJES"; }
-  else if(systematic.Contains("JES_FLAVOR")) { label = "JES: Flavor"; }
-  else if(systematic.Contains("JES")) { label = "Jet Energy Scale"; }
-  else if(systematic.Contains("PU")) { label = "Pile-Up"; }
-  else if(systematic.Contains("TRIG")) { label = "Trigger Eff."; }
-  else if(systematic.Contains("LEPT")) { label = "Lepton Eff."; }
-  else if(systematic.Contains("BG")) { label = "Background"; }
-  else if(systematic.Contains("DY")) { label = "Drell-Yan"; }
-  else if(systematic.Contains("KIN")) { label = "Kinematic Reconstruction"; }
-  else if(systematic.Contains("MATCH")) { label = "Matching"; }
-  else if(systematic.Contains("SCALE")) { label = "Q$^2$ Scale"; }
-  else if(systematic.Contains("HAD")) { label = "Model"; } //{ label = "Hadronization"; }
-  else if(systematic.Contains("MASS")) { label = "Top Mass"; }
-  else if(systematic.Contains("CR")) { label = "Color Reconnection"; }
-  else if(systematic.Contains("UE")) { label = "Underlying Event"; }
-  else if(systematic.Contains("PDF")) { label = "PDF"; }
-
-  if(systematic.Contains("PRED")) label += " (Theory)";
-
-  return label;
-}
-
 TString extractor::getSampleFromMass(TString sample, Double_t mass, bool nominal) {
 
   TString fullSampleName = "";
@@ -219,12 +188,12 @@ float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, floa
 }
 
 std::vector<std::string> &massextractor::split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
 }
 
 std::vector<std::string> massextractor::split(const std::string &s, char delim) {
@@ -236,7 +205,6 @@ std::vector<std::string> massextractor::split(const std::string &s, char delim) 
 Double_t massextractor::systStatErr(Double_t nominalStatErr, Double_t systStatErr) {
   return TMath::Abs(systStatErr - nominalStatErr);
 }
-
 
 bool massextractor::getSystematicUpDownError(Double_t delta_up, Double_t delta_down, Double_t & total_syst_pos, Double_t & total_syst_neg) {
 
@@ -262,3 +230,36 @@ bool massextractor::getSystematicUpDownError(Double_t delta_up, Double_t delta_d
     return false;
   }
 }
+
+TString massextractor::getSampleLabel(TString systematic) {
+
+  TString label = "";
+  if(systematic.Contains("Nominal")) { label = "Nominal"; }
+  else if(systematic.Contains("BTAG")) { label = "B-Tagging"; }
+  else if(systematic.Contains("JER")) { label = "Jet Energy Resolution"; }
+  else if(systematic.Contains("JES_MPF")) { label = "JES: MPF"; }
+  else if(systematic.Contains("JES_INTERCAL")) { label = "JES: Intercalibration"; }
+  else if(systematic.Contains("JES_UNCORR")) { label = "JES: Uncorrelated"; }
+  else if(systematic.Contains("JES_BJES")) { label = "JES: bJES"; }
+  else if(systematic.Contains("JES_FLAVOR")) { label = "JES: Flavor"; }
+  else if(systematic.Contains("JES")) { label = "Jet Energy Scale"; }
+  else if(systematic.Contains("PU")) { label = "Pile-Up"; }
+  else if(systematic.Contains("TRIG")) { label = "Trigger Eff."; }
+  else if(systematic.Contains("LEPT")) { label = "Lepton Eff."; }
+  else if(systematic.Contains("BG")) { label = "Background"; }
+  else if(systematic.Contains("DY")) { label = "Drell-Yan"; }
+  else if(systematic.Contains("KIN")) { label = "Kinematic Reconstruction"; }
+  else if(systematic.Contains("MATCH")) { label = "Matching"; }
+  else if(systematic.Contains("SCALE")) { label = "Q$^2$ Scale"; }
+  else if(systematic.Contains("HAD")) { label = "Model"; } //{ label = "Hadronization"; }
+  else if(systematic.Contains("MASS")) { label = "Top Mass"; }
+  else if(systematic.Contains("CR")) { label = "Color Reconnection"; }
+  else if(systematic.Contains("UE")) { label = "Underlying Event"; }
+  else if(systematic.Contains("PDF")) { label = "PDF"; }
+
+  if(systematic.Contains("PRED")) label += " (Theory)";
+
+  return label;
+}
+
+//bool massextractor::getTopMassDifference(TString channel, TString syst, TString inpath, TString outpath, uint32_t flags) {}

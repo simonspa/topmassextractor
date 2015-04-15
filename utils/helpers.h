@@ -31,8 +31,6 @@ namespace massextractor {
     return os.str();
   }
 
-  TString getSampleLabel(TString systematic);
-
   std::vector<Double_t> getBinningFromHistogram(TH1D * histo, Int_t startbin=1, Int_t nbins=0);
 
   // Splitting a string at tokens:
@@ -42,10 +40,13 @@ namespace massextractor {
   // Helper to calculate the stat. error on systematics for DiffXSec:
   Double_t systStatErr(Double_t nominalStatErr, Double_t systStatErr);
 
+  TString getSampleLabel(TString systematic);
+
   // Helper to check if both systematic variations (UP and DOWN) produce errors in the same
   // direction. If so, only add the maximum of both, otherwise count up and down.
   // Return value is decision (true: same direction, false: different directions)
   bool getSystematicUpDownError(Double_t delta_up, Double_t delta_down, Double_t & total_syst_pos, Double_t & total_syst_neg);
+
 }
 
 #endif /* MASSEXTRACTOR_HELPERS_H */
