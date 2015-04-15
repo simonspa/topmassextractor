@@ -18,7 +18,6 @@
 using namespace std;
 using namespace massextractor;
 using namespace unilog;
-using namespace bin;
 
 int main(int argc, char* argv[]) {
 

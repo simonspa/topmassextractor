@@ -18,9 +18,8 @@
 using namespace std;
 using namespace massextractor;
 using namespace unilog;
-using namespace bin;
 
-void bin::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> predictions;
   predictions.push_back("MATCH");
@@ -280,7 +279,7 @@ void bin::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TS
   return;
 }
 
-void bin::extract_diffxsec_stats(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_diffxsec_stats(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, bool fulltake) {
 
   // here we need to use two different input paths since the statistical errors have already been changed (for the inf. stat. data set)
   // before the unfolding (appending "_infstat" to the input path)

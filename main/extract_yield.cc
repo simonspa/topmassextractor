@@ -18,9 +18,8 @@
 using namespace std;
 using namespace massextractor;
 using namespace unilog;
-using namespace bin;
 
-void bin::extract_yield(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_yield(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
 
   // #######################################
   // ###              YIELD              ###
@@ -220,7 +219,7 @@ void bin::extract_yield(TString inputpath, TString outputpath, std::vector<TStri
   return;
 }
 
-void bin::extract_yield_stats(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
+void massextractor::extract_yield_stats(TString inputpath, TString outputpath, std::vector<TString> channels, bool closure, TString closure_sample, uint32_t flags, bool syst, bool fulltake) {
 
   std::vector<TString> syst_bg;
   //syst_bg.push_back("BG_UP"); syst_bg.push_back("BG_DOWN");
