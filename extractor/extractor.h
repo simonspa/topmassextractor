@@ -12,7 +12,7 @@ namespace massextractor {
 
   // Some ugly global defines:
 #define nominalmass 172.5
-#define granularity 500
+#define granularity 5000
 #define confidenceLevel 0.95
 #define chi2significance 1.5
 
