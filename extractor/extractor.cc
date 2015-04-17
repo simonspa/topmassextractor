@@ -88,7 +88,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   TGraphErrors * chi2_graph = new TGraphErrors();
   TGraphErrors * chi2_graph_plotting = new TGraphErrors();
   TString gname = "chi2_" + m_channel + Form("_bin%i",bin);
-  chi2_graph->SetTitle(gname);
+  //chi2_graph->SetTitle(gname);
   chi2_graph_plotting->SetTitle(gname);
 
   size_t n = data->GetN();
@@ -109,6 +109,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
   Double_t xshift = (xmax+xmin)/2;
   Double_t yshift = (ymeana+ymeanb)/2;
 
+  LOG(logDEBUG2) << "xmin/xmax: " << xmin << "/" << xmax << " (plotting: " << xmin_plotting << "/" << xmax_plotting << ")";
 
   if((flags & FLAG_DONT_SHIFT_GRAPHS) == 0) {
     // Get shifted graphs:
@@ -166,7 +167,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     chi2_graph->SetPoint(i, scanPoints.at(i), chi2);
 
     // Not all points go into the final plot, restrict to range between mass points:
-    if(xmin_plotting <= scanPoints.at(i) && scanPoints.at(i) <= xmax_plotting) {
+    if(xmin_plotting <= scanPoints.at(i) && scanPoints.at(i) <= xmax_plotting && i%(scanPoints.size()/500) == 0) {
       chi2_graph_plotting->SetPoint(i_plotting, scanPoints.at(i), chi2);
       i_plotting++;
     }
@@ -291,7 +292,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
       chi2sum->SetPoint(i,x,y+ysum);
       
       // Check if this is within the range we want to plot:
-      if(masses.front() <= x && x <= masses.back()) {
+      if(masses.front() <= x && x <= masses.back() && i%(chi2->GetN()/500) == 0) {
 	chi2sum_plotting->SetPoint(i_plotting,x,y+ysum);
 	i_plotting++;
       }
