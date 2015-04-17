@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
   // If this bool is set, PDFs for *all* systematics are produced (many!)
   bool fulltake = false;
 
-  bool closure = true;
+  bool closure = false;
   TString closure_sample = "Nominal";
 
   for (int i = 1; i < argc; i++) {
@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-o")) { outputpath = string(argv[++i]); }
     // Set "data" flag to run on real data instead of closure test (just yield):
     else if(!strcmp(argv[i],"-d")) { closure = false; }
+    // Set "pseudo" flag to run on pseudo data (just yield):
+    else if(!strcmp(argv[i],"--pseudo")) { closure = true; }
     // Set systematics flag to run on systematic variation sample
     else if(!strcmp(argv[i],"-s")) { syst = true; systlist = split(string(argv[++i]), ','); }
     // Select the channel to run on:
