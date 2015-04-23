@@ -42,35 +42,7 @@ void extractorDiffXSecScaled::prepareScaleFactors(TString systematic) {
 
   if(systematic.Contains("PDF")) {
     LOG(logDEBUG2) << "Preparing PDF uncertainty scale factors...";
-    // PDF scaling for all five bins:
-    if(m_channel == "combined") {
-      scaleFactors.push_back(sign*0.0515052195287627);
-      scaleFactors.push_back(sign*0.0303295667921121);
-      scaleFactors.push_back(sign*0.0120197587318592);
-      scaleFactors.push_back(sign*0.00096285557392822);
-      scaleFactors.push_back(sign*0.00463865551220651);
-    }
-    else if(m_channel == "ee") {
-      scaleFactors.push_back(sign*0.0516332122065309);
-      scaleFactors.push_back(sign*0.0299519625826893);
-      scaleFactors.push_back(sign*0.0121955932869055);
-      scaleFactors.push_back(sign*0.00101224057977448);
-      scaleFactors.push_back(sign*0.00468337726512364);
-    }
-    else if(m_channel == "emu") {
-      scaleFactors.push_back(sign*0.052187580222256);
-      scaleFactors.push_back(sign*0.0299646995888875);
-      scaleFactors.push_back(sign*0.0120067363967587);
-      scaleFactors.push_back(sign*0.000941424495068623);
-      scaleFactors.push_back(sign*0.00460886986739672);
-    }
-    else if(m_channel == "mumu") {
-      scaleFactors.push_back(sign*0.0482779652628936);
-      scaleFactors.push_back(sign*0.0317757682332336);
-      scaleFactors.push_back(sign*0.011940251061639);
-      scaleFactors.push_back(sign*0.00101279917736978);
-      scaleFactors.push_back(sign*0.0046749620211185);
-    }
+    scaleFactors = getPDFScaleFactors(sign,m_channel);
   }
   std::stringstream sv;
   for(std::vector<Double_t>::iterator sf = scaleFactors.begin(); sf != scaleFactors.end(); ++sf) { sv << *sf << " "; }

@@ -149,6 +149,43 @@ bool extractor::isApprox(t a, t b, double eps) {
   else { return false; }
 }
 
+std::vector<Double_t> extractorDiffXSecScaled::getPDFScaleFactors(Int_t sign, TString channel) {
+
+  std::vector<Double_t> factors;
+
+  // PDF scaling for all five bins:
+  if(channel == "combined") {
+    factors.push_back(sign*0.0515052195287627);
+    factors.push_back(sign*0.0303295667921121);
+    factors.push_back(sign*0.0120197587318592);
+    factors.push_back(sign*0.00096285557392822);
+    factors.push_back(sign*0.00463865551220651);
+  }
+  else if(channel == "ee") {
+    factors.push_back(sign*0.0516332122065309);
+    factors.push_back(sign*0.0299519625826893);
+    factors.push_back(sign*0.0121955932869055);
+    factors.push_back(sign*0.00101224057977448);
+    factors.push_back(sign*0.00468337726512364);
+  }
+  else if(channel == "emu") {
+    factors.push_back(sign*0.052187580222256);
+    factors.push_back(sign*0.0299646995888875);
+    factors.push_back(sign*0.0120067363967587);
+    factors.push_back(sign*0.000941424495068623);
+    factors.push_back(sign*0.00460886986739672);
+  }
+  else if(channel == "mumu") {
+    factors.push_back(sign*0.0482779652628936);
+    factors.push_back(sign*0.0317757682332336);
+    factors.push_back(sign*0.011940251061639);
+    factors.push_back(sign*0.00101279917736978);
+    factors.push_back(sign*0.0046749620211185);
+  }
+
+  return factors;
+}
+
 float extractor::getTtbarXsec(float topmass, float energy, float* scaleerr, float * pdferr) {
     /*
      * all numbers following arxiv 1303.6254

@@ -335,6 +335,7 @@ namespace massextractor {
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
 
     void prepareScaleFactors(TString systematic);
+    std::vector<Double_t> getPDFScaleFactors(Int_t sign, TString channel);
     std::vector<Double_t> scaleFactors;
 
   public:
