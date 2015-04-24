@@ -29,7 +29,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   systematics.push_back("MATCH");
   systematics.push_back("SCALE");
   systematics.push_back("BG");
-  //systematics.push_back("JES");
+  systematics.push_back("JES");
   /*systematics.push_back("JES_MPF");
   systematics.push_back("JES_INTERCAL");
   systematics.push_back("JES_UNCORR");
@@ -134,8 +134,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       LOG(logRESULT) << "HAD- " << *ch << ": delta = " << diff << " GeV "
 		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)
 		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2);
-      total_syst_pos += diff*diff;
-      total_syst_neg += diff*diff;
+      getSystematicUpDownError(diff,-1*diff,total_syst_pos,total_syst_neg);
       delete var; delete var2;
 
       LOG(logDEBUG) << "Getting CR variation...";
@@ -152,8 +151,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       LOG(logRESULT) << "CR - " << *ch << ": delta = " << diff << " GeV "
 		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)
 		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2);
-      total_syst_pos += diff*diff;
-      total_syst_neg += diff*diff;
+      getSystematicUpDownError(diff,-1*diff,total_syst_pos,total_syst_neg);
       delete var; delete var2;
 
       LOG(logDEBUG) << "Getting UE variation...";
@@ -175,35 +173,39 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       LOG(logRESULT) << "UE - " << *ch << ": delta = " << diff << " GeV "
 		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2)+systStatErr(total_stat_pos,var_stat_pos3)
 		     << "-" << systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2)+systStatErr(total_stat_neg,var_stat_neg3);
-      total_syst_pos += diff*diff;
-      total_syst_neg += diff*diff;
+      getSystematicUpDownError(diff,-1*diff,total_syst_pos,total_syst_neg);
       delete var; delete var2; delete var3;
 
       LOG(logDEBUG) << "Getting PDF variation...";
-      extractorDiffXSecScaled * pdf;
-      pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
-      diff = (Double_t)topmass - pdf->getTopMass();
-      pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logINFO) << "PDF_UP - " << *ch << ": minimum Chi2 @ m_t=" << pdf->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
-      LOG(logRESULT) << "PDF_UP - " << *ch << ": delta = " << diff << " GeV "
-		     << "+" << systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos)
-		     << "-" << systStatErr(total_stat_neg,var_stat_neg);
-      if(diff > 0) total_syst_pos += diff*diff;
-      else total_syst_neg += diff*diff;
-      DiffSystOutputFile << systab->writeSystematicsTableUp("PDF_UP", diff,
+      extractorDiffXSecScaled * pdf_up   = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
+      extractorDiffXSecScaled * pdf_down = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
+
+      Double_t topmass_pdf_up = pdf_up->getTopMass();
+      Double_t topmass_pdf_down = pdf_down->getTopMass();
+
+      pdf_up->getStatError(var_stat_pos,var_stat_neg);
+      pdf_up->getStatError(var_stat_pos2,var_stat_neg2);
+
+      LOG(logINFO) << "PDF_UP   - " << *ch << ": minimum Chi2 @ m_t=" << topmass_pdf_up << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logINFO) << "PDF_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_pdf_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+
+      // Calculate difference to nominal extraction:
+      Double_t delta_pdf_up = (Double_t)topmass-topmass_pdf_up;
+      Double_t delta_pdf_down = (Double_t)topmass-topmass_pdf_down;
+
+      LOG(logRESULT) << "PDF_UP:   delta = " << delta_pdf_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
+      LOG(logRESULT) << "PDF_DOWN: delta = " << delta_pdf_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
+
+      bool systPdfUpDown = getSystematicUpDownError(delta_pdf_up,delta_pdf_down,total_syst_pos,total_syst_neg);
+      if(systPdfUpDown) {
+	if(abs(delta_pdf_up) > abs(delta_pdf_down)) { delta_pdf_down = 0; }
+	else { delta_pdf_up = delta_pdf_down; delta_pdf_down = 0; }
+      }
+
+      DiffSystOutputFile << systab->writeSystematicsTableUp("PDF_UP", delta_pdf_up, 
 							    systStatErr(total_stat_pos,var_stat_pos),
 							    systStatErr(total_stat_neg,var_stat_neg));
-
-      pdf = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
-      diff = (Double_t)topmass - pdf->getTopMass();
-      pdf->getStatError(var_stat_pos,var_stat_neg);
-      LOG(logINFO) << "PDF_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << pdf->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
-      LOG(logRESULT) << "PDF_DOWN - " << *ch << ": delta = " << diff << " GeV "
-		     << "+" << systStatErr(total_stat_pos,var_stat_pos)
-		     << "-" << systStatErr(total_stat_neg,var_stat_neg);
-      if(diff > 0) total_syst_pos += diff*diff;
-      else total_syst_neg += diff*diff;
-      DiffSystOutputFile << systab->writeSystematicsTableDown(diff,
+      DiffSystOutputFile << systab->writeSystematicsTableDown(delta_pdf_down,
 							      systStatErr(total_stat_pos,var_stat_pos),
 							      systStatErr(total_stat_neg,var_stat_neg));
 
