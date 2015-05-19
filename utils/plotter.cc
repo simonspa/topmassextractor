@@ -325,6 +325,39 @@ void massextractor::setStyle(TGraphErrors *hist, TString name)
   }
 }
 
+void massextractor::setStyle(TH2D *hist, TString name)
+{
+  hist->SetLineWidth(1);
+  hist->GetXaxis()->SetLabelFont(42);
+  hist->GetYaxis()->SetLabelFont(42);
+  hist->GetZaxis()->SetLabelFont(42);
+  hist->GetXaxis()->SetTitleFont(42);
+  hist->GetYaxis()->SetTitleFont(42);
+  hist->GetZaxis()->SetTitleFont(42);
+  hist->GetXaxis()->SetTitleSize(0.05);
+  hist->GetYaxis()->SetTitleSize(0.05);
+  hist->GetZaxis()->SetTitleSize(0.05);
+  hist->GetXaxis()->SetTitleOffset(1.08);
+  hist->GetYaxis()->SetTitleOffset(1.08);
+  hist->GetZaxis()->SetTitleOffset(1.08);
+  hist->GetXaxis()->SetLabelOffset(0.007);
+  hist->GetYaxis()->SetLabelOffset(0.007);
+  hist->GetZaxis()->SetLabelOffset(0.007);
+
+  hist->SetMarkerStyle(20);
+  hist->SetMarkerSize(1.2);
+  hist->SetLineWidth(2);
+  
+  hist->GetXaxis()->SetTitle("#rho_{s}");
+  hist->GetYaxis()->SetTitle("#rho_{s}");
+
+  if(name == "cov") {
+    hist->SetLineWidth(2);
+    hist->SetFillStyle(3005);
+    hist->SetFillColor(kBlack);
+    hist->GetZaxis()->SetTitle("Statisical Covariance (Absolute)");
+  }
+}
 
 void massextractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg, bool closure) {
 

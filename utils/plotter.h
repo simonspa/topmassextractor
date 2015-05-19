@@ -2,6 +2,7 @@
 #include <TGraphErrors.h>
 #include <TString.h>
 #include <TLegend.h>
+#include <TH2D.h>
 
 namespace massextractor {
 
@@ -14,6 +15,7 @@ namespace massextractor {
   void DrawCMSLabels(double lumi=19712, double energy=8, double textSize=0.045);
 
   void setStyle(TGraphErrors *hist, TString name="");
+  void setStyle(TH2D *hist, TString name="");
   void setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg, bool closure=false);
   void setLegendStyle(TLegend *leg);
 
