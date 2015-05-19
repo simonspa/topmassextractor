@@ -2,6 +2,7 @@
 *.d
 *.so
 *.pdf
+*.eps
 *.root
 build
 bin
