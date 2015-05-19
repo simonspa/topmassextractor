@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -114,6 +115,10 @@ void combine_closure() {
     graph->SetLineColor(kGray+1);
     graph->SetMarkerStyle(20);
     graphtotal->SetLineColor(kOrange-4);
+
+    // Do some line fitting
+    //graph->Fit("pol1","F EX0 S","",166.5,178.5);
+    //TF1 * graphFit = graph->GetFunction("pol1");
 
     TLine *l = new TLine(m_min,m_min,m_max,m_max);
     l->SetLineColor(kGray+1);
