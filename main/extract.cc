@@ -39,6 +39,8 @@ int main(int argc, char* argv[]) {
   bool closure = false;
   TString closure_sample = "Nominal";
 
+  Double_t unfolding_mass = nominalmass;
+
   for (int i = 1; i < argc; i++) {
     // select to either extract from yield of differential cross section:
     if (!strcmp(argv[i],"-t")) {
@@ -69,7 +71,10 @@ int main(int argc, char* argv[]) {
       unilog::SetLogOutput::Duplicate() = true;
     }
     // Mass sample to be used for closure test:
-    else if(!strcmp(argv[i],"-m")) { closure_sample = string(argv[++i]); }
+    else if(!strcmp(argv[i],"-m")) { 
+      closure_sample = string(argv[++i]);
+      unfolding_mass = massextractor::getMassFromSample(closure_sample);
+    }
     // Read and tokeinze the flags:
     else if(!strcmp(argv[i],"-f")) { flagtokens = split(string(argv[++i]), ','); }
     else { LOG(logERROR) << "Unrecognized command line argument \"" << argv[i] << "\".";}
@@ -129,8 +134,6 @@ int main(int argc, char* argv[]) {
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
   }
   LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);
-
-  Double_t unfolding_mass = nominalmass;
 
   try {
     if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,systlist,fulltake);
