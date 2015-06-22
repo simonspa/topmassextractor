@@ -330,6 +330,25 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 
 TMatrixD * extractorDiffXSec::readMatrix(TString sample, TString channel) {
 
+  // Overwrite the samples unfolded with different masses with just the nominal:
+  if((flags & FLAG_UNFOLD_ALLMASSES) == 0 ) { 
+    LOG(logDEBUG2) << "Overwriting: " << sample;
+
+    // Mass samples from Nominal:
+    if(sample.Contains("GEV") || sample.Contains("Nominal")) {
+      sample = getSampleFromMass("Nominal",unfoldingMass,true);
+    }
+
+    // All other mass-varied samples:
+    else if(sample.Contains("POS") || sample.Contains("NEG")) { 
+      sample.Remove(sample.Length()-5);
+      // Check if we have set a specific sample to use for unfolding:
+      sample = getSampleFromMass(sample,unfoldingMass,false);
+    }
+
+    LOG(logDEBUG2) << "with: " << sample;
+  }
+
   // Input files for Differential Cross section mass extraction: unfolded distributions
   TString filename = "SVD/" + sample + "/Unfolding_" + channel + "_TtBar_Mass_HypTTBar1stJetMass.root";
   TString histogramname;
