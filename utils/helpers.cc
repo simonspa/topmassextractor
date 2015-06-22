@@ -115,7 +115,7 @@ TString extractor::getSampleFromMass(TString sample, Double_t mass, bool nominal
   return fullSampleName;
 }
 
-Double_t extractor::getMassFromSample(TString sample) {
+Double_t massextractor::getMassFromSample(TString sample) {
 
   Double_t topmass = nominalmass;
   // The mass samples are marked with "GEV":

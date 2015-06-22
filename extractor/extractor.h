@@ -137,7 +137,6 @@ namespace massextractor {
      */
     float getTtbarXsec(float topmass, float energy=8, float* scaleerr=0, float * pdferr=0);
 
-    Double_t getMassFromSample(TString sample);
     TString getSampleFromMass(TString sample, Double_t mass, bool nominal);
     TFile * OpenFile(TString name, TString mode);
 

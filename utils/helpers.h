@@ -41,6 +41,7 @@ namespace massextractor {
   Double_t systStatErr(Double_t nominalStatErr, Double_t systStatErr);
 
   TString getSampleLabel(TString systematic);
+  Double_t getMassFromSample(TString sample);
 
   // Helper to check if both systematic variations (UP and DOWN) produce errors in the same
   // direction. If so, only add the maximum of both, otherwise count up and down.
