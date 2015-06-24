@@ -118,7 +118,6 @@ void combine_closure() {
 
     // Do some line fitting
     //graph->Fit("pol1","F EX0 S","",166.5,178.5);
-    //TF1 * graphFit = graph->GetFunction("pol1");
 
     TLine *l = new TLine(m_min,m_min,m_max,m_max);
     l->SetLineColor(kGray+1);
@@ -137,7 +136,7 @@ void combine_closure() {
     l->Draw();
     l2->Draw();
     massextractor::DrawCMSLabels();
-    massextractor::DrawDecayChLabel(*ch);
+    massextractor::DrawDecayChLabel(*ch,false);
     c->Print("diffxs_closure_" + *ch + ".pdf");
   }
 
