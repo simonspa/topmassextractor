@@ -234,8 +234,10 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 
   std::pair<TGraphErrors*,TF1*> finalChiSquare;
   TGraphErrors * chi2sum = new TGraphErrors();
+  TGraphErrors * chi2sum_plotting = new TGraphErrors();
   TString gname = "chi2_" + m_channel + "_sum";
   chi2sum->SetTitle(gname);
+  chi2sum_plotting->SetTitle(gname);
 
   // Cross-check: we have the same number of rho-S bins:
   if(data.size() != mc.size()) {
@@ -267,6 +269,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 
   // Now we have to fits to MC and data for all bins, let's calculate the Chi2.
   // Scanning over the fits:
+  Int_t i_plotting = 0;
   for(Int_t i = 0; i < dataFits.at(0)->GetN(); i++) {
     // Prepare the vector containing the (dat - mc) difference for all bins:
     TVectorD v(dataFits.size() - (drop_bin > 0 ? 1 : 0));
@@ -302,6 +305,12 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 		   << "(V:" << v.GetNoElements() << "x1, {" << sv.str() << "} "
 		   << "COV: " << invCov->GetNrows() << "x" << invCov->GetNcols() << ")";
     chi2sum->SetPoint(i,x_dat,chi2);
+
+    // Check if this is within the range we want to plot:
+    if(PLOT_LOWER_LIMIT_DIFFXS <= x_dat && x_dat <= PLOT_UPPER_LIMIT_DIFFXS && i%(dataFits.at(0)->GetN()/500) == 0) {
+      chi2sum_plotting->SetPoint(i_plotting,x_dat,chi2);
+      i_plotting++;
+    }
     delete invCov;
   }
 
@@ -310,13 +319,14 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     TString cname = "chi2_" + m_channel + "_sum";
     c = new TCanvas(cname,cname);
     c->cd();
-    chi2sum->SetMarkerStyle(20);
-    chi2sum->GetXaxis()->SetTitle("m_{t} [GeV]");
-    chi2sum->GetYaxis()->SetTitle("#chi^{2}");
-    chi2sum->Draw("AP");
+    chi2sum_plotting->SetMarkerStyle(20);
+    chi2sum_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
+    chi2sum_plotting->GetYaxis()->SetTitle("#chi^{2}");
+    chi2sum_plotting->Draw("AP");
     DrawDecayChLabel(m_channel);
     DrawCMSLabels();
-    chi2sum->Write(gname);
+    rescaleGraph(chi2sum_plotting);
+    chi2sum_plotting->Write(gname);
     c->Write(cname);
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + cname + ".pdf"); }
   }

@@ -16,6 +16,11 @@ namespace massextractor {
 #define confidenceLevel 0.95
 #define chi2significance 1.5
 
+#define PLOT_LOWER_LIMIT 168.5
+#define PLOT_UPPER_LIMIT 177.0
+#define PLOT_LOWER_LIMIT_DIFFXS 166.5
+#define PLOT_UPPER_LIMIT_DIFFXS 178.0
+
   // Ship this flag in order to create and store histograms:
 #define FLAG_STORE_HISTOGRAMS 0x01
 

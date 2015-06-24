@@ -292,7 +292,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
       chi2sum->SetPoint(i,x,y+ysum);
       
       // Check if this is within the range we want to plot:
-      if(masses.front() <= x && x <= masses.back() && i%(chi2->GetN()/500) == 0) {
+      if(PLOT_LOWER_LIMIT <= x && x <= PLOT_UPPER_LIMIT && i%(chi2->GetN()/500) == 0) {
 	chi2sum_plotting->SetPoint(i_plotting,x,y+ysum);
 	i_plotting++;
       }
