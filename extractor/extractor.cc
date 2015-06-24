@@ -208,7 +208,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     chi2_graph_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph_plotting->GetYaxis()->SetTitle("#chi^{2}");
     chi2_graph_plotting->Draw("AP");
-    DrawDecayChLabel(m_channel,bin,bin_boundaries);
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0),bin,bin_boundaries);
     DrawCMSLabels();
     rescaleGraph(chi2_graph_plotting,1.25);
     chi2_graph_plotting->Write(gname);
@@ -244,7 +244,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     data->Draw("SAME L E3");
     data->Write(dataname);
 
-    DrawDecayChLabel(m_channel,bin, bin_boundaries);
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0),bin, bin_boundaries);
     DrawCMSLabels();
     leg->Draw();
 
@@ -308,7 +308,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     chi2sum_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum_plotting->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum_plotting->Draw("AP");
-    DrawDecayChLabel(m_channel);
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0));
     DrawCMSLabels();
     rescaleGraph(chi2sum_plotting);
     chi2sum_plotting->Write(gname);
@@ -364,7 +364,7 @@ std::pair<TGraphErrors*,TF1*> extractor::getChiSquare(std::vector<Double_t> mass
     chisquare->GetXaxis()->SetTitle("m_{t} [GeV]");
     chisquare->GetYaxis()->SetTitle("#chi^{2}");
     chisquare->Draw("AP");
-    DrawDecayChLabel(m_channel);
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0));
     DrawCMSLabels();
     chisquare->Write(name);
     c->Write(name + "_c");
@@ -471,7 +471,7 @@ void extractor::getControlPlots(std::vector<TH1D*> histograms) {
     }
   }
 
-  DrawDecayChLabel(m_channel);
+  DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0));
   DrawCMSLabels();
   c->Write(canvastitle);
   if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + canvastitle + ".pdf"); }

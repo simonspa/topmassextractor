@@ -60,6 +60,10 @@ namespace massextractor {
   // Flag to explicitly set the statistical uncertainty on data (signal histogram) to zero (or something super tiny) to pretend having infinite statistics in data
 #define FLAG_INFINITE_DATA_STATISTICS 0x1000
 
+  // Do not plot channel labels:
+#define FLAG_DONT_PLOT_CHANNELLABELS 0x2000
+
+
   class extractor {
 
   private:

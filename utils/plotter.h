@@ -9,7 +9,7 @@ namespace massextractor {
   void setHHStyle(TStyle& HHStyle);
 
   // Draw label for Decay Channel in upper left corner of plot
-  void DrawDecayChLabel(TString decaychannel="", Int_t bin=0, std::vector<Double_t> boundaries=std::vector<Double_t>(), int cmsprelim=1, double textSize=0.04);
+  void DrawDecayChLabel(TString decaychannel="", bool drawchannel=true, Int_t bin=0, std::vector<Double_t> boundaries=std::vector<Double_t>(), int cmsprelim=1, double textSize=0.04);
 
   // Draw official labels (CMS Preliminary, luminosity and CM energy) above plot
   void DrawCMSLabels(double lumi=19712, double energy=8, double textSize=0.045);

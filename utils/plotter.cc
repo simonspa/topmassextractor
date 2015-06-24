@@ -200,7 +200,7 @@ void massextractor::setHHStyle(TStyle& HHStyle)
 
 
 // Draw label for Decay Channel in upper left corner of plot
-void massextractor::DrawDecayChLabel(TString decaychannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
+void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
 
     TPaveText *cms = new TPaveText();
     cms->AddText("CMS");
@@ -258,19 +258,21 @@ void massextractor::DrawDecayChLabel(TString decaychannel, Int_t bin, std::vecto
       bintxt->Draw("same");
     }
 
-    TPaveText *decch = new TPaveText();
-    decch->AddText(getChannelLabel(decaychannel));
+    if(drawchannel) {
+      TPaveText *decch = new TPaveText();
+      decch->AddText(getChannelLabel(decaychannel));
 
-    decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
-    decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
-    decch->SetX2NDC(1.0 - gStyle->GetPadRightMargin() - gStyle->GetTickLength()       );
-    decch->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength()        );
+      decch->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+      decch->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+      decch->SetX2NDC(1.0 - gStyle->GetPadRightMargin() - gStyle->GetTickLength()       );
+      decch->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength()        );
 
-    decch->SetFillStyle(0);
-    decch->SetBorderSize(0);
-    if (textSize!=0) decch->SetTextSize(textSize);
-    decch->SetTextAlign(32);
-    decch->Draw("same");
+      decch->SetFillStyle(0);
+      decch->SetBorderSize(0);
+      if (textSize!=0) decch->SetTextSize(textSize);
+      decch->SetTextAlign(32);
+      decch->Draw("same");
+    }
 }
 
 // Draw official labels (CMS Preliminary, luminosity and CM energy) above plot

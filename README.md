@@ -49,6 +49,7 @@ The following flag tokens for the `-f` command line argument are currently suppo
   * `lastbin`: Do only extract from the last bin (most sensitive to the top quark mass) of the histogram instead of the full distribution.
   * `pred | nopred`: Enable disable inclusion of theory prediction uncertainties in the MC statistical error for all extractions. The theory prediction uncertainties taken into account are Q^2 scale and Matching, the errors are calculated by taking the sample difference to nominal and added in quadrature to the statistical error. Default is `nopred`.
   * `norm | nonorm`: Enable/disable normalisation of the total distribution. This flag can be used for event yield and differential cross section. Default is `norm`.
+  * `nochlabel`: Do not plot the channel labels
 
 The following flags only apply for the `yield` mode:
 

@@ -323,7 +323,7 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     chi2sum_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum_plotting->GetYaxis()->SetTitle("#chi^{2}");
     chi2sum_plotting->Draw("AP");
-    DrawDecayChLabel(m_channel);
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0));
     DrawCMSLabels();
     rescaleGraph(chi2sum_plotting);
     chi2sum_plotting->Write(gname);
