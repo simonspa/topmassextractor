@@ -40,7 +40,6 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   systematics.push_back("JES_FLAVOR_CHARM");
   systematics.push_back("JES_FLAVOR_BOTTOM");
   */
-
   systematics.push_back("JER");
   systematics.push_back("PU");
   systematics.push_back("TRIG");
@@ -177,8 +176,8 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       delete var; delete var2; delete var3;
 
       LOG(logDEBUG) << "Getting PDF variation...";
-      extractorDiffXSecScaled * pdf_up   = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_UP");
-      extractorDiffXSecScaled * pdf_down = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags, "PDF_DOWN");
+      extractorDiffXSecScaled * pdf_up   = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags | FLAG_DONT_USE_COVARIANCE, "PDF_UP");
+      extractorDiffXSecScaled * pdf_down = new extractorDiffXSecScaled(*ch,"Nominal", inputpath, outputpath, flags | FLAG_DONT_USE_COVARIANCE, "PDF_DOWN");
 
       Double_t topmass_pdf_up = pdf_up->getTopMass();
       Double_t topmass_pdf_down = pdf_down->getTopMass();
