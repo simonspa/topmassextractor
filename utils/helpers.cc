@@ -155,32 +155,109 @@ std::vector<Double_t> extractorDiffXSecScaled::getPDFScaleFactors(Int_t sign, TS
 
   // PDF scaling for all five bins:
   if(channel == "combined") {
-    factors.push_back(sign*0.0515052195287627);
-    factors.push_back(sign*0.0303295667921121);
-    factors.push_back(sign*0.0120197587318592);
-    factors.push_back(sign*0.00096285557392822);
-    factors.push_back(sign*0.00463865551220651);
+    factors.push_back(sign*0.0437648692592951);
+    factors.push_back(sign*0.0313545740485939);
+    factors.push_back(sign*0.0219282948263315);
+    factors.push_back(sign*0.0103976808020846);
+    factors.push_back(sign*0.0303756233738881);
   }
   else if(channel == "ee") {
-    factors.push_back(sign*0.0516332122065309);
-    factors.push_back(sign*0.0299519625826893);
-    factors.push_back(sign*0.0121955932869055);
-    factors.push_back(sign*0.00101224057977448);
-    factors.push_back(sign*0.00468337726512364);
+    factors.push_back(sign*0.049860059679855);
+    factors.push_back(sign*0.0348051512429172);
+    factors.push_back(sign*0.0243662670991424);
+    factors.push_back(sign*0.0113172740302442);
+    factors.push_back(sign*0.0341297220727368);
   }
   else if(channel == "emu") {
-    factors.push_back(sign*0.052187580222256);
-    factors.push_back(sign*0.0299646995888875);
-    factors.push_back(sign*0.0120067363967587);
-    factors.push_back(sign*0.000941424495068623);
-    factors.push_back(sign*0.00460886986739672);
+    factors.push_back(sign*0.0516947496252088);
+    factors.push_back(sign*0.0363747616499262);
+    factors.push_back(sign*0.0251596355319995);
+    factors.push_back(sign*0.0118658180165814);
+    factors.push_back(sign*0.0340823989670275);
   }
   else if(channel == "mumu") {
-    factors.push_back(sign*0.0482779652628936);
-    factors.push_back(sign*0.0317757682332336);
-    factors.push_back(sign*0.011940251061639);
-    factors.push_back(sign*0.00101279917736978);
-    factors.push_back(sign*0.0046749620211185);
+    factors.push_back(sign*0.0502777148183957);
+    factors.push_back(sign*0.0361246416882863);
+    factors.push_back(sign*0.024545456047524);
+    factors.push_back(sign*0.0114930081187188);
+    factors.push_back(sign*0.0354809031989924);
+  }
+
+  return factors;
+}
+
+std::vector<Double_t> extractorYieldScaled::getPDFScaleFactors(Int_t sign, TString channel) {
+
+  std::vector<Double_t> factors;
+
+  // PDF scaling for all fifteen bins:
+  if(channel == "combined") {
+    factors.push_back(sign*0.00158722);
+    factors.push_back(sign*0.00503999);
+    factors.push_back(sign*0.00554239);
+    factors.push_back(sign*0.00510825);
+    factors.push_back(sign*0.00460287);
+    factors.push_back(sign*0.00372495);
+    factors.push_back(sign*0.00317764);
+    factors.push_back(sign*0.00258707);
+    factors.push_back(sign*0.00199497);
+    factors.push_back(sign*0.00137818);
+    factors.push_back(sign*0.000734715);
+    factors.push_back(sign*0.00054574);
+    factors.push_back(sign*0.000559074);
+    factors.push_back(sign*0.000570643);
+    factors.push_back(sign*0.000921185);
+  }
+  else if(channel == "ee") {
+    factors.push_back(sign*0.00427789);
+    factors.push_back(sign*0.00628967);
+    factors.push_back(sign*0.00597934);
+    factors.push_back(sign*0.00549314);
+    factors.push_back(sign*0.00472432);
+    factors.push_back(sign*0.00389662);
+    factors.push_back(sign*0.00327403);
+    factors.push_back(sign*0.00279232);
+    factors.push_back(sign*0.00201646);
+    factors.push_back(sign*0.0015067);
+    factors.push_back(sign*0.000864905);
+    factors.push_back(sign*0.000584901);
+    factors.push_back(sign*0.000592294);
+    factors.push_back(sign*0.00082415);
+    factors.push_back(sign*0.00115525);
+  }
+  else if(channel == "emu") {
+    factors.push_back(sign*0.0015538);
+    factors.push_back(sign*0.0042698);
+    factors.push_back(sign*0.00534513);
+    factors.push_back(sign*0.00504612);
+    factors.push_back(sign*0.00454557);
+    factors.push_back(sign*0.00369042);
+    factors.push_back(sign*0.00312908);
+    factors.push_back(sign*0.00249632);
+    factors.push_back(sign*0.00196157);
+    factors.push_back(sign*0.00140594);
+    factors.push_back(sign*0.000725493);
+    factors.push_back(sign*0.000572194);
+    factors.push_back(sign*0.000561623);
+    factors.push_back(sign*0.000544157);
+    factors.push_back(sign*0.000919533);
+  }
+  else if(channel == "mumu") {
+    factors.push_back(sign*0.00743986);
+    factors.push_back(sign*0.00673674);
+    factors.push_back(sign*0.00578573);
+    factors.push_back(sign*0.00496957);
+    factors.push_back(sign*0.00466311);
+    factors.push_back(sign*0.00369669);
+    factors.push_back(sign*0.00325777);
+    factors.push_back(sign*0.00270205);
+    factors.push_back(sign*0.00208218);
+    factors.push_back(sign*0.00120263);
+    factors.push_back(sign*0.000679662);
+    factors.push_back(sign*0.000474355);
+    factors.push_back(sign*0.000540337);
+    factors.push_back(sign*0.000449014);
+    factors.push_back(sign*0.000747598);
   }
 
   return factors;
