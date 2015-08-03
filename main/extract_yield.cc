@@ -158,6 +158,32 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
       //if(syst->Contains("UP")) SystOutputFile << systab->writeSystematicsTableUp(*syst, delta, var_stat_pos, var_stat_neg);
       //else SystOutputFile << systab->writeSystematicsTableDown(delta, var_stat_pos, var_stat_neg);
 
+      // Getting PDF variations:
+      LOG(logDEBUG) << "Getting PDF variation...";
+      extractorYieldScaled * pdf_up   = new extractorYieldScaled(*ch,"Nominal",inputpath, outputpath, flags,"PDF_UP");
+      extractorYieldScaled * pdf_down = new extractorYieldScaled(*ch,"Nominal",inputpath, outputpath, flags,"PDF_DOWN");
+      if(closure) {
+	bg_up->setClosureSample(closure_sample);
+	bg_down->setClosureSample(closure_sample);
+      }
+
+      Double_t topmass_variation_pdf_up = pdf_up->getTopMass();
+      Double_t topmass_variation_pdf_down = pdf_down->getTopMass();
+
+      pdf_up->getStatError(var_stat_pos,var_stat_neg);
+      pdf_down->getStatError(var_stat_pos2,var_stat_neg2);
+
+      LOG(logINFO) << "PDF_UP - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_pdf_up << " +" << var_stat_pos << " -" << var_stat_neg;
+      LOG(logINFO) << "PDF_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_pdf_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+
+      Double_t delta_pdf_up = (Double_t)topmass-topmass_variation_pdf_up;
+      Double_t delta_pdf_down = (Double_t)topmass-topmass_variation_pdf_down;
+
+      LOG(logRESULT) << "PDF_UP: delta = " << delta_pdf_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
+      LOG(logRESULT) << "PDF_DOWN: delta = " << delta_pdf_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
+
+      getSystematicUpDownError(delta_pdf_up,delta_pdf_down,total_syst_pos,total_syst_neg);
+
 
       // Systematic Variations produced by varying nominal samples:
       Double_t btag_syst_pos = 0, btag_syst_neg = 0;

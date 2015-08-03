@@ -77,6 +77,11 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   }
 }
 
+Double_t extractorYieldScaled::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  // Return the signal after scaling with supplied scale factor:
+  return (1+scaleFactors.at(bin-1))*data;
+}
+
 Double_t extractorYieldPrediction::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   Int_t sign = 0;
@@ -318,6 +323,21 @@ void extractorYieldBackground::prepareScaleFactor(TString systematic) {
     if(systematic.Contains("UP")) { scaleFactor = 1.3; }
     if(systematic.Contains("DOWN")) { scaleFactor = 0.7; }
   }
+}
+
+void extractorYieldScaled::prepareScaleFactors(TString systematic) {
+
+  Int_t sign = 0;
+  if(systematic.Contains("UP")) { sign = 1; }
+  else if(systematic.Contains("DOWN")) { sign = -1; }
+
+  if(systematic.Contains("PDF")) {
+    LOG(logDEBUG2) << "Preparing PDF uncertainty scale factors...";
+    scaleFactors = getPDFScaleFactors(sign,m_channel);
+  }
+  std::stringstream sv;
+  for(std::vector<Double_t>::iterator sf = scaleFactors.begin(); sf != scaleFactors.end(); ++sf) { sv << *sf << " "; }
+  LOG(logDEBUG2) << "Scale factors for every bin: " << sv.str();
 }
 
 Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr) {

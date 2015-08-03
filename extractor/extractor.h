@@ -285,6 +285,27 @@ namespace massextractor {
     };
   };
 
+  class extractorYieldScaled : public extractorYield {
+
+  private:
+    Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+
+    void prepareScaleFactors(TString systematic);
+    std::vector<Double_t> getPDFScaleFactors(Int_t sign, TString channel);
+    std::vector<Double_t> scaleFactors;
+
+  public:
+  extractorYieldScaled(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString scale) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), scaleFactors() {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+      m_outputpath += "/" + scale;
+
+      LOG(unilog::logDEBUG) << "Running sample " << sample << " with scale factors " << scale;
+      prepareScaleFactors(scale);
+    };
+  };
+
   class extractorDiffXSec : public extractor {
 
   private:
