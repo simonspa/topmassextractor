@@ -63,6 +63,9 @@ namespace massextractor {
   // Do not plot channel labels:
 #define FLAG_DONT_PLOT_CHANNELLABELS 0x2000
 
+  // Use the Powheg NLO predictions instead of LO MadGraph:
+#define FLAG_USE_NLO 0x4000
+
 
   class extractor {
 

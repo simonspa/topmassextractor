@@ -58,4 +58,5 @@ The following flags only apply for the `yield` mode:
 The following flags only apply for the `diffxs` mode:
 
   * `cov | nocov`: enable or disable calculation of bin-to-bin correlations using the covariance matrix from unfolding.
+  * `nlo | lo`: switch between predictions taken from Powheg NLO caluclations and MadGraph LO for the mass extraction
   * `mcstat`: Flag to explicitly exclude/ignore the statistical error on the MC sample in the chi2 calculation. If set, just the data statistical errors (convoluted with whatever has been used for unfolding) are taken into account. This should only be used to evaluate the statistical errors of systematic variations when extracting from differential cross-section, not to extract the mass or any systematic uncertainties.

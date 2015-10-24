@@ -132,6 +132,8 @@ int main(int argc, char* argv[]) {
     else if(*tok == "nopred") { flags |= FLAG_NO_THEORYPREDICTION_ERRORS; }
     else if(*tok == "mcstat") { flags |= FLAG_IGNORE_MC_STATERR; }
     else if(*tok == "nochlabel") { flags |= FLAG_DONT_PLOT_CHANNELLABELS; }
+    else if(*tok == "nlo") { flags |= FLAG_USE_NLO; }
+    else if(*tok == "lo") { flags &= ~FLAG_USE_NLO; }
     else { LOG(logERROR) << "Unrecognized flag \"" << *tok << "\"."; }
   }
   LOG(logINFO) << "Flags: " << massextractor::listFlags(flags);

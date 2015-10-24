@@ -178,21 +178,39 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample) {
 
   TString filename;
-  if(sample.Contains("MASS") || sample == "Nominal") {
-    if(getMassFromSample(sample) < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
-    else if(getMassFromSample(sample) < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
-    else if(getMassFromSample(sample) < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
-    else if(getMassFromSample(sample) < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
-    else if(getMassFromSample(sample) < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
-    else if(getMassFromSample(sample) < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
-    else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
-  }
-  else if(sample.Contains("MATCH_UP")) filename = "_ttbarsignalplustau_matchingup.root";
-  else if(sample.Contains("MATCH_DOWN")) filename = "_ttbarsignalplustau_matchingdown.root";
-  else if(sample.Contains("SCALE_UP")) filename = "_ttbarsignalplustau_scaleup.root";
-  else if(sample.Contains("SCALE_DOWN")) filename = "_ttbarsignalplustau_scaledown.root";
 
-  // Input files for Differential Cross section mass extraction: NLO curves
+  if((flags & FLAG_USE_NLO) != 0) {
+    // Input files for Differential Cross section mass extraction: NLO curves
+    if(sample.Contains("MASS") || sample == "Nominal") {
+      if(getMassFromSample(sample) < 167) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
+      else if(getMassFromSample(sample) < 170) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m169p5.root"; }
+      else if(getMassFromSample(sample) < 172) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m171p5.root"; }
+      else if(getMassFromSample(sample) < 173) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m172p5.root"; }
+      else if(getMassFromSample(sample) < 174) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m173p5.root"; }
+      else if(getMassFromSample(sample) < 176) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m175p5.root"; }
+      else { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m178p5.root"; }
+    }
+    else if(sample.Contains("MATCH_UP")) filename = "_ttbarsignalplustau_matchingup.root";
+    else if(sample.Contains("MATCH_DOWN")) filename = "_ttbarsignalplustau_matchingdown.root";
+    else if(sample.Contains("SCALE_UP")) filename = "_ttbarsignalplustau_scaleup.root";
+    else if(sample.Contains("SCALE_DOWN")) filename = "_ttbarsignalplustau_scaledown.root";
+  } else {
+    // Input files for Differential Cross section mass extraction: MadGraph LO curves
+    if(sample.Contains("MASS") || sample == "Nominal") {
+      if(getMassFromSample(sample) < 167) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_166_massdown.root"; }
+      else if(getMassFromSample(sample) < 170) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_169_massdown.root"; }
+      else if(getMassFromSample(sample) < 172) { sample = "MASS_DOWN"; filename = "_ttbarsignalplustau_massdown.root"; }
+      else if(getMassFromSample(sample) < 173) { sample = "Nominal"; filename = "_ttbarsignalplustau.root"; }
+      else if(getMassFromSample(sample) < 174) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_massup.root"; }
+      else if(getMassFromSample(sample) < 176) { sample = "MASS_UP"; filename = "_ttbarsignalplustau_175_massup.root"; }
+      else { sample = "MASS_UP"; filename = "_ttbarsignalplustau_178_massup.root"; }
+    }
+    else if(sample.Contains("MATCH_UP")) filename = "_ttbarsignalplustau_matchingup.root";
+    else if(sample.Contains("MATCH_DOWN")) filename = "_ttbarsignalplustau_matchingdown.root";
+    else if(sample.Contains("SCALE_UP")) filename = "_ttbarsignalplustau_scaleup.root";
+    else if(sample.Contains("SCALE_DOWN")) filename = "_ttbarsignalplustau_scaledown.root";
+  }
+
   TString path = "selectionRoot/" + sample + "/" + channel + "/" + channel + filename;
   TFile * input = OpenFile(path,"read");
   LOG(logDEBUG) << "Successfully opened file " << path;
