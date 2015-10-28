@@ -16,9 +16,20 @@ namespace massextractor {
 
   void setStyle(TGraphErrors *hist, TString name="");
   void setStyle(TH2D *hist, TString name="");
+  void setStyle(TH1D *hist, TString name="");
   void setStyleAndFillLegend(TGraphErrors* hist, TString name, TLegend *leg, bool closure=false);
+  void setTheoryStyleAndFillLegend(TH1* histo, TString theoryName, TLegend *leg);
   void setLegendStyle(TLegend *leg);
 
   void rescaleGraph(TGraphErrors * g, Double_t up=1.2, Double_t down=0.95);
   TString getChannelLabel(TString channel);
+
+  void drawRatio(const TH1* histNumerator, const TH1* histDenominator1, 
+		 TGraphAsymmErrors *ratio_stat = 0, TGraphAsymmErrors *ratio_total = 0, 
+		 const TH1* histDenominator2 = 0, const TH1* histDenominator3 = 0, 
+		 const TH1* histDenominator4 = 0, const TH1* histDenominator5 = 0, 
+		 const TH1* histDenominator6 = 0, const TH1* histDenominator7 = 0, 
+		 const Double_t& ratioMin = 0.5, const Double_t& ratioMax = 1.5, 
+		 TStyle myStyle = *gStyle);
+
 }

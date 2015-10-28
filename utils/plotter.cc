@@ -2,9 +2,14 @@
 #include <TAxis.h>
 #include <TStyle.h>
 #include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
 #include <TString.h>
 #include <TLegend.h>
 #include <TMath.h>
+#include <TPad.h>
+#include <TF1.h>
+
+#include <iostream>
 
 #include "plotter.h"
 
@@ -62,7 +67,7 @@ void massextractor::setHHStyle(TStyle& HHStyle)
     // HHStyle.SetHistFillStyle(0);
     // HHStyle.SetHistLineColor(1);
     HHStyle.SetHistLineStyle(0);
-    HHStyle.SetHistLineWidth(1);
+    HHStyle.SetHistLineWidth(2);
     // HHStyle.SetLegoInnerR(Float_t rad = 0.5);
     // HHStyle.SetNumberContours(Int_t number = 20);
 
@@ -201,7 +206,7 @@ void massextractor::setHHStyle(TStyle& HHStyle)
 
 // Draw label for Decay Channel in upper left corner of plot
 void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
-
+  /*
     TPaveText *cms = new TPaveText();
     cms->AddText("CMS");
 
@@ -234,7 +239,7 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
       extra->SetTextFont(52);
       extra->Draw("same");
     }
-
+  */
     if(bin > 0) {
       TPaveText *bintxt = new TPaveText();
       if(!boundaries.empty()) {
@@ -327,6 +332,85 @@ void massextractor::setStyle(TGraphErrors *hist, TString name)
   }
 }
 
+void massextractor::setTheoryStyleAndFillLegend(TH1* histo, TString theoryName, TLegend *leg) {
+
+    histo->GetXaxis()->SetTitleOffset(1.08);
+    histo->GetXaxis()->SetTitleSize(0.05);
+    histo->GetXaxis()->SetLabelFont(42);
+    histo->GetXaxis()->SetLabelOffset(0.007);
+    histo->GetXaxis()->SetLabelSize(0.04);
+
+    histo->GetYaxis()->SetTitleOffset(1.7);
+    histo->GetYaxis()->SetTitleSize(0.05);
+    histo->GetYaxis()->SetLabelFont(42);
+    histo->GetYaxis()->SetLabelOffset(0.007);
+    histo->GetYaxis()->SetLabelSize(0.04);
+
+    histo->SetLineWidth(2);
+    if(theoryName != "data"){
+        histo->SetMarkerSize(0);
+        histo->SetMarkerStyle(1);
+    }
+
+    if(theoryName == "madgraph"){
+        histo->SetLineColor(kRed+1);
+        histo->SetLineStyle(1);
+        if(leg) leg->AddEntry(histo, "MadGraph+Pythia",  "l");
+    }
+    if(theoryName == "powhegpythia"){
+      histo->SetLineColor(kGreen+1);
+      histo->SetLineStyle(7);
+      if(leg) leg->AddEntry(histo, "Powheg+Pythia",  "l");
+    }
+    if(theoryName == "powhegbox") {
+        histo->SetLineColor(kBlue);
+        histo->SetLineStyle(5);
+        if(leg) leg->AddEntry(histo, "PowhegBox",  "l");
+    }
+    if(theoryName == "powheg2") {
+        histo->SetLineColor(kRed-7);
+        histo->SetLineStyle(5);
+        if(leg) leg->AddEntry(histo, "Powheg (hdamp)",  "l");
+    }
+    if(theoryName == "powheg2box") {
+        histo->SetLineColor(kCyan+2);
+        histo->SetLineStyle(1);
+        if(leg) leg->AddEntry(histo, "PowhegBox (hdamp)",  "l");
+    }
+    if(theoryName == "powheg2r11box") {
+        histo->SetLineColor(kRed+2);
+        histo->SetLineStyle(1);
+        if(leg) leg->AddEntry(histo, "PowhegBox (hdamp) r11",  "l");
+    }
+}
+
+void massextractor::setStyle(TH1D *hist, TString name)
+{
+  hist->SetLineWidth(1);
+  hist->GetXaxis()->SetLabelFont(42);
+  hist->GetYaxis()->SetLabelFont(42);
+  hist->GetZaxis()->SetLabelFont(42);
+  hist->GetXaxis()->SetTitleFont(42);
+  hist->GetYaxis()->SetTitleFont(42);
+  hist->GetZaxis()->SetTitleFont(42);
+  hist->GetXaxis()->SetTitleSize(0.05);
+  hist->GetYaxis()->SetTitleSize(0.05);
+  hist->GetZaxis()->SetTitleSize(0.05);
+  hist->GetXaxis()->SetTitleOffset(1.08);
+  hist->GetYaxis()->SetTitleOffset(1.08);
+  hist->GetZaxis()->SetTitleOffset(1.08);
+  hist->GetXaxis()->SetLabelOffset(0.007);
+  hist->GetYaxis()->SetLabelOffset(0.007);
+  hist->GetZaxis()->SetLabelOffset(0.007);
+
+  hist->SetMarkerStyle(20);
+  hist->SetMarkerSize(1.2);
+  hist->SetLineWidth(2);
+  
+  hist->GetXaxis()->SetTitle("#rho_{s}");
+  hist->GetYaxis()->SetTitle("#rho_{s}");
+}
+
 void massextractor::setStyle(TH2D *hist, TString name)
 {
   hist->SetLineWidth(1);
@@ -367,7 +451,7 @@ void massextractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLeg
 
   if(name == "data") {
     if(leg && closure) leg->AddEntry(hist, "Pseudo Data",  "l");
-    else if(leg) leg->AddEntry(hist, "Data",  "l");
+    else if(leg) leg->AddEntry(hist, "CMS Data",  "l");
   }
   else if(name == "madgraph") {
   if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
@@ -408,4 +492,218 @@ TString massextractor::getChannelLabel(TString channel) {
   if(channel =="combined"){ label = "Dilepton Combined"; }
 
   return label;
+}
+
+void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominator1, 
+			      TGraphAsymmErrors *ratio_stat, TGraphAsymmErrors *ratio_total, 
+			      const TH1* histDenominator2, const TH1* histDenominator3, 
+			      const TH1* histDenominator4, const TH1* histDenominator5, 
+			      const TH1* histDenominator6, const TH1* histDenominator7, 
+			      const Double_t& ratioMin, const Double_t& ratioMax, 
+			      TStyle myStyle) {
+    // this function draws a pad with the ratio of 'histNumerator' and 'histDenominator_i' (_i = 1-5)
+    // the range of the ratio is 'ratioMin' to 'ratioMax'
+    // per default only the gaussian error of the 'histNumerator' is considered:
+    // (error(bin i) = sqrt(histNumerator->GetBinContent(i))/histDenominator->GetBinContent(i))
+    // the histogram style is transferred from 'histDenominator_i' to the 'ratio_i'
+    // NOTE: x Axis is transferred from histDenominator to the bottom of the canvas
+    // modified quantities: none
+    // used functions: none
+    // used enumerators: none
+
+    /// check that histos exist and have the same binning
+    if(histNumerator->GetNbinsX()!=histDenominator1->GetNbinsX()){
+        std::cout << "error when calling drawRatio - histos have different number of bins" << std::endl;
+        return;
+    }
+
+    /// create ratio
+    TH1F *ratio1 = 0, *ratio2 = 0, *ratio3 = 0, *ratio4 = 0, *ratio5 = 0, *ratio6 = 0, *ratio7 = 0; 
+
+    ratio1 = (TH1F*)histDenominator1->Clone();
+    ratio1->SetLineColor(histDenominator1->GetLineColor());
+    ratio1->SetLineStyle(histDenominator1->GetLineStyle());
+    ratio1->SetLineWidth(histDenominator1->GetLineWidth());
+    ratio1->Divide(histNumerator);
+
+    if (histDenominator2){
+        ratio2 = (TH1F*)histDenominator2->Clone();
+        ratio2->SetLineColor(histDenominator2->GetLineColor());
+        ratio2->SetLineStyle(histDenominator2->GetLineStyle());
+        ratio2->SetLineWidth(histDenominator2->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator2->GetNbinsX()){ratio2 = 0;}
+        else {ratio2->Divide(histNumerator);}
+    };
+    if (histDenominator3){
+        ratio3 = (TH1F*)histDenominator3->Clone();
+        ratio3->SetLineColor(histDenominator3->GetLineColor());
+        ratio3->SetLineStyle(histDenominator3->GetLineStyle());
+        ratio3->SetLineWidth(histDenominator3->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator3->GetNbinsX()){ratio3 = 0;}
+        else {ratio3->Divide(histNumerator);}
+    };
+    if (histDenominator4){
+        ratio4 = (TH1F*)histDenominator4->Clone();
+        ratio4->SetLineColor(histDenominator4->GetLineColor());
+        ratio4->SetLineStyle(histDenominator4->GetLineStyle());
+        ratio4->SetLineWidth(histDenominator4->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator4->GetNbinsX()){ratio4 = 0;}
+        else {ratio4->Divide(histNumerator);}
+    };
+    if (histDenominator5){
+        ratio5 = (TH1F*)histDenominator5->Clone();
+        ratio5->SetLineColor(histDenominator5->GetLineColor());
+        ratio5->SetLineStyle(histDenominator5->GetLineStyle());
+        ratio5->SetLineWidth(histDenominator5->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator5->GetNbinsX()){ratio5 = 0;}
+        else {ratio5->Divide(histNumerator);}
+    };
+    if (histDenominator6){
+        ratio6 = (TH1F*)histDenominator6->Clone();
+        ratio6->SetLineColor(histDenominator6->GetLineColor());
+        ratio6->SetLineStyle(histDenominator6->GetLineStyle());
+        ratio6->SetLineWidth(histDenominator6->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator6->GetNbinsX()){ratio6 = 0;}
+        else {ratio6->Divide(histNumerator);}
+    };
+    if (histDenominator7){
+        ratio7 = (TH1F*)histDenominator7->Clone();
+        ratio7->SetLineColor(histDenominator7->GetLineColor());
+        ratio7->SetLineStyle(histDenominator7->GetLineStyle());
+        ratio7->SetLineWidth(histDenominator7->GetLineWidth());
+        if(histNumerator->GetNbinsX()!=histDenominator7->GetNbinsX()){ratio7 = 0;}
+        else {ratio7->Divide(histNumerator);}
+    };
+
+    /// calculate error for ratio only gaussian error of histNumerator
+    for(int bin=1; bin<=histNumerator->GetNbinsX(); bin++){
+        if (ratio1) ratio1->SetBinError(bin, sqrt(histDenominator1->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio2) ratio2->SetBinError(bin, sqrt(histDenominator2->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio3) ratio3->SetBinError(bin, sqrt(histDenominator3->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio4) ratio4->SetBinError(bin, sqrt(histDenominator4->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio5) ratio5->SetBinError(bin, sqrt(histDenominator5->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio6) ratio6->SetBinError(bin, sqrt(histDenominator6->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+        if (ratio7) ratio7->SetBinError(bin, sqrt(histDenominator7->GetBinContent(bin))/histNumerator->GetBinContent(bin));
+    }
+
+    Int_t    logx  = myStyle.GetOptLogx();
+    Double_t left  = myStyle.GetPadLeftMargin();
+    Double_t right = myStyle.GetPadRightMargin();
+
+    // y:x size ratio for canvas
+    double canvAsym = 4./3.;
+    // ratio size of pad with plot and pad with ratio
+    double ratioSize = 0.36;
+    // change old pad
+    gPad->SetBottomMargin(ratioSize);
+    gPad->SetRightMargin(right);
+    gPad->SetLeftMargin(left);
+    gPad->SetBorderMode(0);
+    gPad->SetBorderSize(0);
+    gPad->SetFillColor(10);
+
+    /// create new pad for ratio plot
+    TPad *rPad = new TPad("rPad","",0,0,1,ratioSize+0.001);
+    rPad->SetBorderSize(0);
+    rPad->SetBorderMode(0);
+    rPad->Draw();
+    rPad->cd();
+    rPad->SetLogy(0);
+    rPad->SetLogx(logx);
+    rPad->SetTicky(1);
+    
+    /// configure ratio plot
+    double scaleFactor = 1./(canvAsym*ratioSize);
+    ratio1->SetStats(kFALSE);
+    ratio1->SetTitle("");
+    ratio1->SetMaximum(ratioMax);
+    ratio1->SetMinimum(ratioMin);
+    
+    /// configure axis of ratio plot
+    ratio1->GetXaxis()->SetTitleSize(histNumerator->GetXaxis()->GetTitleSize()*scaleFactor*1.3);
+    ratio1->GetXaxis()->SetTitleOffset(histNumerator->GetXaxis()->GetTitleOffset()*0.9);
+    ratio1->GetXaxis()->SetLabelSize(histNumerator->GetXaxis()->GetLabelSize()*scaleFactor*1.4);
+    ratio1->GetXaxis()->SetTitle(histNumerator->GetXaxis()->GetTitle());
+
+
+    ratio1->GetYaxis()->CenterTitle();
+    ratio1->GetYaxis()->SetTitle("#frac{Theory}{Data}");
+    ratio1->GetYaxis()->SetTitleSize(histNumerator->GetYaxis()->GetTitleSize()*scaleFactor);
+    ratio1->GetYaxis()->SetTitleOffset(histNumerator->GetYaxis()->GetTitleOffset()/scaleFactor);
+    ratio1->GetYaxis()->SetLabelSize(histNumerator->GetYaxis()->GetLabelSize()*scaleFactor);
+    ratio1->GetYaxis()->SetLabelOffset(histNumerator->GetYaxis()->GetLabelOffset()*3.3);
+    ratio1->GetYaxis()->SetTickLength(0.03);
+    ratio1->GetYaxis()->SetNdivisions(505);
+    ratio1->GetXaxis()->SetRange(histNumerator->GetXaxis()->GetFirst(), histNumerator->GetXaxis()->GetLast());
+    ratio1->GetXaxis()->SetNoExponent(kTRUE);
+    
+    /// delete axis of initial plot
+    histNumerator->GetXaxis()->SetLabelSize(0);
+    histNumerator->GetXaxis()->SetTitleSize(0);
+    histNumerator->GetXaxis()->SetNoExponent(kFALSE);
+
+    /// draw ratio plot
+    ratio1->DrawClone("Histo");
+    rPad->Update();
+    rPad->Modified();
+    rPad->SetTopMargin(0.0);
+    rPad->SetBottomMargin(0.15*scaleFactor);
+    rPad->SetRightMargin(right);
+    gPad->SetLeftMargin(left);
+    gPad->RedrawAxis();
+    
+    /// draw grid
+    rPad->SetGrid(0,1);
+
+    // draw a horizontal lines on a given histogram
+    // a) at 1
+    Double_t xmin = ratio1->GetXaxis()->GetXmin();
+    Double_t xmax = ratio1->GetXaxis()->GetXmax();
+    TString height = ""; height += 1;
+    TF1 *f = new TF1("f", height.Data(), xmin, xmax);
+    f->SetLineStyle(1);//this is frustrating and stupid but apparently necessary...
+    f->SetLineWidth(1);
+    f->SetLineColor(kBlack);
+    f->Draw("L same");
+    // b) at upper end of ratio pad
+    TString height2 = ""; height2 += ratioMax;
+    TF1 *f2 = new TF1("f2", height2.Data(), xmin, xmax);
+    f2->SetLineStyle(1);
+    f2->SetLineWidth(1);
+    f2->SetLineColor(kBlack);
+    f2->Draw("L same");
+
+    if(ratio_stat) {
+        TLegend *leg_band = new TLegend();
+        if(ratio_total) leg_band->AddEntry(ratio_total, "Stat. #oplus Syst.", "f");
+        leg_band->AddEntry(ratio_stat, "Stat.", "f");
+        leg_band->SetX1NDC(0.22);
+        leg_band->SetY1NDC(0.97);
+        leg_band->SetX2NDC(0.46);
+        leg_band->SetY2NDC(0.77);
+        leg_band->SetFillStyle(1001);
+        leg_band->SetFillColor(10);
+        leg_band->SetBorderSize(0);
+        leg_band->SetTextSize(0.1);
+        leg_band->SetTextAlign(12);
+        leg_band->Draw("same");
+        if(ratio_total)ratio_total->Draw("same,e2");
+        ratio_stat->Draw("same,e2");
+    }
+    f->Draw("l,same");
+    f2->Draw("l,same");
+    gPad->RedrawAxis();
+    gPad->Update();
+    gPad->Modified();
+    ratio1->Draw("histo,same");
+    if (ratio2) ratio2->Draw("Histo,same");
+    if (ratio3) ratio3->Draw("Histo,same");
+    if (ratio4) ratio4->Draw("Histo,same");
+    if (ratio5) ratio5->Draw("Histo,same");
+    if (ratio6) ratio6->Draw("Histo,same");
+    if (ratio7) ratio7->Draw("Histo,same");
+    gPad->RedrawAxis();
+    gPad->Update();
+    gPad->Modified();
+    rPad->RedrawAxis();
 }
