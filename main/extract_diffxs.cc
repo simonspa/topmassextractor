@@ -26,8 +26,8 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   predictions.push_back("SCALE");
 
   std::vector<TString> systematics;
-  systematics.push_back("MATCH");
-  systematics.push_back("SCALE");
+  //systematics.push_back("MATCH");
+  //systematics.push_back("SCALE");
   systematics.push_back("BG");
   systematics.push_back("JES");
   /*systematics.push_back("JES_MPF");
@@ -82,8 +82,8 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
       for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
 	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
-	extractorDiffXSecPrediction * variation_diffxs_up = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_UP");
-	extractorDiffXSecPrediction * variation_diffxs_down = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_DOWN");
+	extractorDiffXSecPrediction * variation_diffxs_up = new extractorDiffXSecPrediction(*ch,(*pred)+"_UP",inputpath, outputpath, flags,(*pred)+"_UP");
+	extractorDiffXSecPrediction * variation_diffxs_down = new extractorDiffXSecPrediction(*ch,(*pred)+"_DOWN",inputpath, outputpath, flags,(*pred)+"_DOWN");
 
 	variation_diffxs_up->setUnfoldingMass(unfoldingMass);
 	variation_diffxs_down->setUnfoldingMass(unfoldingMass);
