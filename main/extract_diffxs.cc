@@ -22,12 +22,16 @@ using namespace unilog;
 void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, std::vector<std::string> systlist, bool fulltake) {
 
   std::vector<TString> predictions;
-  predictions.push_back("MATCH");
+  if((flags & FLAG_USE_NLO) == 0) {
+    predictions.push_back("MATCH");
+  }
   predictions.push_back("SCALE");
 
   std::vector<TString> systematics;
-  //systematics.push_back("MATCH");
-  //systematics.push_back("SCALE");
+  if((flags & FLAG_USE_NLO) != 0) {
+    systematics.push_back("MATCH");
+    systematics.push_back("SCALE");
+  }
   systematics.push_back("BG");
   systematics.push_back("JES");
   /*systematics.push_back("JES_MPF");
@@ -82,8 +86,18 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
       for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
 	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
-	extractorDiffXSecPrediction * variation_diffxs_up = new extractorDiffXSecPrediction(*ch,(*pred)+"_UP",inputpath, outputpath, flags,(*pred)+"_UP");
-	extractorDiffXSecPrediction * variation_diffxs_down = new extractorDiffXSecPrediction(*ch,(*pred)+"_DOWN",inputpath, outputpath, flags,(*pred)+"_DOWN");
+	extractorDiffXSecPrediction * variation_diffxs_up, * variation_diffxs_down;
+
+	// Coherently vary MadGraph Prediction and DiffXS up and down for LO:
+	if((flags & FLAG_USE_NLO) == 0) {
+	  variation_diffxs_up = new extractorDiffXSecPrediction(*ch,(*pred)+"_UP",inputpath, outputpath, flags,(*pred)+"_UP");
+	  variation_diffxs_down = new extractorDiffXSecPrediction(*ch,(*pred)+"_DOWN",inputpath, outputpath, flags,(*pred)+"_DOWN");
+	}
+	// Compare Powheg NLO prediction only agains nominal DiffXSec:
+	else {
+	  variation_diffxs_up = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_UP");
+	  variation_diffxs_down = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_DOWN");
+	}
 
 	variation_diffxs_up->setUnfoldingMass(unfoldingMass);
 	variation_diffxs_down->setUnfoldingMass(unfoldingMass);
@@ -266,7 +280,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       total_syst_pos += jes_syst_pos + btag_syst_pos;
       total_syst_neg += jes_syst_neg + btag_syst_neg;
     }
-
+ 
     total_syst_pos = TMath::Sqrt(total_syst_pos);
     total_syst_neg = TMath::Sqrt(total_syst_neg);
     total_theo_pos = TMath::Sqrt(total_theo_pos);
