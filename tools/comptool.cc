@@ -50,13 +50,12 @@ TH1D * getNiceHistogram(std::vector<Double_t> binning, TFile * file, TString his
 
 int main(int argc, char* argv[]) {
 
-  TGaxis::SetMaxDigits(3);
   Log::ReportingLevel() = Log::FromString("INFO");
 
   std::vector<std::string> files;
   std::vector<std::string> histograms;
   std::string outputpath = "default.root";
-  Int_t output_bins = 50;
+  Int_t output_bins;
   std::string datahistogram = "";
   bool have_data = false;
 
@@ -78,6 +77,7 @@ int main(int argc, char* argv[]) {
 
 
   massextractor::setHHStyle(*gStyle);
+  TGaxis::SetMaxDigits(3);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   gROOT->ForceStyle();
@@ -150,7 +150,8 @@ int main(int argc, char* argv[]) {
 
       // Get the name:
       TString name = (*file);
-      if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
+      if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ w/o hdamp"); }
+      else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
       else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
       else { myhistogramnames.push_back(getSampleLabel(name)); }
       LOG(logDEBUG) << "Histogram read was: " << myhistogramnames.back();
@@ -184,13 +185,20 @@ int main(int argc, char* argv[]) {
     std::string quantity = "";
     std::string unit = "";
     if(hist.Contains("Eta")) {             quantity = "#eta"; }
-    else if(hist.Contains("pT")) {         quantity = "p_{T}"; unit = " [GeV]"; }
+    else if(hist.Contains("pT")) {         quantity = "p_{T}"; unit = "GeV"; }
     else if(hist.Contains("1stJetMass")) { quantity = "#rho_{s}"; }
-    else if(hist.Contains("Mass")) {       quantity = "m_{tt#bar}"; unit = " [GeV]"; }
-    else if(hist.Contains("Rapidity")) {   quantity = "Rapidity"; }
-    reference->GetXaxis()->SetTitle(Form("%s%s",quantity.c_str(),unit.c_str()));
-    reference->GetYaxis()->SetTitle(Form("#frac{1}{#sigma} #frac{d#sigma}{d%s}",quantity.c_str()));
-    reference->GetYaxis()->SetTitleOffset(1.5);
+    else if(hist.Contains("Mass")) {       quantity = "m_{tt#bar}"; unit = "GeV"; }
+    else if(hist.Contains("Rapidity")) {   quantity = "y"; }
+    
+    if(unit != "") {
+      reference->GetXaxis()->SetTitle(Form("%s [%s]",quantity.c_str(),unit.c_str()));
+      reference->GetYaxis()->SetTitle(Form("#frac{1}{#sigma} #frac{d#sigma}{d%s} [%s^{-1}]",quantity.c_str(),unit.c_str()));
+    }
+    else {
+      reference->GetXaxis()->SetTitle(Form("%s",quantity.c_str()));
+      reference->GetYaxis()->SetTitle(Form("#frac{1}{#sigma} #frac{d#sigma}{d%s}",quantity.c_str()));
+    }
+    reference->GetYaxis()->SetTitleOffset(1.8);
     reference->GetYaxis()->SetLabelOffset(0.01);
 
     reference->Draw("e");
@@ -206,15 +214,12 @@ int main(int argc, char* argv[]) {
       TH1D* plothist = myhistograms.at(i);
       LOG(logDEBUG2) << "Histogram pointer: " << plothist;
       if(i == 0) {
-	plothist->SetMarkerStyle(0);
 	plothist->SetLineColor(kGray+2);
 	plothist->SetLineStyle(7);
       }
-      else if(i == 1) {
-	plothist->SetLineColor(kRed+1);
-	plothist->SetMarkerStyle(0);
-      }
-      else plothist->SetLineColor(i+2);
+      else if(i == 1) {	plothist->SetLineColor(kRed+1); }
+      else { plothist->SetLineColor(i+2); }
+      plothist->SetMarkerStyle(0);
       plothist->SetLineWidth(2);
       leg->AddEntry(plothist,myhistogramnames.at(i),"l");
       plothist->Draw("same e");
@@ -229,7 +234,7 @@ int main(int argc, char* argv[]) {
     massextractor::drawRatio(reference, denominators.at(0), 
 			     NULL, NULL, 
 			     denominators.at(1), denominators.at(2), denominators.at(3), denominators.at(4), denominators.at(5), denominators.at(6), 
-			     0.5,1.5);
+			     0.5,1.5,have_data);
     c->Update();
     c->Modified();
     c->Write();
