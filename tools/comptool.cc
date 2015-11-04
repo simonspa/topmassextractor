@@ -231,8 +231,18 @@ int main(int argc, char* argv[]) {
 
     while(denominators.size() < 7) denominators.push_back(NULL);
 
+    // Prepare the uncertainty band:
+    TH1* uncBand = NULL;
+    uncBand = dynamic_cast<TH1*>(reference->Clone("uncBand"));
+    uncBand->SetFillStyle(3354);
+    uncBand->SetFillColor(kBlack);
+    uncBand->SetLineColor(kBlack);
+    gStyle->SetHatchesLineWidth(1);
+    gStyle->SetHatchesSpacing(0.8);
+    uncBand->SetMarkerStyle(0);
+
     // Draw the ratio pad:
-    massextractor::drawRatio(reference, denominators.at(0), 
+    massextractor::drawRatio(reference, denominators.at(0), uncBand,
 			     NULL, NULL, 
 			     denominators.at(1), denominators.at(2), denominators.at(3), denominators.at(4), denominators.at(5), denominators.at(6), 
 			     0.5,1.5,have_data);

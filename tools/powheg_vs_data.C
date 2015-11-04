@@ -133,7 +133,7 @@ int main() {
     massextractor::setLegendStyle(leg);
     leg->Draw();
 
-    massextractor::drawRatio(sample_data, nominalBinned, NULL, NULL, 
+    massextractor::drawRatio(sample_data, nominalBinned, NULL, NULL, NULL,
 			     pwhgBinned, pwhgbxBinned, 
 			     pwhg2Binned, pwhgbx2Binned,
 			     pwhgbx2r11Binned, NULL,

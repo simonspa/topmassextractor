@@ -280,6 +280,25 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
     }
 }
 
+void massextractor::DrawFreeCMSLabels(char* text, double textSize) {
+
+  //const char *text = "%2.1f #times 10^{6} clusters (fiducial) (%1.1f GeV)";
+  //char *text = "%2.1f #times 10^{6} clusters (fiducial)";
+    
+  TPaveText *label = new TPaveText();
+  label->SetX1NDC(gStyle->GetPadLeftMargin());
+  label->SetY1NDC(1.0-gStyle->GetPadTopMargin());
+  label->SetX2NDC(1.0-gStyle->GetPadRightMargin());
+  label->SetY2NDC(1.0);
+  label->SetTextFont(42);
+  label->AddText(text);
+  label->SetFillStyle(0);
+  label->SetBorderSize(0);
+  if (textSize!=0) label->SetTextSize(textSize);
+  label->SetTextAlign(32);
+  label->Draw("same");
+}
+
 // Draw official labels (CMS Preliminary, luminosity and CM energy) above plot
 void massextractor::DrawCMSLabels(double lumi, double energy, double textSize) {
 
@@ -494,12 +513,12 @@ TString massextractor::getChannelLabel(TString channel) {
   return label;
 }
 
-void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominator1, 
+void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominator1, const TH1* uncband, 
 			      TGraphAsymmErrors *ratio_stat, TGraphAsymmErrors *ratio_total, 
 			      const TH1* histDenominator2, const TH1* histDenominator3, 
 			      const TH1* histDenominator4, const TH1* histDenominator5, 
 			      const TH1* histDenominator6, const TH1* histDenominator7, 
-			      const Double_t& ratioMin, const Double_t& ratioMax, 
+			      const Double_t& ratioMin, const Double_t& ratioMax, const bool data,
 			      TStyle myStyle) {
     // this function draws a pad with the ratio of 'histNumerator' and 'histDenominator_i' (_i = 1-5)
     // the range of the ratio is 'ratioMin' to 'ratioMax'
@@ -600,12 +619,13 @@ void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominat
     gPad->SetLeftMargin(left);
     gPad->SetBorderMode(0);
     gPad->SetBorderSize(0);
-    gPad->SetFillColor(10);
+    gPad->SetFillColor(0);
 
     /// create new pad for ratio plot
     TPad *rPad = new TPad("rPad","",0,0,1,ratioSize+0.001);
     rPad->SetBorderSize(0);
     rPad->SetBorderMode(0);
+    rPad->SetFillColor(0);
     rPad->Draw();
     rPad->cd();
     rPad->SetLogy(0);
@@ -627,11 +647,12 @@ void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominat
 
 
     ratio1->GetYaxis()->CenterTitle();
-    ratio1->GetYaxis()->SetTitle("#frac{Theory}{Data}");
+    if(data) ratio1->GetYaxis()->SetTitle("#frac{Theory}{Data}");
+    else ratio1->GetYaxis()->SetTitle("#frac{Theory}{MadGraph}");
     ratio1->GetYaxis()->SetTitleSize(histNumerator->GetYaxis()->GetTitleSize()*scaleFactor);
     ratio1->GetYaxis()->SetTitleOffset(histNumerator->GetYaxis()->GetTitleOffset()/scaleFactor);
     ratio1->GetYaxis()->SetLabelSize(histNumerator->GetYaxis()->GetLabelSize()*scaleFactor);
-    ratio1->GetYaxis()->SetLabelOffset(histNumerator->GetYaxis()->GetLabelOffset()*3.3);
+    ratio1->GetYaxis()->SetLabelOffset(histNumerator->GetYaxis()->GetLabelOffset());
     ratio1->GetYaxis()->SetTickLength(0.03);
     ratio1->GetYaxis()->SetNdivisions(505);
     ratio1->GetXaxis()->SetRange(histNumerator->GetXaxis()->GetFirst(), histNumerator->GetXaxis()->GetLast());
@@ -672,6 +693,23 @@ void massextractor::drawRatio(const TH1* histNumerator, const TH1* histDenominat
     f2->SetLineWidth(1);
     f2->SetLineColor(kBlack);
     f2->Draw("L same");
+
+    // create ratio of uncertainty band
+    TH1 *band = nullptr;
+    if (uncband) {
+        band = (TH1*)uncband->Clone("band");
+        for(int i=0; i<= 1+uncband->GetNbinsX(); i++) {
+            double error = 0;
+            double content = 1;
+            if(band->GetBinContent(i)) {
+                error = band->GetBinError(i) / band->GetBinContent(i);
+                content = band->GetBinContent(i) /band->GetBinContent(i);
+            }
+            band->SetBinError(i, error/content);
+            band->SetBinContent(i, content/content);
+        }
+    }
+    if(band) band->Draw("same,e2");
 
     if(ratio_stat) {
         TLegend *leg_band = new TLegend();
