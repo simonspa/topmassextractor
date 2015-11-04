@@ -202,7 +202,8 @@ int main(int argc, char* argv[]) {
     reference->GetYaxis()->SetLabelOffset(0.01);
 
     reference->Draw("e");
-    DrawFreeCMSLabels("Simulation");
+    if(have_data) DrawCMSLabels();
+    else DrawFreeCMSLabels("Simulation");
     reference->Write(referencename);
 
     std::vector<TH1*> denominators;
