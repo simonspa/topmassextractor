@@ -343,7 +343,7 @@ void massextractor::setStyle(TGraphErrors *hist, TString name)
     hist->SetFillStyle(3005);
     hist->SetFillColor(kBlack);
   }
-  else if(name == "madgraph") {
+  else if(name == "madgraph" || name == "powheg") {
     hist->SetMarkerColor(kRed+1);
     hist->SetLineColor(kRed+1);
     hist->SetFillStyle(3004);
@@ -375,6 +375,11 @@ void massextractor::setTheoryStyleAndFillLegend(TH1* histo, TString theoryName, 
         histo->SetLineColor(kRed+1);
         histo->SetLineStyle(1);
         if(leg) leg->AddEntry(histo, "MadGraph+Pythia",  "l");
+    }
+    if(theoryName == "powheg") {
+        histo->SetLineColor(kRed+1);
+        histo->SetLineStyle(1);
+        if(leg) leg->AddEntry(histo, "Powheg+Pythia8",  "l");
     }
     if(theoryName == "powhegpythia"){
       histo->SetLineColor(kGreen+1);
@@ -473,7 +478,10 @@ void massextractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLeg
     else if(leg) leg->AddEntry(hist, "CMS Data",  "l");
   }
   else if(name == "madgraph") {
-  if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
+    if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
+  }
+  else if(name == "powheg") {
+    if(leg) leg->AddEntry(hist, "Powheg+Pythia8",  "p");
   }
 }
 

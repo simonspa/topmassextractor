@@ -230,8 +230,14 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     mc_statconf->GetYaxis()->SetTitle(getQuantity());
     mc_statconf->GetXaxis()->SetLimits(mc_stat->GetX()[0]-1,mc_stat->GetX()[mc_stat->GetN()-1] + 1);
 
-    setStyle(mc_stat,"madgraph");
-    setStyleAndFillLegend(mc_statconf,"madgraph",leg);
+    if((flags & FLAG_USE_NLO) != 0) {
+      setStyle(mc_stat,"powheg");
+      setStyleAndFillLegend(mc_statconf,"powheg",leg);
+    }
+    else {
+      setStyle(mc_stat,"madgraph");
+      setStyleAndFillLegend(mc_statconf,"madgraph",leg);
+    }
     setStyleAndFillLegend(data,"data",leg, doClosure);
 
     mc_statconf->Draw("A E3");
