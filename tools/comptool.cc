@@ -153,6 +153,7 @@ int main(int argc, char* argv[]) {
       if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ w/o hdamp"); }
       else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
       else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
+      else if(name.Contains("Nominal")) { myhistogramnames.push_back("MadGraph"); }
       else { myhistogramnames.push_back(getSampleLabel(name)); }
       LOG(logDEBUG) << "Histogram read was: " << myhistogramnames.back();
 
@@ -218,7 +219,8 @@ int main(int argc, char* argv[]) {
 	plothist->SetLineColor(kGray+2);
 	plothist->SetLineStyle(7);
       }
-      else if(i == 1) {	plothist->SetLineColor(kRed+1); }
+      else if(i == 1) {	plothist->SetLineColor(4); }
+      else if(i == 2) {	plothist->SetLineColor(kRed+1); }
       else { plothist->SetLineColor(i+2); }
       plothist->SetMarkerStyle(0);
       plothist->SetLineWidth(2);
