@@ -21,7 +21,7 @@ Double_t lumi = 19712;
 TH2D * readCov(TString ch) {
 
   TString filename = "SVD/Nominal/Unfolding_" + ch + "_TtBar_Mass_HypTTBar1stJetMass.root";
-  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_Nominal_STATCOV";
+  TString histogramname = "SVD_" + ch + "_TtBar_Mass_HypTTBar1stJetMass_Nominal_STATCOVNORM";
   
   TFile * file = TFile::Open(filename,"read");
   if(!file->IsOpen()) {
@@ -47,7 +47,7 @@ TH2D * readCov(TString ch) {
   TH2D * cov = new TH2D("cov","cov",statCovNorm->GetNbinsX()-2,&binning.front(),statCovNorm->GetNbinsY()-2,&binning.front());
   for(Int_t y = 0; y <= cov->GetNbinsX(); y++) {
     for(Int_t x = 0; x <= cov->GetNbinsY(); x++) {
-      cov->SetBinContent(x,y,statCovNorm->GetBinContent(x+1,y+1));
+      cov->SetBinContent(x,y,statCovNorm->GetBinContent(x+1,y+1)/(statCovNorm->GetXaxis()->GetBinWidth(x+1)*statCovNorm->GetYaxis()->GetBinWidth(y+1)));
     }
   }
 
@@ -99,15 +99,21 @@ void plotcov() {
     }
 
     massextractor::setStyle(cov,"cov");
+    gStyle->SetPaintTextFormat("1.3f");
 
     TCanvas * c = new TCanvas("statcov_" + *ch,"statcov_" + *ch);
     c->cd();
+    cov->GetZaxis()->SetTitle("stat. cov.");
     cov->Draw("colz text");
     TGaxis::SetMaxDigits(3);
 
-    //massextractor::DrawCMSLabels();
-    massextractor::DrawDecayChLabel(*ch);
-    c->Print("Unfolding_" + *ch + "_TtBar_Mass_HypTTBar1stJetMass_ResultCovStat.eps");
+    //massextractor::DrawFreeCMSLabels(Form("%s, %2.1f fb^{-1} (8 TeV)",*ch,lumi/1000),0.045);
+    if(*ch == "ee") massextractor::DrawFreeCMSLabels(Form("ee, %2.1f fb^{-1} (8 TeV)",lumi/1000),0.045);
+    else if(*ch == "emu") massextractor::DrawFreeCMSLabels(Form("e#mu, %2.1f fb^{-1} (8 TeV)",lumi/1000),0.045);
+    else if(*ch == "mumu") massextractor::DrawFreeCMSLabels(Form("#mu#mu, %2.1f fb^{-1} (8 TeV)",lumi/1000),0.045);
+    else massextractor::DrawFreeCMSLabels(Form("Dilepton combined, %2.1f fb^{-1} (8 TeV)",lumi/1000),0.045);
+    //massextractor::DrawDecayChLabel(*ch);
+    c->Print("Unfolding_" + *ch + "_HypTTBar1stJetMass_CovStat.pdf");
   }
 
   return;
