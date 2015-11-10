@@ -186,8 +186,8 @@ namespace massextractor {
     void getPredictionUncertainties();
 
     inline TString getQuantity() { 
-      if((flags &FLAG_NORMALIZE_DISTRIBUTIONS) != 0) return "Events";
-      else return "Events (norm.)";
+      if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) == 0) return "events";
+      else return "events (norm.)";
     }
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
@@ -395,7 +395,7 @@ namespace massextractor {
 
       // This is a systematic variation run:
       m_isSystematicVariation = true;
-      m_outputpath += "/" + scale;
+      if(sample == "Nominal") m_outputpath += "/" + scale;
 
       LOG(unilog::logDEBUG) << "Running Theory Prediction error " << sample << ", shifting MC using " << scale;
       prepareShiftFactors(scale);

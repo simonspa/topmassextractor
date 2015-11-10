@@ -205,9 +205,10 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     c = new TCanvas(cname,cname);
     c->cd();
     chi2_graph_plotting->SetMarkerStyle(20);
+    chi2_graph_plotting->SetLineWidth(3);
     chi2_graph_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2_graph_plotting->GetYaxis()->SetTitle("#chi^{2}");
-    chi2_graph_plotting->Draw("AP");
+    chi2_graph_plotting->Draw("AL");
     DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0),bin,bin_boundaries);
     DrawCMSLabels();
     rescaleGraph(chi2_graph_plotting,1.25);
@@ -311,10 +312,11 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     c = new TCanvas(cname,cname);
     c->cd();
     chi2sum_plotting->SetMarkerStyle(20);
+    chi2sum_plotting->SetLineWidth(3);
     chi2sum_plotting->GetXaxis()->SetTitle("m_{t} [GeV]");
     chi2sum_plotting->GetYaxis()->SetTitle("#chi^{2}");
-    chi2sum_plotting->Draw("AP");
-    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0));
+    chi2sum_plotting->Draw("AL");
+    DrawDecayChLabel(m_channel,((flags & FLAG_DONT_PLOT_CHANNELLABELS) == 0),-1);
     DrawCMSLabels();
     rescaleGraph(chi2sum_plotting);
     chi2sum_plotting->Write(gname);
@@ -521,7 +523,7 @@ Double_t extractor::getTopMass() {
 
   // Store the output histograms into this file:
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
-    m_root_output = OpenFile(getRootFilename(),"update");
+    m_root_output = OpenFile(getRootFilename(),"RECREATE");
     gDirectory->pwd();
   }
 
@@ -567,6 +569,7 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
 
   // Set the histogram styles:
   setHHStyle(*gStyle);
+  gStyle->SetTitleYOffset(1.3);
 
   // Supress Root info and warnings:
   gErrorIgnoreLevel=kError;
