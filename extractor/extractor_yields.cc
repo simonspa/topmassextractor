@@ -365,6 +365,33 @@ Double_t extractorYieldBackground::getSignal(Int_t bin, Double_t /*mass*/, Doubl
   }
 }
 
+Double_t extractorYieldBackground::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t bgr, Double_t ttbgr) {
+
+  // Other (i.e. non-ttbar) backgrounds:
+  Double_t bgr_other = (bgr - ttbgr)*scaleFactor;
+
+  // Scale factor (normalizing to data):
+  if(mcScalingFactor < 0.0001) {
+    LOG(logCRITICAL) << "Data for scaling missing!";
+    throw(1);
+  }
+
+  if((flags & FLAG_DONT_SUBTRACT_BACKGROUND) != 0) {
+    // Return a full pseudo data set including scaled backgrounds:
+    Double_t reco_data = (reco + ttbgr)*mcScalingFactor + bgr_other;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " reco_data=" << reco_data;
+    return reco_data;
+  }
+  else {
+    // Scale the reco according to the different TTBar Cross sections (mass dependent):
+    Double_t corr_reco = reco*mcScalingFactor;
+    LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << reco << " corr=" << corr_reco;
+
+    // Return the reco event count corrected by the ttbar Xsec at given mass:
+    return corr_reco;
+  }
+}
+
 Double_t extractorYieldOtherSamples::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
 
   // Subtract the difference in event count for the nominal mass bin and systematics variation for every bin:

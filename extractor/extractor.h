@@ -191,9 +191,9 @@ namespace massextractor {
     }
     inline TString getRootFilename() { return "MassFitRates.root"; }
 
+  protected:
     Double_t mcScalingFactor;
 
-  protected:
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_rec;
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_bgr;
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors_ttbgr;
@@ -272,6 +272,7 @@ namespace massextractor {
 
   private:
     Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco, Double_t bgr, Double_t ttbgr);
+    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
 
     void prepareScaleFactor(TString systematic);
     Double_t scaleFactor;
