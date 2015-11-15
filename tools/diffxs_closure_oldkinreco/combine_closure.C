@@ -108,7 +108,7 @@ void combine_closure() {
     graphtotal->GetXaxis()->SetTitle("true m_{t} #left[GeV#right]");
     graphtotal->GetYaxis()->SetTitle("measured m_{t} #left[GeV#right]");
 
-    Double_t m_min = 164, m_max = 184, m_nominal = 172.5;
+    Double_t m_min = 164, m_max = 182, m_nominal = 172.5;
     graphtotal->GetXaxis()->SetLimits(m_min,m_max);
     graphtotal->GetYaxis()->SetRangeUser(m_min,m_max);
 
@@ -124,19 +124,29 @@ void combine_closure() {
     l->SetLineStyle(7);
     l->SetLineWidth(2);
 
-    TLine *l2 = new TLine(m_min,m_nominal,m_max,m_nominal);
-    l2->SetLineColor(kGray+1);
-    l2->SetLineStyle(7);
-    l2->SetLineWidth(2);
+    /*TPaveText *extra = new TPaveText();
+    extra->AddText("Preliminary");
+
+    extra->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
+    extra->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.10 );
+    extra->SetX2NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength() + 0.15 );
+    extra->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+
+    extra->SetFillStyle(0);
+    extra->SetBorderSize(0);
+    extra->SetTextSize(0.045);
+    extra->SetTextAlign(12);
+    extra->SetTextFont(52);
+    extra->Draw("same");
+    */
 
     TCanvas * c = new TCanvas("diffxs_closure_" + *ch,"diffxs_closure_" + *ch);
     c->cd();
     graphtotal->Draw("a p e1");
     graph->Draw("same e1");
     l->Draw();
-    l2->Draw();
     massextractor::DrawCMSLabels();
-    massextractor::DrawDecayChLabel(*ch,false);
+    massextractor::DrawDecayChLabel(*ch,true);
     c->Print("diffxs_closure_" + *ch + ".pdf");
   }
 
