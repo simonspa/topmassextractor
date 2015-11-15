@@ -77,9 +77,9 @@ Double_t extractorYield::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Do
   }
 }
 
-Double_t extractorYieldScaled::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+Double_t extractorYieldScaled::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
   // Return the signal after scaling with supplied scale factor:
-  return (1+scaleFactors.at(bin-1))*data;
+  return extractorYield::getReco(bin, mass, (1+scaleFactors.at(bin-1))*reco, bgr, ttbgr);
 }
 
 Double_t extractorYieldPrediction::getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr) {
