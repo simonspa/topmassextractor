@@ -277,6 +277,12 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     throw(1);
   }
 
+  // Bin number (starting from 1) to be dropped in order to
+  // satistfy NDOF reduction due to the usage of normalized distributions
+  // 0 returns all bins.
+  Int_t drop_bin = 0;
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { drop_bin = 1; }
+
   // Loop over all bins we have:
   for(size_t bin = 0; bin < data.size(); bin++) {
 
@@ -288,6 +294,9 @@ std::pair<TGraphErrors*,TF1*> extractor::getFittedChiSquare(std::vector<Double_t
     if(maxVal < chi2significance) {
       LOG(logWARNING) << "Channel " << m_channel << " bin " << bin+1 << " has low significance: max(chi2) = " << maxVal << " < " << chi2significance;
     }
+
+    // Drop bin for NDOF satisfaction:
+    if(static_cast<Int_t>(bin) == drop_bin-1) { continue; }
 
     // Sum them all:
     Int_t i_plotting = 0;
