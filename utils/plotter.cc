@@ -206,7 +206,7 @@ void massextractor::setHHStyle(TStyle& HHStyle)
 
 // Draw label for Decay Channel in upper left corner of plot
 void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
-  /*
+    /*
     TPaveText *cms = new TPaveText();
     cms->AddText("CMS");
 
@@ -239,10 +239,13 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
       extra->SetTextFont(52);
       extra->Draw("same");
     }
-  */
-    if(bin > 0) {
+    */
+    if(bin != 0) {
       TPaveText *bintxt = new TPaveText();
-      if(!boundaries.empty()) {
+      if(bin < 0) {
+	bintxt->AddText("Global");
+      }
+      else if(!boundaries.empty()) {
 	// Lower and upper edge of the bin:
 	Double_t bin_low = boundaries.at(bin-1);
 	Double_t bin_high = boundaries.at(bin);
