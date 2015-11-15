@@ -55,9 +55,10 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> files;
   std::vector<std::string> histograms;
   std::string outputpath = "default.root";
-  Int_t output_bins;
+  Int_t output_bins = 0;
   std::string datahistogram = "";
   bool have_data = false;
+  bool mass_comparison = false;
 
   for (int i = 1; i < argc; i++) {
     // Read and tokeinze the files:
@@ -68,7 +69,9 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-o")) { outputpath = string(argv[++i]); }
     // Set "data" flag to rebin from data histogram:
     else if(!strcmp(argv[i],"-d")) { have_data = true; datahistogram = string(argv[++i]); }
-   // Set some number of bins to rebin to:
+    // Set "masses" flag to draw differently:
+    else if(!strcmp(argv[i],"-m")) { mass_comparison = true; }
+    // Set some number of bins to rebin to:
     else if(!strcmp(argv[i],"-b")) { output_bins = atoi(argv[++i]); }
      // Set the verbosity level:
     else if (!strcmp(argv[i],"-v")) { Log::ReportingLevel() = Log::FromString(argv[++i]); }
@@ -125,8 +128,9 @@ int main(int argc, char* argv[]) {
     // Otherwise rebin to CLI option of to default:
     else {
       Int_t bins_now = ((TH1D*)referenceFile->Get(hist))->GetNbinsX();
+      if(output_bins == 0) output_bins = bins_now;
+      LOG(logDEBUG2) << "Reference has " << bins_now << " bins, requested " << output_bins << ", dividing by " << (bins_now/output_bins);
       rebinning = bins_now/output_bins;
-      LOG(logDEBUG2) << "Reference has " << bins_now << " bins, dividing by " << rebinning;
       LOG(logDEBUG2) << "Fetching " << *hgrm;
       reference = getNiceHistogram(binning, referenceFile, hist, rebinning);
       LOG(logDEBUG2) << "Fetched successfully.";
@@ -150,11 +154,26 @@ int main(int argc, char* argv[]) {
 
       // Get the name:
       TString name = (*file);
-      if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ w/o hdamp"); }
-      else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
-      else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
-      else if(name.Contains("Nominal")) { myhistogramnames.push_back("MadGraph"); }
-      else { myhistogramnames.push_back(getSampleLabel(name)); }
+      if(!mass_comparison) {
+	if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ w/o hdamp"); }
+	else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
+	else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
+	else if(name.Contains("Nominal")) { myhistogramnames.push_back("MadGraph"); }
+	else { myhistogramnames.push_back(getSampleLabel(name)); }
+      }
+      else {
+	if(name.Contains("MASS")) {
+	  Double_t mass = 0;
+	  if(name.Contains("178")) mass = 178.5;
+	  else if(name.Contains("175")) mass = 175.5;
+	  else if(name.Contains("169")) mass = 169.5;
+	  else if(name.Contains("166")) mass = 166.5;
+	  else if(name.Contains("massup")) mass = 173.5;
+	  else if(name.Contains("massdown")) mass = 172.5;
+	  else mass = 172.5;
+	  myhistogramnames.push_back(Form("m_{t}^{MC} = %3.1f GeV",mass)); }
+	else { myhistogramnames.push_back(getSampleLabel(name)); }
+      }
       LOG(logDEBUG) << "Histogram read was: " << myhistogramnames.back();
 
       delete tempFile;
@@ -177,10 +196,11 @@ int main(int argc, char* argv[]) {
     gStyle->SetOptTitle(0);
     if(!have_data) reference->SetMarkerStyle(0);
     setStyle(reference,"reference");
+    if(mass_comparison) { reference->SetMarkerStyle(0); }
     reference->SetLineColor(kBlack);
     reference->SetLineWidth(2);
     reference->SetTitle("");
-    leg->AddEntry(reference,referencename,"lp");
+    if(!mass_comparison) { leg->AddEntry(reference,referencename,"lp"); }
 
     // Set axis label:
     std::string quantity = "";
@@ -215,19 +235,35 @@ int main(int argc, char* argv[]) {
       LOG(logDEBUG2) << "Attempting to plot histogram " << i;
       TH1D* plothist = myhistograms.at(i);
       LOG(logDEBUG2) << "Histogram pointer: " << plothist;
-      if(i == 0) {
-	plothist->SetLineColor(kGray+2);
-	plothist->SetLineStyle(7);
+      if(!mass_comparison) {
+	if(i == 0) {
+	  plothist->SetLineColor(kGray+2);
+	  plothist->SetLineStyle(7);
+	}
+	else if(i == 1) {	plothist->SetLineColor(4); }
+	else if(i == 2) {	plothist->SetLineColor(kRed+1); }
+	else { plothist->SetLineColor(i+2); }
       }
-      else if(i == 1) {	plothist->SetLineColor(4); }
-      else if(i == 2) {	plothist->SetLineColor(kRed+1); }
-      else { plothist->SetLineColor(i+2); }
+      else {
+	if(i == 2 || i == 3) { plothist->SetLineStyle(7); }
+
+	if(i == 0) { plothist->SetLineColor(kRed+1); }
+	else if(i == 1) { plothist->SetLineColor(kOrange+8); }
+	else if(i == 2) { plothist->SetLineColor(kOrange-4); }
+	else if(i == 3) { plothist->SetLineColor(kAzure-3); }
+	else if(i == 4) { plothist->SetLineColor(kBlue-4); }
+	else if(i == 5) { plothist->SetLineColor(kBlue+2); }
+	else { plothist->SetLineColor(i+2); }
+      }
+
       plothist->SetMarkerStyle(0);
       plothist->SetLineWidth(2);
       leg->AddEntry(plothist,myhistogramnames.at(i),"l");
       plothist->Draw("same e");
       plothist->Write(myhistogramnames.at(i));
       if(i < 7) denominators.push_back(plothist);
+
+      if(mass_comparison && i == (myhistograms.size()-1)/2) { leg->AddEntry(reference,referencename,"l"); }
     }
     leg->Draw();
 
