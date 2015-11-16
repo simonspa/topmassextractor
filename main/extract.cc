@@ -117,7 +117,9 @@ int main(int argc, char* argv[]) {
   // Check and assign the flags:
   for(std::vector<std::string>::iterator tok = flagtokens.begin(); tok != flagtokens.end(); ++tok) {
     if(*tok == "fit") { flags |= FLAG_CHISQUARE_FROM_FITS; }
-    if(*tok == "nofit") { flags &= ~FLAG_CHISQUARE_FROM_FITS; }
+    else if(*tok == "nofit") { flags &= ~FLAG_CHISQUARE_FROM_FITS; }
+    else if(*tok == "fitmin") { flags |= FLAG_RETURN_FITMIN; }
+    else if(*tok == "nofitmin") { flags &= ~FLAG_RETURN_FITMIN; }
     else if(*tok == "pdf") { flags |= FLAG_STORE_PDFS; }
     else if(*tok == "pdfall") { flags |= FLAG_STORE_PDFS; fulltake = true; }
     else if(*tok == "root") { flags |= FLAG_STORE_HISTOGRAMS; }

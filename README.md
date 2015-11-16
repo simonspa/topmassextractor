@@ -42,7 +42,8 @@ with the following possible command line arguments:
 
 The following flag tokens for the `-f` command line argument are currently supported:
     
-  * `fit | nofit`: Get Chi2 distribution from already fitted bin distributions instead of calculating the Chi2 just at the measurement points. Default is `fit`.
+  * `fit | nofit`: Get Chi2 distribution from already fitted bin distributions with continuous parametrization of mt instead of calculating the Chi2 just at the measurement points. Default is `fit`.
+  * `fitmin | nofitmin`: Obtain the minimum of the global Chi2 distribution by fitting a parabola, or by just searching the minimum. Default is `nofitmin`.
   * `root`: Do create and store histograms and canvases into an output Root file.
   * `pdf`: If flag `root` is set, in addition store all canvases to PDF files into the output directory. This is only active for the nominal extraction, not for systematics.
   * `pdfall`: If flag `root` is set, in addition store all canvases for all systematic variations processed to PDF files into the output directory. This is very slow.
