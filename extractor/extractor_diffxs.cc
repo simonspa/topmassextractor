@@ -95,12 +95,12 @@ Double_t extractorDiffXSec::getSignal(Int_t /*bin*/, Double_t /*mass*/, Double_t
   return data;
 }
 
-Double_t extractorDiffXSecScaled::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
-  return (1+scaleFactors.at(bin))*data;
-}
-
 Double_t extractorDiffXSec::getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
   return reco;
+}
+
+Double_t extractorDiffXSecScaled::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  return (1+scaleFactors.at(bin))*reco;
 }
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
@@ -158,7 +158,7 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 				   &Xbins.at(startbin-1));
 
   for(Int_t bin = startbin; bin <= nbins; bin++) {
-    simulationHist->SetBinContent(bin+1-startbin,getReco(bin,mass,aMcBinned->GetBinContent(bin)));
+    simulationHist->SetBinContent(bin+1-startbin,getReco(bin-startbin,mass,aMcBinned->GetBinContent(bin)));
     if((flags & FLAG_NO_THEORYPREDICTION_ERRORS) == 0) {
       Double_t err_match = aMcBinned->GetBinError(bin) + m_prediction_errors.at(bin-startbin).first;
       Double_t err_scale = aMcBinned->GetBinError(bin) + m_prediction_errors.at(bin-startbin).second;
@@ -632,7 +632,7 @@ void extractorDiffXSec::getPredictionUncertainties() {
 Double_t extractorDiffXSecPrediction::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
   // Shift the values up/down by the calculated difference:
   LOG(logDEBUG3) << "Bin #" << bin << ": reco_in=" << reco << ", reco_out=" << (reco + m_shiftFactors.at(bin-1));
-  return (reco + m_shiftFactors.at(bin-1));
+  return (reco + m_shiftFactors.at(bin));
 }
 
 void extractorDiffXSecPrediction::prepareShiftFactors(TString systematic) {
