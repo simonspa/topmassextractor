@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     TH1D * reference;
     Int_t rebinning;
     TString referencename;
-    if(have_data) referencename = "CMS Data";
+    if(have_data) referencename = "Data";
     else referencename = "MadGraph";
     //else referencename = getSampleLabel(files.front().c_str());
 
@@ -155,7 +155,10 @@ int main(int argc, char* argv[]) {
       // Get the name:
       TString name = (*file);
       if(!mass_comparison) {
-	if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ w/o hdamp"); }
+	if(name.Contains("POWHEG_13")) { myhistogramnames.push_back("POWHEG ttJ (13)"); }
+	else if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ (15)"); }
+	else if(name.Contains("POWHEG_16")) { myhistogramnames.push_back("POWHEG ttJ (16)"); }
+	else if(name.Contains("POWHEG_17")) { myhistogramnames.push_back("POWHEG ttJ (17)"); }
 	else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
 	else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
 	else if(name.Contains("Nominal")) { myhistogramnames.push_back("MadGraph"); }

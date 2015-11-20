@@ -478,7 +478,7 @@ void massextractor::setStyleAndFillLegend(TGraphErrors* hist, TString name, TLeg
 
   if(name == "data") {
     if(leg && closure) leg->AddEntry(hist, "Pseudo Data",  "l");
-    else if(leg) leg->AddEntry(hist, "CMS Data",  "l");
+    else if(leg) leg->AddEntry(hist, "Data",  "l");
   }
   else if(name == "madgraph") {
     if(leg) leg->AddEntry(hist, "MadGraph+Pythia",  "p");
