@@ -316,7 +316,6 @@ namespace massextractor {
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFile(TString sample);
-    TFile * selectInputFileTheory(TString channel, TString sample);
 
     std::vector<std::pair<Double_t,Double_t> > m_prediction_errors;
     void getPredictionUncertainties();
@@ -345,6 +344,7 @@ namespace massextractor {
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
   protected:
+    TFile * selectInputFileTheory(TString channel, TString sample);
     std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
   public:
@@ -402,5 +402,24 @@ namespace massextractor {
       prepareShiftFactors(scale);
     };
   };
+
+  class extractorDiffXSecGenLevelPrediction : public extractorDiffXSec {
+
+  private:
+    TFile * selectInputFileTheory(TString channel, TString sample);
+    TString m_systematic;
+
+  public:
+  extractorDiffXSecGenLevelPrediction(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TString systematic) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags) {
+
+      // This is a systematic variation run:
+      m_isSystematicVariation = true;
+      m_systematic = systematic;
+      if(sample == "Nominal") m_outputpath += "/" + systematic;
+
+      LOG(unilog::logDEBUG) << "Running Theory Prediction uncertainty " << systematic << " using gen-level histograms, data from sample " << sample;
+    };
+  };
+
 }
 #endif /* MASSEXTRACTOR_H */

@@ -86,7 +86,7 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       // Theory prediction errors - this uses Nominal as data and shifts MC according to the given Syst. Sample:
       for(std::vector<TString>::iterator pred = predictions.begin(); pred != predictions.end(); ++pred) {
 	LOG(logDEBUG) << "Getting Theory Prediction error for " << (*pred) << "...";
-	extractorDiffXSecPrediction * variation_diffxs_up, * variation_diffxs_down;
+	extractorDiffXSec * variation_diffxs_up, * variation_diffxs_down;
 
 	// Coherently vary MadGraph Prediction and DiffXS up and down for LO:
 	if((flags & FLAG_USE_NLO) == 0) {
@@ -95,8 +95,8 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
 	}
 	// Compare Powheg NLO prediction only agains nominal DiffXSec:
 	else {
-	  variation_diffxs_up = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_UP");
-	  variation_diffxs_down = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_DOWN");
+	  variation_diffxs_up = new extractorDiffXSecGenLevelPrediction(*ch,"Nominal",inputpath, outputpath, flags,(*pred)+"_UP");
+	  variation_diffxs_down = new extractorDiffXSecGenLevelPrediction(*ch,(*pred)+"Nominal",inputpath, outputpath, flags,(*pred)+"_DOWN");
 	}
 
 	variation_diffxs_up->setUnfoldingMass(unfoldingMass);

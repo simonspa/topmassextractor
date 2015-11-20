@@ -217,6 +217,32 @@ TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample
   return input;
 }
 
+TFile * extractorDiffXSecGenLevelPrediction::selectInputFileTheory(TString channel, TString sample) {
+
+  TString filename;
+  TString samplename = m_systematic;
+
+  if((flags & FLAG_USE_NLO) != 0) {
+    samplename.Prepend("POWHEG_");
+    // Input files for Differential Cross section mass extraction: NLO curves
+    if(getMassFromSample(sample) < 167) { filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
+    else if(getMassFromSample(sample) < 170) { filename = "_ttbarsignalplustau_powhegbox_m169p5.root"; }
+    else if(getMassFromSample(sample) < 172) { filename = "_ttbarsignalplustau_powhegbox_m171p5.root"; }
+    else if(getMassFromSample(sample) < 173) { filename = "_ttbarsignalplustau_powhegbox_m172p5.root"; }
+    else if(getMassFromSample(sample) < 174) { filename = "_ttbarsignalplustau_powhegbox_m173p5.root"; }
+    else if(getMassFromSample(sample) < 176) { filename = "_ttbarsignalplustau_powhegbox_m175p5.root"; }
+    else { filename = "_ttbarsignalplustau_powhegbox_m178p5.root"; }
+  } else {
+    LOG(logCRITICAL) << "Currently no per-mass samples are available for systematic variations at reco level!";
+    throw;
+  }
+
+  TString path = "selectionRoot/" + samplename + "/" + channel + "/" + channel + filename;
+  TFile * input = OpenFile(path,"read");
+  LOG(logDEBUG) << "Successfully opened file " << path;
+  return input;
+}
+
 TFile * extractorDiffXSec::selectInputFile(TString sample) {
 
   // Overwrite the samples unfolded with different masses with just the nominal:
