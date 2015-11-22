@@ -108,8 +108,8 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
 	LOG(logINFO) << *syst << "_UP - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_up << " +" << var_stat_pos << " -" << var_stat_neg;
 	LOG(logINFO) << *syst << "_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
 
-	Double_t delta_up = (Double_t)topmass-topmass_variation_up;
-	Double_t delta_down = (Double_t)topmass-topmass_variation_down;
+	Double_t delta_up = (Double_t)topmass_variation_up-topmass;
+	Double_t delta_down = (Double_t)topmass_variation_down-topmass;
 
 	LOG(logRESULT) << *syst << "_UP: delta = " << delta_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
 	LOG(logRESULT) << *syst << "_DOWN: delta = " << delta_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
@@ -147,8 +147,8 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
       LOG(logINFO) << "BG_UP - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_bg_up << " +" << var_stat_pos << " -" << var_stat_neg;
       LOG(logINFO) << "BG_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_bg_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
 
-      Double_t delta_bg_up = (Double_t)topmass-topmass_variation_bg_up;
-      Double_t delta_bg_down = (Double_t)topmass-topmass_variation_bg_down;
+      Double_t delta_bg_up = (Double_t)topmass_variation_bg_up-topmass;
+      Double_t delta_bg_down = (Double_t)topmass_variation_bg_down-topmass;
 
       LOG(logRESULT) << "BG_UP: delta = " << delta_bg_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
       LOG(logRESULT) << "BG_DOWN: delta = " << delta_bg_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
@@ -176,8 +176,8 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
       LOG(logINFO) << "PDF_UP - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_pdf_up << " +" << var_stat_pos << " -" << var_stat_neg;
       LOG(logINFO) << "PDF_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_pdf_down << " +" << var_stat_pos2 << " -" << var_stat_neg2;
 
-      Double_t delta_pdf_up = (Double_t)topmass-topmass_variation_pdf_up;
-      Double_t delta_pdf_down = (Double_t)topmass-topmass_variation_pdf_down;
+      Double_t delta_pdf_up = (Double_t)topmass_variation_pdf_up-topmass;
+      Double_t delta_pdf_down = (Double_t)topmass_variation_pdf_down-topmass;
 
       LOG(logRESULT) << "PDF_UP: delta = " << delta_pdf_up << " GeV +" << systStatErr(total_stat_pos,var_stat_pos) << "-" << systStatErr(total_stat_neg,var_stat_neg);
       LOG(logRESULT) << "PDF_DOWN: delta = " << delta_pdf_down << " GeV +" << systStatErr(total_stat_pos,var_stat_pos2) << "-" << systStatErr(total_stat_neg,var_stat_neg2);
@@ -214,8 +214,8 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
 	LOG(logINFO) << *syst << "_DOWN - " << *ch << ": minimum Chi2 @ m_t=" << topmass_variation_down << " +" << stat_down_pos << " -" << stat_down_neg;
 
 	// Calculate difference to nominal extraction:
-	Double_t delta_up = (Double_t)topmass-topmass_variation_up;
-	Double_t delta_down = (Double_t)topmass-topmass_variation_down;
+	Double_t delta_up = (Double_t)topmass_variation_up-topmass;
+	Double_t delta_down = (Double_t)topmass_variation_down-topmass;
 
 	LOG(logRESULT) << *syst << "_UP:   delta = " << delta_up << " GeV +" << systStatErr(total_stat_pos,stat_up_pos) << "-" << systStatErr(total_stat_neg,stat_up_neg);
 	LOG(logRESULT) << *syst << "_DOWN: delta = " << delta_down << " GeV +" << systStatErr(total_stat_pos,stat_down_pos) << "-" << systStatErr(total_stat_neg,stat_down_neg);
@@ -240,9 +240,9 @@ void massextractor::extract_yield(TString inputpath, TString outputpath, std::ve
 	}
       }
       SystOutputFile << systab->writeSystematicsTableUp("JES_FLAVOR", TMath::Sqrt(jes_syst_pos), btag_stat_pos/12, btag_stat_neg/12)
-		     << systab->writeSystematicsTableDown(TMath::Sqrt(jes_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
+		     << systab->writeSystematicsTableDown(-1*TMath::Sqrt(jes_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
       SystOutputFile << systab->writeSystematicsTableUp("BTAG", TMath::Sqrt(btag_syst_pos), btag_stat_pos/12, btag_stat_neg/12)
-		     << systab->writeSystematicsTableDown(TMath::Sqrt(btag_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
+		     << systab->writeSystematicsTableDown(-1*TMath::Sqrt(btag_syst_neg), btag_stat_pos/12, btag_stat_neg/12);
       total_syst_pos += jes_syst_pos + btag_syst_pos;
       total_syst_neg += jes_syst_neg + btag_syst_neg;
     }
