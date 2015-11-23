@@ -137,8 +137,8 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
   aMcBinned = dynamic_cast<TH1D*>(aMcHist->Rebin(nbins,"madgraphplot",&Xbins.front()));
 
   for (Int_t bin=0; bin < nbins; bin++) {
-    // Divide rebinned histogram's bin content by bin width factor (new/old):
-    aMcBinned->SetBinError(bin+1,sqrt(aMcBinned->GetBinContent(bin+1))/((Xbins.at(bin+1)-Xbins.at(bin))/aMcHist->GetBinWidth(1)));
+    // Divide rebinned histogram's bin content and bin error by bin width factor (new/old):
+    aMcBinned->SetBinError(bin+1,aMcBinned->GetBinError(bin+1)/((Xbins.at(bin+1)-Xbins.at(bin))/aMcHist->GetBinWidth(1)));
     aMcBinned->SetBinContent(bin+1,aMcBinned->GetBinContent(bin+1)/((Xbins.at(bin+1)-Xbins.at(bin))/aMcHist->GetBinWidth(1)));
   }
   
