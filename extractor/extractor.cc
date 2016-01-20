@@ -585,6 +585,7 @@ extractor::extractor(TString ch, TString sample, TString inputpath, TString outp
 
   // This is our nominal mass variation sample:
   if(sample == "Nominal") {
+    samples.push_back("MASS_DOWN_9GEV");
     samples.push_back("MASS_DOWN_6GEV");
     samples.push_back("MASS_DOWN_3GEV");
     samples.push_back("MASS_DOWN_1GEV");

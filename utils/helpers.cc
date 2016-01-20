@@ -81,7 +81,11 @@ TString extractor::getSampleFromMass(TString sample, Double_t mass, bool nominal
   TString fullSampleName = "";
 
   // Variations down:
-  if(mass < (nominalmass-5.5)) {
+  if(mass < (nominalmass-8.5)) {
+    if(nominal) { fullSampleName = "MASS_DOWN_9GEV"; }
+    else { fullSampleName = sample + "_9NEG"; }
+  }
+  else if(mass < (nominalmass-5.5)) {
     if(nominal) { fullSampleName = "MASS_DOWN_6GEV"; }
     else { fullSampleName = sample + "_6NEG"; }
   }
@@ -129,6 +133,7 @@ Double_t massextractor::getMassFromSample(TString sample) {
       if(sample.Contains("1")) topmass -= 1;
       else if(sample.Contains("3")) topmass -= 3;
       else if(sample.Contains("6")) topmass -= 6;
+      else if(sample.Contains("9")) topmass -= 9;
     }
   }
   else {
@@ -138,6 +143,7 @@ Double_t massextractor::getMassFromSample(TString sample) {
     else if(sample.Contains("1NEG")) topmass -= 1;
     else if(sample.Contains("3NEG")) topmass -= 3;
     else if(sample.Contains("6NEG")) topmass -= 6;
+    else if(sample.Contains("9NEG")) topmass -= 9;
   }
 
   return topmass;

@@ -182,7 +182,8 @@ TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample
   if((flags & FLAG_USE_NLO) != 0) {
     // Input files for Differential Cross section mass extraction: NLO curves
     if(sample.Contains("MASS") || sample == "Nominal") {
-      if(getMassFromSample(sample) < 167) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
+      if(getMassFromSample(sample) < 164) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m163p5.root"; }
+      else if(getMassFromSample(sample) < 167) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
       else if(getMassFromSample(sample) < 170) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m169p5.root"; }
       else if(getMassFromSample(sample) < 172) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m171p5.root"; }
       else if(getMassFromSample(sample) < 173) { sample = "POWHEG"; filename = "_ttbarsignalplustau_powhegbox_m172p5.root"; }
@@ -225,7 +226,8 @@ TFile * extractorDiffXSecGenLevelPrediction::selectInputFileTheory(TString chann
   if((flags & FLAG_USE_NLO) != 0) {
     samplename.Prepend("POWHEG_");
     // Input files for Differential Cross section mass extraction: NLO curves
-    if(getMassFromSample(sample) < 167) { filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
+    if(getMassFromSample(sample) < 164) { filename = "_ttbarsignalplustau_powhegbox_m163p5.root"; }
+    else if(getMassFromSample(sample) < 167) { filename = "_ttbarsignalplustau_powhegbox_m166p5.root"; }
     else if(getMassFromSample(sample) < 170) { filename = "_ttbarsignalplustau_powhegbox_m169p5.root"; }
     else if(getMassFromSample(sample) < 172) { filename = "_ttbarsignalplustau_powhegbox_m171p5.root"; }
     else if(getMassFromSample(sample) < 173) { filename = "_ttbarsignalplustau_powhegbox_m172p5.root"; }
