@@ -195,6 +195,12 @@ TFile * extractorDiffXSec::selectInputFileTheory(TString channel, TString sample
     else if(sample.Contains("MATCH_DOWN")) filename = "_ttbarsignalplustau_matchingdown.root";
     else if(sample.Contains("SCALE_UP")) filename = "_ttbarsignalplustau_scaleup.root";
     else if(sample.Contains("SCALE_DOWN")) filename = "_ttbarsignalplustau_scaledown.root";
+    else if(sample.Contains("POWHEG")) { sample = "POWHEG_lo"; filename = "_ttbarsignalplustau_powheg.root"; }
+    else if(sample.Contains("MCATNLO")) filename = "_ttbarsignalplustau_mcatnlo.root";
+    else if(sample.Contains("PERUGIA11mpiHi")) filename = "_ttbarsignalplustau_Perugia11mpiHi.root";
+    else if(sample.Contains("PERUGIA11TeV")) filename = "_ttbarsignalplustau_Perugia11TeV.root";
+    else if(sample.Contains("PERUGIA11NoCR")) filename = "_ttbarsignalplustau_Perugia11NoCR.root";
+    else if(sample.Contains("PERUGIA11")) filename = "_ttbarsignalplustau_Perugia11.root";
   } else {
     // Input files for Differential Cross section mass extraction: MadGraph LO curves
     if(sample.Contains("MASS") || sample == "Nominal") {
@@ -235,7 +241,7 @@ TFile * extractorDiffXSecGenLevelPrediction::selectInputFileTheory(TString chann
     else if(getMassFromSample(sample) < 176) { filename = "_ttbarsignalplustau_powhegbox_m175p5.root"; }
     else { filename = "_ttbarsignalplustau_powhegbox_m178p5.root"; }
   } else {
-    LOG(logCRITICAL) << "Currently no per-mass samples are available for systematic variations at reco level!";
+    LOG(logCRITICAL) << "Currently no per-mass samples are available for systematic variations at gen level!";
     throw;
   }
 
@@ -667,13 +673,30 @@ void extractorDiffXSecPrediction::prepareShiftFactors(TString systematic) {
 
   m_shiftFactors.clear();
 
-  if(!systematic.Contains("MATCH") && !systematic.Contains("SCALE")) {
+  if(systematic.Contains("HAD")) {
+    LOG(logDEBUG2) << "Preparing sample difference between POWHEG and MCATNLO.";
+    m_shiftFactors = calcSampleDifference("POWHEG","MCATNLO","VisGenTTBar1stJetMass");
+  }
+  else if(systematic.Contains("CR")) {
+    LOG(logDEBUG2) << "Preparing sample difference between PERUGIA11 and PERUGIA11NoCR.";
+    m_shiftFactors = calcSampleDifference("PERUGIA11","PERUGIA11NoCR","VisGenTTBar1stJetMass");
+  }
+  else if(systematic.Contains("UE1")) {
+    LOG(logDEBUG2) << "Preparing sample difference between PERUGIA11 and PERUGIA11mpiHi.";
+    m_shiftFactors = calcSampleDifference("PERUGIA11","PERUGIA11mpiHi","VisGenTTBar1stJetMass");
+  }
+  else if(systematic.Contains("UE2")) {
+    LOG(logDEBUG2) << "Preparing sample difference between PERUGIA11 and PERUGIA11TeV.";
+    m_shiftFactors = calcSampleDifference("PERUGIA11","PERUGIA11TeV","VisGenTTBar1stJetMass");
+  }
+  else if(systematic.Contains("MATCH") || systematic.Contains("SCALE")) {
+    LOG(logDEBUG2) << "Preparing theory prediction uncertainty factors for " << systematic;
+    m_shiftFactors = calcSampleDifference("Nominal",systematic,"VisGenTTBar1stJetMass");
+  }
+  else {
     LOG(logWARNING) << "Systematic " << systematic << " can't be used as theory prediction error.";
     return;
   }
-
-  LOG(logDEBUG2) << "Preparing theroy prediction uncertainty factors for " << systematic;
-  m_shiftFactors = calcSampleDifference("Nominal",systematic,"VisGenTTBar1stJetMass");
 
   std::stringstream sv;
   for(std::vector<Double_t>::iterator sf = m_shiftFactors.begin(); sf != m_shiftFactors.end(); ++sf) { sv << *sf << " "; }
