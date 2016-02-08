@@ -206,7 +206,7 @@ void massextractor::setHHStyle(TStyle& HHStyle)
 
 // Draw label for Decay Channel in upper left corner of plot
 void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int_t bin, std::vector<Double_t> boundaries, int cmsprelim, double textSize) {
-    /*
+
     TPaveText *cms = new TPaveText();
     cms->AddText("CMS");
 
@@ -239,7 +239,7 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
       extra->SetTextFont(52);
       extra->Draw("same");
     }
-    */
+
     if(bin != 0) {
       TPaveText *bintxt = new TPaveText();
       if(bin < 0) {
@@ -255,9 +255,9 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
 	bintxt->AddText(Form("bin %i",bin));
       }
       bintxt->SetX1NDC(      gStyle->GetPadLeftMargin() + gStyle->GetTickLength()        );
-      bintxt->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.10 );
+      bintxt->SetY1NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 ); // was: -0.10
       bintxt->SetX2NDC(1.0 - gStyle->GetPadRightMargin() - gStyle->GetTickLength()       );
-      bintxt->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() - 0.05 );
+      bintxt->SetY2NDC(1.0 - gStyle->GetPadTopMargin()  - gStyle->GetTickLength() ); // was: -0.05
 
       bintxt->SetFillStyle(0);
       bintxt->SetBorderSize(0);
@@ -266,7 +266,8 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
       bintxt->Draw("same");
     }
 
-    if(drawchannel) {
+/*
+  if(drawchannel) {
       TPaveText *decch = new TPaveText();
       decch->AddText(getChannelLabel(decaychannel));
 
@@ -281,6 +282,7 @@ void massextractor::DrawDecayChLabel(TString decaychannel, bool drawchannel, Int
       decch->SetTextAlign(32);
       decch->Draw("same");
     }
+*/
 }
 
 void massextractor::DrawFreeCMSLabels(char* text, double textSize) {
