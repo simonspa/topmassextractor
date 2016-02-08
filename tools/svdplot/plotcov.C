@@ -104,8 +104,30 @@ void plotcov() {
     TCanvas * c = new TCanvas("statcov_" + *ch,"statcov_" + *ch);
     c->cd();
     cov->GetZaxis()->SetTitle("stat. cov.");
-    cov->Draw("colz text");
+    //cov->Draw("colz text");
+    cov->Draw("text");
     TGaxis::SetMaxDigits(3);
+
+    //superimpose lines at the xbins positions
+    std::vector<Double_t> binning;
+    for (Int_t bin = 2; bin < cov->GetNbinsX(); bin++) { 
+      binning.push_back(cov->GetBinLowEdge(bin));
+      std::cout << " " << binning.back();
+    }
+    binning.push_back(cov->GetBinLowEdge(cov->GetNbinsX()-1) + cov->GetBinWidth(cov->GetNbinsX()-1));
+    std::cout << " " << binning.back() << std::endl;
+
+    TLine l;
+    c->Update();
+    Double_t ymin = c->GetUymin();
+    Double_t ymax = c->GetUymax();
+    Double_t xmin = c->GetUxmin();
+    Double_t xmax = c->GetUxmax();
+    l.SetLineStyle(3);
+    for (Int_t bin = 0; bin < binning.size();bin++) {
+      l.DrawLine(binning.at(bin),ymin,binning.at(bin),ymax);
+      l.DrawLine(xmin,binning.at(bin),xmax,binning.at(bin));
+    }
 
     //massextractor::DrawFreeCMSLabels(Form("%s, %2.1f fb^{-1} (8 TeV)",*ch,lumi/1000),0.045);
     if(*ch == "ee") massextractor::DrawFreeCMSLabels(Form("ee, %2.1f fb^{-1} (8 TeV)",lumi/1000),0.045);
