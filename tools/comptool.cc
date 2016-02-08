@@ -2,6 +2,7 @@
 #include "TFile.h"
 #include "TH1D.h"
 #include "TCanvas.h"
+#include "TMath.h"
 #include "TH1.h"
 #include "TF1.h"
 #include "TStyle.h"
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
   std::string datahistogram = "";
   bool have_data = false;
   bool mass_comparison = false;
+  bool combined = false;
 
   for (int i = 1; i < argc; i++) {
     // Read and tokeinze the files:
@@ -73,6 +75,8 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-m")) { mass_comparison = true; }
     // Set some number of bins to rebin to:
     else if(!strcmp(argv[i],"-b")) { output_bins = atoi(argv[++i]); }
+    // Combine three histograms
+    else if(!strcmp(argv[i],"-c")) { combined = true; }
      // Set the verbosity level:
     else if (!strcmp(argv[i],"-v")) { Log::ReportingLevel() = Log::FromString(argv[++i]); }
     else { LOG(logERROR) << "Unrecognized command line argument \"" << argv[i] << "\".";}
@@ -125,7 +129,7 @@ int main(int argc, char* argv[]) {
       LOG(logINFO) << "Rebinning with " << binning.size()-1 << " bins.";
 
     }
-    // Otherwise rebin to CLI option of to default:
+    // Otherwise rebin to CLI option or to default:
     else {
       Int_t bins_now = ((TH1D*)referenceFile->Get(hist))->GetNbinsX();
       if(output_bins == 0) output_bins = bins_now;
@@ -142,7 +146,7 @@ int main(int argc, char* argv[]) {
     // Prepare all input histograms:
     std::vector<TH1D*> myhistograms;
     std::vector<TString> myhistogramnames;
-    TH1D * tempBinned;
+    TH1D * tempBinned, * tempBinned2, * tempBinned3;
     for(std::vector<std::string>::iterator file = files.begin() + 1; file != files.end(); file++) {
       LOG(logDEBUG) << "Attempting to open " << *file;
       TFile * tempFile = new TFile((*file).c_str());
@@ -150,12 +154,47 @@ int main(int argc, char* argv[]) {
       tempBinned = getNiceHistogram(binning, tempFile, hist, rebinning);
       LOG(logDEBUG2) << "Storing histogram pointer: " << tempBinned;
       LOG(logDEBUG2) << "First bin contains: " << tempBinned->GetBinContent(1);
+
+      // Sum three for combined channel:
+      if(combined) {
+	delete tempFile;
+	file++;
+	LOG(logDEBUG) << "Getting the others: " << *file;
+	tempFile = new TFile((*file).c_str());
+	tempBinned2 = getNiceHistogram(binning, tempFile, hist, rebinning);
+	delete tempFile;
+	file++;
+	LOG(logDEBUG) << "Getting the others: " << *file;
+	tempFile = new TFile((*file).c_str());
+	tempBinned3 = getNiceHistogram(binning, tempFile, hist, rebinning);
+
+	LOG(logDEBUG) << "Summing channels...";
+	tempBinned->Add(tempBinned2);
+	tempBinned->Add(tempBinned3);
+	/*Int_t nbins = tempBinned->GetNbinsX();
+	for(Int_t bin = 1; bin <= nbins; bin++) {
+	  tempBinned->SetBinContent(bin,((tempBinned->GetBinContent(bin)/(tempBinned->GetBinError(bin)*tempBinned->GetBinError(bin))
+					  + tempBinned2->GetBinContent(bin)/(tempBinned2->GetBinError(bin)*tempBinned2->GetBinError(bin))
+					  + tempBinned3->GetBinContent(bin)/(tempBinned3->GetBinError(bin)*tempBinned3->GetBinError(bin)))/
+					 ((1/(tempBinned->GetBinError(bin)*tempBinned->GetBinError(bin)))
+					  + (1/(tempBinned2->GetBinError(bin)*tempBinned2->GetBinError(bin)))
+					  + (1/(tempBinned3->GetBinError(bin)*tempBinned3->GetBinError(bin))))));
+	  tempBinned->SetBinError(bin,(1/(TMath::Sqrt((1/(tempBinned->GetBinError(bin)*tempBinned->GetBinError(bin)))
+						      + (1/(tempBinned2->GetBinError(bin)*tempBinned2->GetBinError(bin)))
+						      + (1/(tempBinned3->GetBinError(bin)*tempBinned3->GetBinError(bin)))))));
+						      }*/
+	LOG(logDEBUG2) << "Summed, first bin is: " << tempBinned->GetBinContent(1);
+	tempBinned->Scale(1/tempBinned->Integral("width"));
+	LOG(logDEBUG2) << "First bin now contains: " << tempBinned->GetBinContent(1);
+       }
+
+
       myhistograms.push_back(tempBinned);
 
       // Get the name:
       TString name = (*file);
       if(!mass_comparison) {
-	if(name.Contains("POWHEG_13")) { myhistogramnames.push_back("POWHEG ttJ (13)"); }
+	if(name.Contains("POWHEG_13")) { myhistogramnames.push_back("POWHEG ttJ"); }
 	else if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ (15)"); }
 	else if(name.Contains("POWHEG_16")) { myhistogramnames.push_back("POWHEG ttJ (16)"); }
 	else if(name.Contains("POWHEG_17")) { myhistogramnames.push_back("POWHEG ttJ (17)"); }
@@ -230,6 +269,13 @@ int main(int argc, char* argv[]) {
     else DrawFreeCMSLabels("Simulation");
     reference->Write(referencename);
 
+
+    TString name = files.front().c_str();
+    if(combined || name.Contains("combined")) DrawDecayChLabel("combined");
+    else if(name.Contains("ee")) DrawDecayChLabel("ee");
+    else if(name.Contains("emu")) DrawDecayChLabel("emu");
+    else if(name.Contains("mumu")) DrawDecayChLabel("mumu");
+
     std::vector<TH1*> denominators;
 
     // Plot all others:
@@ -287,6 +333,7 @@ int main(int argc, char* argv[]) {
 			     NULL, NULL, 
 			     denominators.at(1), denominators.at(2), denominators.at(3), denominators.at(4), denominators.at(5), denominators.at(6), 
 			     0.5,1.5,have_data);
+
     c->Update();
     c->Modified();
     c->Write();
