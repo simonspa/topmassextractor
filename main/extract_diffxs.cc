@@ -19,6 +19,8 @@ using namespace std;
 using namespace massextractor;
 using namespace unilog;
 
+#define MINMASS 163.5
+
 void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std::vector<TString> channels, Double_t unfoldingMass, uint32_t flags, bool syst, std::vector<std::string> systlist, bool fulltake) {
 
   std::vector<TString> predictions;
@@ -34,16 +36,6 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
   }
   systematics.push_back("BG");
   systematics.push_back("JES");
-  /*systematics.push_back("JES_MPF");
-  systematics.push_back("JES_INTERCAL");
-  systematics.push_back("JES_UNCORR");
-  systematics.push_back("JES_BJES");
-
-  systematics.push_back("JES_FLAVOR_GLUON");
-  systematics.push_back("JES_FLAVOR_QUARK");
-  systematics.push_back("JES_FLAVOR_CHARM");
-  systematics.push_back("JES_FLAVOR_BOTTOM");
-  */
   systematics.push_back("JER");
   systematics.push_back("PU");
   systematics.push_back("TRIG");
@@ -134,13 +126,29 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       Double_t diff = 0;
 
       LOG(logDEBUG) << "Getting HAD variation...";
-      var = new extractorDiffXSec(*ch,"POWHEG", inputpath, outputpath, flags);
-      var2 = new extractorDiffXSec(*ch,"MCATNLO", inputpath, outputpath, flags);
-      diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+
+      if((flags & FLAG_USE_NLO) == 0) {
+	//var = new extractorDiffXSec(*ch,"POWHEGV2PYTHIA8", inputpath, outputpath, flags);
+	//var2 = new extractorDiffXSec(*ch,"POWHEGV2HERWIG", inputpath, outputpath, flags);
+	var = new extractorDiffXSec(*ch,"POWHEG", inputpath, outputpath, flags);
+	var2 = new extractorDiffXSec(*ch,"MCATNLO", inputpath, outputpath, flags);
+	diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+      }
+      else {
+	// Use the difference between POWHEG & MCATNLO and add it to POWHEGBOX.
+	var = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,"HAD");
+	var2 = new extractorDiffXSecPrediction(*ch,"Nominal",inputpath, outputpath, flags,"HAD");
+	diff = TMath::Abs(var->getTopMass()-topmass)/2;
+      }
+
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
+      //LOG(logINFO) << "POWHEGV2PYTHIA8 - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
+      //LOG(logINFO) << "POWHEGV2HERWIG  - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
       LOG(logINFO) << "POWHEG - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
-      LOG(logINFO) << "MCATNLO - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+      LOG(logINFO) << "MCATNLO  - " << *ch << ": minimum Chi2 @ m_t=" << var2->getTopMass() << " +" << var_stat_pos2 << " -" << var_stat_neg2;
+
+
       DiffSystOutputFile << systab->writeSystematicsTableUpDown("HAD_UP", diff, 
 								systStatErr(total_stat_pos,var_stat_pos)+systStatErr(total_stat_pos,var_stat_pos2),
 								systStatErr(total_stat_neg,var_stat_neg)+systStatErr(total_stat_neg,var_stat_neg2));
@@ -151,9 +159,13 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
       delete var; delete var2;
 
       LOG(logDEBUG) << "Getting CR variation...";
+
       var = new extractorDiffXSec(*ch,"PERUGIA11NoCR", inputpath, outputpath, flags);
       var2 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
-      diff = TMath::Abs(var->getTopMass()-var2->getTopMass())/2;
+      double tm = var->getTopMass(); if(tm < MINMASS) { LOG(logERROR) << "Fitted mass exceeding sample range!"; tm = MINMASS; }
+      double tm2 = var2->getTopMass(); if(tm2 < MINMASS) { LOG(logERROR) << "Fitted mass exceeding sample range!"; tm2 = MINMASS; }
+      diff = TMath::Abs(tm-tm2)/2;
+
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
       LOG(logINFO) << "PERUGIA11NoCR - " << *ch << ": minimum Chi2 @ m_t=" << var->getTopMass() << " +" << var_stat_pos << " -" << var_stat_neg;
@@ -169,10 +181,12 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
 
       LOG(logDEBUG) << "Getting UE variation...";
       extractorDiffXSec * var3;
+
       var = new extractorDiffXSec(*ch,"PERUGIA11mpiHi", inputpath, outputpath, flags);
       var2 = new extractorDiffXSec(*ch,"PERUGIA11TeV", inputpath, outputpath, flags);
       var3 = new extractorDiffXSec(*ch,"PERUGIA11", inputpath, outputpath, flags);
       diff = (TMath::Abs(var->getTopMass() - var3->getTopMass()) + TMath::Abs(var2->getTopMass() - var3->getTopMass()))/2;
+
       Double_t var_stat_pos3, var_stat_neg3;
       var->getStatError(var_stat_pos,var_stat_neg);
       var2->getStatError(var_stat_pos2,var_stat_neg2);
@@ -241,6 +255,8 @@ void massextractor::extract_diffxsec(TString inputpath, TString outputpath, std:
 	// Extract the top quark mass from data:
 	Double_t topmass_variation_up = variation_up->getTopMass();
 	Double_t topmass_variation_down = variation_down->getTopMass();
+	if(topmass_variation_up < MINMASS) { LOG(logERROR) << "Fitted mass exceeding sample range!"; topmass_variation_up = MINMASS; }
+	if(topmass_variation_down < MINMASS) { LOG(logERROR) << "Fitted mass exceeding sample range!"; topmass_variation_down = MINMASS; }
 	variation_up->getStatError(stat_up_pos,stat_up_neg);
 	variation_down->getStatError(stat_down_pos,stat_down_neg);
 
@@ -301,8 +317,12 @@ void massextractor::extract_diffxsec_stats(TString inputpath, TString outputpath
   // before the unfolding (appending "_infstat" to the input path)
 
   std::vector<TString> systematics;
-  systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
-  systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
+  if((flags & FLAG_USE_NLO) != 0) {
+  }
+  else {
+    systematics.push_back("MATCH_UP"); systematics.push_back("MATCH_DOWN");
+    systematics.push_back("SCALE_UP"); systematics.push_back("SCALE_DOWN");
+  }
   systematics.push_back("BG_UP"); systematics.push_back("BG_DOWN");
   systematics.push_back("JES_UP"); systematics.push_back("JES_DOWN");
   systematics.push_back("JER_UP"); systematics.push_back("JER_DOWN");
