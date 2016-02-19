@@ -5,6 +5,7 @@
 #include <TFile.h>
 #include <TGraphErrors.h>
 #include <TMatrixD.h>
+#include <TRandom.h>
 
 #include "log.h"
 
@@ -313,7 +314,6 @@ namespace massextractor {
   class extractorDiffXSec : public extractor {
 
   private:
-    TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFile(TString sample);
 
@@ -344,6 +344,7 @@ namespace massextractor {
     inline TString getRootFilename() { return "MassFitDiffXSec.root"; }
 
   protected:
+    virtual TH1D * getSignalHistogram(Double_t mass, TFile * histos);
     TFile * selectInputFileTheory(TString channel, TString sample);
     std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
@@ -360,6 +361,19 @@ namespace massextractor {
       if((flags&FLAG_IGNORE_MC_STATERR) != 0) { LOG(unilog::logWARNING) << "This run will ignore all statistical (and theory prediction) errors assigned to the MC sample!"; }
     };
     void setUnfoldingMass(Double_t mass);
+  };
+
+  class extractorDiffXSecPseudoExp : public extractorDiffXSec {
+
+  private:
+    TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+    TRandom * myrnd;
+
+  public:
+  extractorDiffXSecPseudoExp(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TRandom * random) : extractorDiffXSec(ch, sample, inputpath, outputpath, steeringFlags), myrnd(random) {
+
+      LOG(unilog::logDEBUG) << "Running pseudo experiments on sample " << sample;
+    };
   };
 
   class extractorDiffXSecScaled : public extractorDiffXSec {

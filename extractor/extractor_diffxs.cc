@@ -8,6 +8,7 @@
 #include <TH2D.h>
 #include <TFile.h>
 #include <TMatrixD.h>
+#include <TRandom3.h>
 #include <TDecompSVD.h>
 #include <TStyle.h>
 #include <TLegend.h>
@@ -703,3 +704,25 @@ void extractorDiffXSecPrediction::prepareShiftFactors(TString systematic) {
   LOG(logDEBUG2) << "Factors for every bin: " << sv.str();
 }
 
+TH1D * extractorDiffXSecPseudoExp::getSignalHistogram(Double_t mass, TFile * histos) {
+
+  // Histogram containing differential cross section from data:
+  TH1D * signalHist = extractorDiffXSec::getSignalHistogram(mass, histos);
+
+  // Smear the differential cross section in each bin within the statistical uncertainty
+  for(Int_t bin = 1; bin <= signalHist->GetNbinsX(); bin++) {
+
+    // Get random number from Gauss distribution with mean and sigma of original bin content:
+    LOG(logDEBUG2) << "Drawing from Gaus(" << signalHist->GetBinContent(bin) << ", " << signalHist->GetBinError(bin) << ")";
+    Double_t content = myrnd->Gaus(signalHist->GetBinContent(bin),signalHist->GetBinError(bin));
+    LOG(logDEBUG2) << "Smearing bin " << bin << ": replace " << signalHist->GetBinContent(bin) << " with " << content << " (integral = " << signalHist->Integral("width") << ")";
+    signalHist->SetBinContent(bin, content);
+  }
+
+  // Normalize the histogram to 1
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { signalHist->Scale(1./signalHist->Integral("width")); }
+  LOG(logDEBUG2) << "Integral = " << signalHist->Integral("width");
+
+  // Return DiffXSec signal histogram:
+  return signalHist;
+}
