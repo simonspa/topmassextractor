@@ -37,7 +37,7 @@ SET(extractor_sources
   "utils/helpers.cc")
 
 ADD_LIBRARY(extractor SHARED ${extractor_sources})
-ADD_EXECUTABLE (extract main/extract.cc main/extract_yield.cc main/extract_diffxs.cc)
+ADD_EXECUTABLE (extract main/extract.cc main/extract_yield.cc main/extract_diffxs.cc main/extract_pseudoexp.cc)
 MESSAGE( STATUS "Building extrator library." )
 
 TARGET_LINK_LIBRARIES(extractor ${ROOT_LIBRARIES})

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     // select to either extract from yield of differential cross section:
     if (!strcmp(argv[i],"-t")) {
       type = string(argv[++i]);
-      if(type !=  "diffxs" && type != "yield" && type != "yieldstats" && type != "diffxsstats") {
+      if(type !=  "diffxs" && type != "yield" && type != "yieldstats" && type != "diffxsstats" && type != "pseudo") {
 	LOG(logERROR) << "Unknown extraction type \"" << type << "\".";
 	return 0;
       }
@@ -144,6 +144,7 @@ int main(int argc, char* argv[]) {
     if(type == "yield") extract_yield(inputpath,outputpath,channels,closure,closure_sample,flags,syst,systlist,fulltake);
     else if(type == "yieldstats") extract_yield_stats(inputpath,outputpath,channels,closure,closure_sample,flags,syst,systlist, fulltake);
     else if(type == "diffxsstats") extract_diffxsec_stats(inputpath,outputpath,channels,unfolding_mass,flags,syst,systlist,fulltake);
+    else if (type == "pseudo") extract_diffxsec_pseudo(inputpath,outputpath,channels,unfolding_mass,flags);
     else extract_diffxsec(inputpath,outputpath,channels,unfolding_mass,flags,syst,systlist,fulltake);
   }
   catch(...) {
