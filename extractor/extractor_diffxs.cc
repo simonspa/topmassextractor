@@ -731,6 +731,7 @@ TH1D * extractorDiffXSecPseudoExp::getSignalHistogram(Double_t mass, TFile * his
     LOG(logDEBUG2) << "Drawing from Gaus(" << signalHist->GetBinContent(bin) << ", " << signalHist->GetBinError(bin) << ")";
     Double_t content = myrnd->Gaus(signalHist->GetBinContent(bin),signalHist->GetBinError(bin));
     LOG(logDEBUG2) << "Smearing bin " << bin << ": replace " << signalHist->GetBinContent(bin) << " with " << content << " (integral = " << signalHist->Integral("width") << ")";
+    signalHist->SetBinError(bin, signalHist->GetBinError(bin)*content/signalHist->GetBinContent(bin));
     signalHist->SetBinContent(bin, content);
   }
 
