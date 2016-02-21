@@ -259,6 +259,7 @@ TGraphErrors * extractor::createIntersectionChiSquare(TGraphErrors* data, TGraph
     if((flags & FLAG_STORE_PDFS) != 0) { c->Print(m_outputpath + "/" + c2name + ".pdf"); }
   }
 
+  delete chi2_graph_plotting;
   return chi2_graph;
 }
 
@@ -548,10 +549,15 @@ Double_t extractor::getTopMass() {
     std::vector<TGraphErrors*> data_graphs = splitBins("data",masses,data_hists);
     std::vector<TGraphErrors*> mc_graphs = splitBins("mc",masses,mc_hists);
     fit = getFittedChiSquare(masses,data_graphs,mc_graphs);
+    // Clean up:
+    for(size_t i = 0; i < data_graphs.size(); i++) { delete data_graphs.at(i); }
+    for(size_t i = 0; i < mc_graphs.size(); i++) { delete mc_graphs.at(i); }
   }
   
   LOG(logDEBUG2) << "Minimizing global Chi2 distribution...";
   extractedMass = getMinimum(fit);
+  delete fit.first;
+  //delete fit.second;
 
   if(m_root_output != NULL && m_root_output->IsOpen()) { m_root_output->Close(); }
   return extractedMass;

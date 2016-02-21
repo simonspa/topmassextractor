@@ -88,6 +88,7 @@ TH1D * extractorDiffXSec::getSignalHistogram(Double_t mass, TFile * histos) {
   m_nevents = signalHist->Integral();
   LOG(logDEBUG2) << "Signal histogram integral: " << m_nevents;
 
+  delete aDiffXSecHist;
   // Return DiffXSec signal histogram:
   return signalHist;
 }
@@ -114,13 +115,17 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
 
   TH1D* aMcHist;
   TFile * input = selectInputFileTheory(channels.front(), getSampleFromMass(m_sample,mass,true));
-  aMcHist = dynamic_cast<TH1D*>(input->Get("VisGenTTBar1stJetMass")->Clone());
+  TObject * tmpHist = input->Get("VisGenTTBar1stJetMass");
+  aMcHist = dynamic_cast<TH1D*>(tmpHist->Clone());
+  delete tmpHist;
   delete input;
 
   for(std::vector<TString>::iterator ch = channels.begin()+1; ch != channels.end(); ++ch) {
     TFile * input2 = selectInputFileTheory(*ch, getSampleFromMass(m_sample,mass,true));
+    TH1D * tmp = dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass"));
     // Since Sumw2() has been called for the histograms, Add() does recalc the errors correctly:
-    aMcHist->Add(dynamic_cast<TH1D*>(input2->Get("VisGenTTBar1stJetMass")));
+    aMcHist->Add(tmp);
+    delete tmp;
     delete input2;
   }
 
@@ -172,6 +177,9 @@ TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) 
     LOG(logDEBUG3) << "Bin #" << bin << ": reco=" << simulationHist->GetBinContent(bin+1-startbin) << "+-" << simulationHist->GetBinError(bin+1-startbin);
   }
 
+  delete aMcHist;
+  delete aMcBinned;
+  delete aDiffXSecHist;
   LOG(logDEBUG) << "Returning Simulation histogram now.";
   return simulationHist;
 }
@@ -305,7 +313,8 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     TGraphErrors * mcFit = new TGraphErrors();
 
     // Get the likelihood for the two functions:
-    createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
+    TGraphErrors* chi2 = createIntersectionChiSquare(data.at(bin),mc.at(bin),1+bin, dataFit, mcFit);
+    delete chi2;
     dataFits.push_back(dataFit);
     mcFits.push_back(mcFit);
   }
@@ -367,6 +376,10 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
     delete invCov;
   }
 
+  // Clean up:
+  for(size_t i = 0; i < dataFits.size(); i++) { delete dataFits.at(i); }
+  for(size_t i = 0; i < mcFits.size(); i++) { delete mcFits.at(i); }
+
   TCanvas* c = 0;
   if((flags & FLAG_STORE_HISTOGRAMS) != 0) {
     TString cname = "chi2_" + m_channel + "_sum";
@@ -387,7 +400,8 @@ std::pair<TGraphErrors*,TF1*> extractorDiffXSec::getFittedChiSquare(std::vector<
 
   // Fit the graph
   chi2sum->Fit("pol2","Q","",170,174.5);
-  
+
+  delete chi2sum_plotting;  
   finalChiSquare = std::make_pair(chi2sum,chi2sum->GetFunction("pol2"));
   return finalChiSquare;
 }
@@ -557,6 +571,7 @@ TMatrixD * extractorDiffXSec::invertCovMatrix(TMatrixD * inputcov, std::vector<D
       cov_x = 0; cov_y++;
     }
     LOG(logDEBUG3) << "Reduced inverted COV matrix to " << covFinal->GetNrows() << "-by-" << covFinal->GetNcols();
+    delete cov;
   }
   else if(drop_bin > 0) {
     LOG(logCRITICAL) << "Failed to drop COV bin" << drop_bin << ". Continue with full COV matrix.";
