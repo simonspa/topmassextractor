@@ -33,7 +33,16 @@ void massextractor::extract_diffxsec_pseudo(TString inputpath, TString outputpat
     // Get random number generator:
     TRandom3 *myrnd = new TRandom3();
 
+    extractorDiffXSec * mass_xs = new extractorDiffXSec(*ch,"Nominal", inputpath, outputpath, flags);
+    mass_xs->setUnfoldingMass(unfoldingMass);
+    Double_t ntopmass = mass_xs->getTopMass();
+    Double_t ntotal_stat_pos;
+    Double_t ntotal_stat_neg;
+    mass_xs->getStatError(ntotal_stat_pos,ntotal_stat_neg);
+    delete mass_xs;
+
     TH1D * pseudoMasses = new TH1D("pseudomasses_" + *ch, "pseudomasses_" + *ch, 250,160,175);
+    TH1D * pull = new TH1D("pulls_" + *ch, "pulls_" + *ch, 50,-5,5);
     
     for(Int_t exp = 0; exp < nexp; exp++) {
       extractorDiffXSecPseudoExp * mass_diffxs = new extractorDiffXSecPseudoExp(*ch,"Nominal", inputpath, outputpath, flags, myrnd);
@@ -47,6 +56,7 @@ void massextractor::extract_diffxsec_pseudo(TString inputpath, TString outputpat
       LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
       LOG(logRESULT) << "(" << exp << "/" << nexp << ") Nominal: mass = " << topmass << " GeV +" << total_stat_pos << "-" << total_stat_neg;
       pseudoMasses->Fill(topmass);
+      pull->Fill((topmass - ntopmass)/ntotal_stat_pos);
       delete mass_diffxs;
     }
 
@@ -61,15 +71,16 @@ void massextractor::extract_diffxsec_pseudo(TString inputpath, TString outputpat
     LOG(logRESULT) << "Pseudo Experiments: mass = " << fit->GetParameter(1) << " GeV +-" << fit->GetParameter(2);
     pseudoMasses->Write();
 
+    pull->Fit("gaus");
+    TF1 *fit2 = pull->GetFunction("gaus");
+    fit2->SetLineWidth(3);
+    fit2->SetLineColor(kRed+1);
+    LOG(logRESULT) << "Pull: mean = " << fit2->GetParameter(1) << " sigma = " << fit2->GetParameter(2);
+    pull->Write();
 
-    extractorDiffXSec * mass_xs = new extractorDiffXSec(*ch,"Nominal", inputpath, outputpath, flags);
-    mass_xs->setUnfoldingMass(unfoldingMass);
-    Double_t topmass = mass_xs->getTopMass();
-    Double_t total_stat_pos;
-    Double_t total_stat_neg;
-    mass_xs->getStatError(total_stat_pos,total_stat_neg);
-    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << topmass << " +" << total_stat_pos << " -" << total_stat_neg;
-    LOG(logRESULT) << "Reference, Nominal: mass = " << topmass << " GeV +" << total_stat_pos << "-" << total_stat_neg;
+
+    LOG(logINFO) << *ch << ": minimum Chi2 @ m_t=" << ntopmass << " +" << ntotal_stat_pos << " -" << ntotal_stat_neg;
+    LOG(logRESULT) << "Reference, Nominal: mass = " << ntopmass << " GeV +" << ntotal_stat_pos << "-" << ntotal_stat_neg;
   }
 
   return;
