@@ -534,3 +534,36 @@ Double_t extractorYieldOtherSamples::getStatError(Double_t &statPos, Double_t &s
 
   return (statPos+statNeg)/2;
 }
+
+TH1D * extractorYieldPseudoExp::getSignalHistogram(Double_t mass, TFile * histos) {
+
+  // Histogram containing data event counts:
+  TH1D * signalHist = extractorYield::getSignalHistogram(mass, histos);
+
+  LOG(logDEBUG2) << "Integral = " << signalHist->Integral("width");
+  signalHist->Scale(m_stat_ndata);
+  LOG(logDEBUG2) << "Integral = " << signalHist->Integral("width");
+
+  // Smear the differential cross section in each bin within the statistical uncertainty
+  for(Int_t bin = 1; bin <= signalHist->GetNbinsX(); bin++) {
+
+    // Get random number from Gauss distribution with mean and sigma of original bin content:
+    LOG(logDEBUG2) << "Drawing from Poisson(" << (signalHist->GetBinContent(bin)) << ")";
+    Double_t content = myrnd->PoissonD(signalHist->GetBinContent(bin));
+    LOG(logDEBUG2) << "Smearing bin " << bin << ": replace " << signalHist->GetBinContent(bin) << " with " << content << "+-" << sqrt(content) << " (integral = " << signalHist->Integral("width") << ")";
+    //signalHist->SetBinError(bin, sqrt(content));
+    signalHist->SetBinContent(bin, content);
+  }
+
+  // Normalize the histogram to 1
+  if((flags & FLAG_NORMALIZE_DISTRIBUTIONS) != 0) { signalHist->Scale(1./signalHist->Integral("width")); }
+  LOG(logDEBUG2) << "Integral = " << signalHist->Integral("width");
+
+  // Smear the differential cross section in each bin within the statistical uncertainty
+  for(Int_t bin = 1; bin <= signalHist->GetNbinsX(); bin++) {
+    LOG(logDEBUG2) << "Smeared bin " << bin << ": " << signalHist->GetBinContent(bin) << " +-" << signalHist->GetBinError(bin);
+  }
+
+  // Return DiffXSec signal histogram:
+  return signalHist;
+}

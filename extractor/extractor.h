@@ -180,8 +180,9 @@ namespace massextractor {
 
     std::vector<Double_t> calcSampleDifference(TString nominal, TString systematic, TString histogram);
 
-  private:
     TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+
+  private:
     TH1D * getSimulationHistogram(Double_t mass, TFile * histos);
 
     void getPredictionUncertainties();
@@ -221,6 +222,19 @@ namespace massextractor {
       }
     };
     void setClosureSample(TString closure);
+  };
+
+  class extractorYieldPseudoExp : public extractorYield {
+
+  private:
+    TH1D * getSignalHistogram(Double_t mass, TFile * histos);
+    TRandom * myrnd;
+
+  public:
+  extractorYieldPseudoExp(TString ch, TString sample, TString inputpath, TString outputpath, uint32_t steeringFlags, TRandom * random) : extractorYield(ch, sample, inputpath, outputpath, steeringFlags), myrnd(random) {
+
+      LOG(unilog::logDEBUG) << "Running pseudo experiments on sample " << sample;
+    };
   };
 
   class extractorYieldOtherSamples : public extractorYield {
