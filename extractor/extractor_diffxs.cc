@@ -681,7 +681,7 @@ void extractorDiffXSec::getPredictionUncertainties() {
 
 Double_t extractorDiffXSecPrediction::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
   // Shift the values up/down by the calculated difference:
-  LOG(logDEBUG3) << "Bin #" << bin << ": reco_in=" << reco << ", reco_out=" << (reco + m_shiftFactors.at(bin-1));
+  LOG(logDEBUG3) << "Bin #" << bin << ": reco_in=" << reco << ", reco_out=" << (reco + m_shiftFactors.at(bin));
   return (reco + m_shiftFactors.at(bin));
 }
 
