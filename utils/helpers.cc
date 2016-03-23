@@ -161,32 +161,32 @@ std::vector<Double_t> extractorDiffXSecScaled::getPDFScaleFactors(Int_t sign, TS
 
   // PDF scaling for all five bins:
   if(channel == "combined") {
-    factors.push_back(sign*0.0437648692592951);
-    factors.push_back(sign*0.0313545740485939);
-    factors.push_back(sign*0.0219282948263315);
-    factors.push_back(sign*0.0103976808020846);
-    factors.push_back(sign*0.0303756233738881);
+    factors.push_back(sign*0.0730983301271362);
+    factors.push_back(sign*0.0490821285094045);
+    factors.push_back(sign*0.0230181728550466);
+    factors.push_back(sign*0.0043597606982635);
+    factors.push_back(sign*0.0049973900782353);
   }
   else if(channel == "ee") {
-    factors.push_back(sign*0.049860059679855);
-    factors.push_back(sign*0.0348051512429172);
-    factors.push_back(sign*0.0243662670991424);
-    factors.push_back(sign*0.0113172740302442);
-    factors.push_back(sign*0.0341297220727368);
+    factors.push_back(sign*0.0763288813903998);
+    factors.push_back(sign*0.0503300069279420);
+    factors.push_back(sign*0.0238420006011287);
+    factors.push_back(sign*0.0046101541503047);
+    factors.push_back(sign*0.0047790035847131);
   }
   else if(channel == "emu") {
-    factors.push_back(sign*0.0516947496252088);
-    factors.push_back(sign*0.0363747616499262);
-    factors.push_back(sign*0.0251596355319995);
-    factors.push_back(sign*0.0118658180165814);
-    factors.push_back(sign*0.0340823989670275);
+    factors.push_back(sign*0.0670695871489987);
+    factors.push_back(sign*0.0476585735302661);
+    factors.push_back(sign*0.0226734244744536);
+    factors.push_back(sign*0.0047253493621820);
+    factors.push_back(sign*0.0046261863593219);
   }
   else if(channel == "mumu") {
-    factors.push_back(sign*0.0502777148183957);
-    factors.push_back(sign*0.0361246416882863);
-    factors.push_back(sign*0.024545456047524);
-    factors.push_back(sign*0.0114930081187188);
-    factors.push_back(sign*0.0354809031989924);
+    factors.push_back(sign*0.0568253092458890);
+    factors.push_back(sign*0.0380155420000706);
+    factors.push_back(sign*0.0142127293134901);
+    factors.push_back(sign*0.0007652029412359);
+    factors.push_back(sign*0.0053693108289561);
   }
 
   return factors;
