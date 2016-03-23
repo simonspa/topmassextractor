@@ -160,33 +160,65 @@ std::vector<Double_t> extractorDiffXSecScaled::getPDFScaleFactors(Int_t sign, TS
   std::vector<Double_t> factors;
 
   // PDF scaling for all five bins:
-  if(channel == "combined") {
-    factors.push_back(sign*0.0730983301271362);
-    factors.push_back(sign*0.0490821285094045);
-    factors.push_back(sign*0.0230181728550466);
-    factors.push_back(sign*0.0043597606982635);
-    factors.push_back(sign*0.0049973900782353);
+  if(sign > 0) { //UP
+    if(channel == "combined") {
+      factors.push_back(sign*8.168063172601e-06);
+      factors.push_back(sign*0.0009124707096062);
+      factors.push_back(sign*0.0111233520372573);
+      factors.push_back(sign*0.0098913692334771);
+      factors.push_back(sign*0.0062381070978409);
+    }
+    else if(channel == "ee") {
+      factors.push_back(sign*5.581749066877e-06);
+      factors.push_back(sign*0.0008874106817139);
+      factors.push_back(sign*0.0105900284322784);
+      factors.push_back(sign*0.0101495535179591);
+      factors.push_back(sign*0.0069355904554989);
+    }
+    else if(channel == "emu") {
+      factors.push_back(sign*8.809070921388e-06);
+      factors.push_back(sign*0.0008053791464509);
+      factors.push_back(sign*0.0102688368994375);
+      factors.push_back(sign*0.0101243473610534);
+      factors.push_back(sign*0.0067963333840146);
+    }
+    else if(channel == "mumu") {
+      factors.push_back(sign*3.281991121312e-05);
+      factors.push_back(sign*0.0026738916729182);
+      factors.push_back(sign*0.0145095443535816);
+      factors.push_back(sign*0.0021253855992498);
+      factors.push_back(sign*0.0049853978806841);
+    }
   }
-  else if(channel == "ee") {
-    factors.push_back(sign*0.0763288813903998);
-    factors.push_back(sign*0.0503300069279420);
-    factors.push_back(sign*0.0238420006011287);
-    factors.push_back(sign*0.0046101541503047);
-    factors.push_back(sign*0.0047790035847131);
-  }
-  else if(channel == "emu") {
-    factors.push_back(sign*0.0670695871489987);
-    factors.push_back(sign*0.0476585735302661);
-    factors.push_back(sign*0.0226734244744536);
-    factors.push_back(sign*0.0047253493621820);
-    factors.push_back(sign*0.0046261863593219);
-  }
-  else if(channel == "mumu") {
-    factors.push_back(sign*0.0568253092458890);
-    factors.push_back(sign*0.0380155420000706);
-    factors.push_back(sign*0.0142127293134901);
-    factors.push_back(sign*0.0007652029412359);
-    factors.push_back(sign*0.0053693108289561);
+  else { // DOWN
+    if(channel == "combined") {
+      factors.push_back(sign*6.3784314243684e-06);
+      factors.push_back(sign*0.00074666229682289);
+      factors.push_back(sign*0.00954963729462566);
+      factors.push_back(sign*0.00898944642249271);
+      factors.push_back(sign*0.00719327826763064);
+    }
+    else if(channel == "ee") {
+      factors.push_back(sign*4.3486078704678e-06);
+      factors.push_back(sign*0.00072713567652888);
+      factors.push_back(sign*0.00910994908841739);
+      factors.push_back(sign*0.00925403208217536);
+      factors.push_back(sign*0.00789719413051872);
+    }
+    else if(channel == "emu") {
+      factors.push_back(sign*6.9003701981726e-06);
+      factors.push_back(sign*0.00065845393953116);
+      factors.push_back(sign*0.00880481866490506);
+      factors.push_back(sign*0.00915432198075124);
+      factors.push_back(sign*0.00776134985149956);
+    }
+    else if(channel == "mumu") {
+      factors.push_back(sign*2.605588249159e-05);
+      factors.push_back(sign*0.0021836202372247);
+      factors.push_back(sign*0.0123632588722757);
+      factors.push_back(sign*0.0024615775198128);
+      factors.push_back(sign*0.0058101384720149);
+    }
   }
 
   return factors;
