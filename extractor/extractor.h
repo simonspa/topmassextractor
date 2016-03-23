@@ -393,7 +393,7 @@ namespace massextractor {
   class extractorDiffXSecScaled : public extractorDiffXSec {
 
   private:
-    Double_t getReco(Int_t bin, Double_t mass, Double_t reco, Double_t bgr, Double_t ttbgr);
+    Double_t getSignal(Int_t bin, Double_t mass, Double_t data, Double_t reco=0, Double_t bgr=0, Double_t ttbgr=0);
 
     void prepareScaleFactors(TString systematic);
     std::vector<Double_t> getPDFScaleFactors(Int_t sign, TString channel);

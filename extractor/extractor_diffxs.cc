@@ -101,8 +101,8 @@ Double_t extractorDiffXSec::getReco(Int_t /*bin*/, Double_t /*mass*/, Double_t r
   return reco;
 }
 
-Double_t extractorDiffXSecScaled::getReco(Int_t bin, Double_t /*mass*/, Double_t reco, Double_t /*bgr*/, Double_t /*ttbgr*/) {
-  return (1+scaleFactors.at(bin))*reco;
+Double_t extractorDiffXSecScaled::getSignal(Int_t bin, Double_t /*mass*/, Double_t data, Double_t /*reco*/, Double_t /*bgr*/, Double_t /*ttbgr*/) {
+  return (1+scaleFactors.at(bin))*data;
 }
 
 TH1D * extractorDiffXSec::getSimulationHistogram(Double_t mass, TFile * histos) {
