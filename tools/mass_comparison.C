@@ -1,5 +1,6 @@
+#include "TCanvas.h"
 #include "TGraphAsymmErrors.h"
-#include "plotter.C"
+#include "../utils/plotter.cc"
 
 #define LEFT 155.0
 #define RIGHT 186.0
@@ -113,6 +114,6 @@ void mass_comparison() {
   drawMeasurement(4, "ATLAS tt+jet", "JHEP 10 (2015) 121", 173.7, 2.3, 2.1, 1.5, 1.5);
   drawMeasurement(3, "D0 9.7 fb^{-1} Preliminary", "D0 6453-CONF", 169.5, 3.3, 3.4);
   drawMeasurement(2, "CMS 7+8 TeV Preliminary", "PAS-TOP-13-004", 173.6, 1.7, 1.8);
-  drawMeasurement(1, "This Measurement", "", 168.2, 4.7, 2.1, 1.1, 1.1, true);
+  drawMeasurement(1, "This Measurement", "", 169.9, 4.5, 3.7, 1.1, 1.1, true);
 
 }
