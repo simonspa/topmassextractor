@@ -162,62 +162,62 @@ std::vector<Double_t> extractorDiffXSecScaled::getPDFScaleFactors(Int_t sign, TS
   // PDF scaling for all five bins:
   if(sign > 0) { //UP
     if(channel == "combined") {
-      factors.push_back(sign*8.168063172601e-06);
-      factors.push_back(sign*0.0009124707096062);
+      factors.push_back(sign*8.1680631726015e-06);
+      factors.push_back(sign*0.000912470709606207);
       factors.push_back(sign*0.0111233520372573);
-      factors.push_back(sign*0.0098913692334771);
-      factors.push_back(sign*0.0062381070978409);
+      factors.push_back(sign*0.00989136923347717);
+      factors.push_back(sign*0.00623810709784094);
     }
     else if(channel == "ee") {
-      factors.push_back(sign*5.581749066877e-06);
-      factors.push_back(sign*0.0008874106817139);
+      factors.push_back(sign*5.58174906687057e-06);
+      factors.push_back(sign*0.000887410681713953);
       factors.push_back(sign*0.0105900284322784);
       factors.push_back(sign*0.0101495535179591);
-      factors.push_back(sign*0.0069355904554989);
+      factors.push_back(sign*0.00693559045549897);
     }
     else if(channel == "emu") {
-      factors.push_back(sign*8.809070921388e-06);
-      factors.push_back(sign*0.0008053791464509);
+      factors.push_back(sign*8.80907092138881e-06);
+      factors.push_back(sign*0.00080537914645096);
       factors.push_back(sign*0.0102688368994375);
       factors.push_back(sign*0.0101243473610534);
-      factors.push_back(sign*0.0067963333840146);
+      factors.push_back(sign*0.00679633338401468);
     }
     else if(channel == "mumu") {
-      factors.push_back(sign*3.281991121312e-05);
-      factors.push_back(sign*0.0026738916729182);
+      factors.push_back(sign*3.28199112131248e-05);
+      factors.push_back(sign*0.00267389167291828);
       factors.push_back(sign*0.0145095443535816);
-      factors.push_back(sign*0.0021253855992498);
-      factors.push_back(sign*0.0049853978806841);
+      factors.push_back(sign*0.00212538559924986);
+      factors.push_back(sign*0.00498539788068414);
     }
   }
   else { // DOWN
     if(channel == "combined") {
-      factors.push_back(sign*6.3784314243684e-06);
-      factors.push_back(sign*0.00074666229682289);
+      factors.push_back(sign*6.37843142436847e-06);
+      factors.push_back(sign*0.000746662296822895);
       factors.push_back(sign*0.00954963729462566);
       factors.push_back(sign*0.00898944642249271);
       factors.push_back(sign*0.00719327826763064);
     }
     else if(channel == "ee") {
-      factors.push_back(sign*4.3486078704678e-06);
-      factors.push_back(sign*0.00072713567652888);
+      factors.push_back(sign*4.34860787046788e-06);
+      factors.push_back(sign*0.000727135676528885);
       factors.push_back(sign*0.00910994908841739);
       factors.push_back(sign*0.00925403208217536);
       factors.push_back(sign*0.00789719413051872);
     }
     else if(channel == "emu") {
-      factors.push_back(sign*6.9003701981726e-06);
-      factors.push_back(sign*0.00065845393953116);
+      factors.push_back(sign*6.90037019817256e-06);
+      factors.push_back(sign*0.000658453939531164);
       factors.push_back(sign*0.00880481866490506);
       factors.push_back(sign*0.00915432198075124);
       factors.push_back(sign*0.00776134985149956);
     }
     else if(channel == "mumu") {
-      factors.push_back(sign*2.605588249159e-05);
-      factors.push_back(sign*0.0021836202372247);
+      factors.push_back(sign*2.60558824915928e-05);
+      factors.push_back(sign*0.00218362023722474);
       factors.push_back(sign*0.0123632588722757);
-      factors.push_back(sign*0.0024615775198128);
-      factors.push_back(sign*0.0058101384720149);
+      factors.push_back(sign*0.00246157751981284);
+      factors.push_back(sign*0.00581013847201496);
     }
   }
 
