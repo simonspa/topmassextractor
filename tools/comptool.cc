@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
   Int_t output_bins = 0;
   std::string datahistogram = "";
   bool have_data = false;
+  bool rebin_data = false;
   bool mass_comparison = false;
   bool combined = false;
 
@@ -71,6 +72,8 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-o")) { outputpath = string(argv[++i]); }
     // Set "data" flag to rebin from data histogram:
     else if(!strcmp(argv[i],"-d")) { have_data = true; datahistogram = string(argv[++i]); }
+    // Set "rebin-only" flag to rebin from data histogram without adding it:
+    else if(!strcmp(argv[i],"-ro")) { rebin_data = true; datahistogram = string(argv[++i]); }
     // Set "masses" flag to draw differently:
     else if(!strcmp(argv[i],"-m")) { mass_comparison = true; }
     // Set some number of bins to rebin to:
@@ -104,50 +107,64 @@ int main(int argc, char* argv[]) {
     TDirectory *folder = output.mkdir(hist);
 
     // Get the reference sample:
-    LOG(logDEBUG) << "Getting reference from " << files.front();
-    TFile * referenceFile = new TFile(files.front().c_str());
-    TH1D * reference;
+    LOG(logDEBUG) << "Getting binning from " << files.front();
+    TFile * binningFile = new TFile(files.front().c_str());
+    TH1D * binningHist;
     Int_t rebinning;
-    TString referencename;
-    if(have_data) referencename = "Data";
-    else referencename = "MadGraph";
-    //else referencename = getSampleLabel(files.front().c_str());
 
     std::vector<Double_t> binning;
     // If we have data, get the binning from there:
-    if(have_data) {
+    if(have_data || rebin_data) {
       LOG(logDEBUG2) << "have data, fetching " << datahistogram;
-      reference = (TH1D*)(referenceFile->Get(datahistogram.c_str())->Clone());
+      binningHist = (TH1D*)(binningFile->Get(datahistogram.c_str())->Clone());
       LOG(logDEBUG2) << "Fetched successfully.";
-      reference->Scale(1/reference->Integral("width"));
 
-      int nbins = reference->GetNbinsX();
+      int nbins = binningHist->GetNbinsX();
       for (Int_t bin = 1; bin <= nbins; bin++) { 
-	binning.push_back(reference->GetBinLowEdge(bin));
+	binning.push_back(binningHist->GetBinLowEdge(bin));
       }
-      binning.push_back(reference->GetBinLowEdge(nbins) + reference->GetBinWidth(nbins));
+      binning.push_back(binningHist->GetBinLowEdge(nbins) + binningHist->GetBinWidth(nbins));
       LOG(logINFO) << "Rebinning with " << binning.size()-1 << " bins.";
 
     }
     // Otherwise rebin to CLI option or to default:
     else {
-      Int_t bins_now = ((TH1D*)referenceFile->Get(hist))->GetNbinsX();
+      Int_t bins_now = ((TH1D*)binningFile->Get(hist))->GetNbinsX();
       if(output_bins == 0) output_bins = bins_now;
-      LOG(logDEBUG2) << "Reference has " << bins_now << " bins, requested " << output_bins << ", dividing by " << (bins_now/output_bins);
+      LOG(logDEBUG2) << "Binning reference has " << bins_now << " bins, requested " << output_bins << ", dividing by " << (bins_now/output_bins);
       rebinning = bins_now/output_bins;
-      LOG(logDEBUG2) << "Fetching " << *hgrm;
-      reference = getNiceHistogram(binning, referenceFile, hist, rebinning);
+    }
+
+    // Getting the reference histogram:
+    bool have_reference = false;
+    TString referencename;
+    if(have_data) referencename = "Data";
+    else referencename = "MadGraph";
+    //else referencename = getSampleLabel(files.front().c_str());
+
+    TH1D * reference;
+    if (have_data) {
+      TFile * referenceFile = new TFile(files.front().c_str());
+      LOG(logDEBUG2) << "Have data, fetching " << datahistogram;
+      reference = (TH1D*)(referenceFile->Get(datahistogram.c_str())->Clone());
       LOG(logDEBUG2) << "Fetched successfully.";
+      reference->Scale(1/reference->Integral("width"));
+
+      have_reference = true;
+      files.erase(files.begin());
+    }
+    else if(rebin_data) {
+      // First histogram is data, but we don't use it:
+      files.erase(files.begin());
     }
     LOG(logDEBUG2) << "Skip reference file, " << files.size() << " files remaining.";
-
 
     LOG(logINFO) << "Fetching histograms " << *hgrm;
     // Prepare all input histograms:
     std::vector<TH1D*> myhistograms;
     std::vector<TString> myhistogramnames;
     TH1D * tempBinned, * tempBinned2, * tempBinned3;
-    for(std::vector<std::string>::iterator file = files.begin() + 1; file != files.end(); file++) {
+    for(std::vector<std::string>::iterator file = files.begin(); file != files.end(); file++) {
       LOG(logDEBUG) << "Attempting to open " << *file;
       TFile * tempFile = new TFile((*file).c_str());
       LOG(logDEBUG2) << "Opened successfully, attempting to read " << *hgrm;
@@ -188,23 +205,30 @@ int main(int argc, char* argv[]) {
 	LOG(logDEBUG2) << "First bin now contains: " << tempBinned->GetBinContent(1);
        }
 
-
-      myhistograms.push_back(tempBinned);
-
       // Get the name:
       TString name = (*file);
+      TString title;
       if(!mass_comparison) {
-	if(name.Contains("POWHEG_13")) { myhistogramnames.push_back("POWHEG ttJ"); }
-	else if(name.Contains("POWHEG_15")) { myhistogramnames.push_back("POWHEG ttJ (15)"); }
-	else if(name.Contains("POWHEG_16")) { myhistogramnames.push_back("POWHEG ttJ (16)"); }
-	else if(name.Contains("POWHEG_17")) { myhistogramnames.push_back("POWHEG ttJ (17)"); }
-	else if(name.Contains("powhegbox")) { myhistogramnames.push_back("POWHEG ttJ"); }
-	else if(name.Contains("powheg")) { myhistogramnames.push_back("POWHEG"); }
-	else if(name.Contains("Nominal")) { myhistogramnames.push_back("MadGraph"); }
-	else { myhistogramnames.push_back(getSampleLabel(name)); }
+	if(name.Contains("POWHEG_13")) { title = "POWHEG ttJ"; }
+	else if(name.Contains("alpha")) { title = "POWHEG ttJ, #alpha = 0.1273"; }
+	else if(name.Contains("POWHEG_15")) { title = "POWHEG ttJ (15)"; }
+	else if(name.Contains("POWHEG_16")) { title = "POWHEG ttJ (16)"; }
+	else if(name.Contains("POWHEG_17")) { title = "POWHEG ttJ, #alpha = 0.1365"; }
+	else if(name.Contains("SCALEUP")) { title = "ttJ PS Scale Up"; }
+	else if(name.Contains("SCALEDOWN")) { title = "ttJ PS Scale Down"; }
+	else if(name.Contains("SCALE_UP_nopt")) { title = "ttJ ME Scale Up (ptHard=0)"; }
+	else if(name.Contains("SCALE_DOWN_nopt")) { title = "ttJ ME Scale Down (ptHard=0)"; }
+	else if(name.Contains("SCALE_UP")) { title = "ttJ ME Scale Up"; }
+	else if(name.Contains("SCALE_DOWN")) { title = "ttJ ME Scale Down"; }
+	else if(name.Contains("nopthard")) { title = "POWHEG ttJ ptHard=0"; }
+	else if(name.Contains("powhegbox")) { title = "POWHEG ttJ"; }
+	else if(name.Contains("fxfx")) { title = "aMCatNLO fxfx"; }
+	else if(name.Contains("powheg")) { title = "POWHEG"; }
+	else if(name.Contains("Nominal")) { title = "MadGraph"; }
+	else { title = getSampleLabel(name); }
       }
       else {
-	if(name.Contains("MASS")) {
+	//if(name.Contains("MASS")) {
 	  Double_t mass = 0;
 	  if(name.Contains("178")) mass = 178.5;
 	  else if(name.Contains("175")) mass = 175.5;
@@ -213,11 +237,25 @@ int main(int argc, char* argv[]) {
 	  else if(name.Contains("massup")) mass = 173.5;
 	  else if(name.Contains("massdown")) mass = 172.5;
 	  else mass = 172.5;
-	  myhistogramnames.push_back(Form("m_{t}^{MC} = %3.1f GeV",mass)); }
-	else { myhistogramnames.push_back(getSampleLabel(name)); }
+	  
+	  //if(name.Contains("fxfx")) { title = Form("aMCatNLO fxfx, %3.1f GeV",mass); }
+	  if(name.Contains("fxfx")) { title = "aMCatNLO fxfx"; }
+	  else title = Form("m_{t}^{MC} = %3.1f GeV",mass); 
+	  //}
+	  //else { myhistogramnames.push_back(getSampleLabel(name)); }
       }
-      LOG(logDEBUG) << "Histogram read was: " << myhistogramnames.back();
+      LOG(logDEBUG) << "Histogram read was: " << title;
 
+      if(!have_reference) {
+	reference = tempBinned;
+	referencename = title;
+	have_reference = true;
+      }
+      else {
+	myhistograms.push_back(tempBinned);
+	myhistogramnames.push_back(title);
+      }
+      
       delete tempFile;
     }
 
@@ -238,11 +276,13 @@ int main(int argc, char* argv[]) {
     gStyle->SetOptTitle(0);
     if(!have_data) reference->SetMarkerStyle(0);
     setStyle(reference,"reference");
-    if(mass_comparison) { reference->SetMarkerStyle(0); }
+    //if(mass_comparison) { reference->SetMarkerStyle(0); }
     reference->SetLineColor(kBlack);
     reference->SetLineWidth(2);
     reference->SetTitle("");
-    if(!mass_comparison) { leg->AddEntry(reference,referencename,"lp"); }
+    //if(!mass_comparison) { 
+    leg->AddEntry(reference,referencename,"lp"); 
+    //}
 
     // Set axis label:
     std::string quantity = "";
@@ -290,19 +330,24 @@ int main(int argc, char* argv[]) {
 	  plothist->SetLineStyle(7);
 	}
 	else if(i == 1) {	plothist->SetLineColor(4); }
-	else if(i == 2) {	plothist->SetLineColor(kRed+1); }
+	else if(i == 2) {	plothist->SetLineColor(kGreen+1); }
 	else { plothist->SetLineColor(i+2); }
       }
       else {
-	if(i == 2 || i == 3) { plothist->SetLineStyle(7); }
+	if(i == 2) {
+	  plothist->SetLineColor(kGray+2);
+	}
+
+	if(i == 1 || i == 3) { plothist->SetLineStyle(7); }
 
 	if(i == 0) { plothist->SetLineColor(kRed+1); }
 	else if(i == 1) { plothist->SetLineColor(kOrange+8); }
-	else if(i == 2) { plothist->SetLineColor(kOrange-4); }
-	else if(i == 3) { plothist->SetLineColor(kAzure-3); }
-	else if(i == 4) { plothist->SetLineColor(kBlue-4); }
-	else if(i == 5) { plothist->SetLineColor(kBlue+2); }
-	else { plothist->SetLineColor(i+2); }
+	//else if(i == 2) { plothist->SetLineColor(kOrange-4); }
+	//else if(i == 3) { plothist->SetLineColor(kAzure-3); }
+	else if(i == 3) { plothist->SetLineColor(kBlue-4); }
+	else if(i == 4) { plothist->SetLineColor(kBlue+2); }
+	else if(i == 5) { plothist->SetLineColor(kGreen+1); }
+	//else { plothist->SetLineColor(i+2); }
       }
 
       plothist->SetMarkerStyle(0);
@@ -312,7 +357,7 @@ int main(int argc, char* argv[]) {
       plothist->Write(myhistogramnames.at(i));
       if(i < 7) denominators.push_back(plothist);
 
-      if(mass_comparison && i == (myhistograms.size()-1)/2) { leg->AddEntry(reference,referencename,"l"); }
+      //if(mass_comparison && i == (myhistograms.size()-1)/2) { leg->AddEntry(reference,referencename,"l"); }
     }
     leg->Draw();
 
@@ -328,11 +373,39 @@ int main(int argc, char* argv[]) {
     gStyle->SetHatchesSpacing(0.8);
     uncBand->SetMarkerStyle(0);
 
+    TGraphAsymmErrors * ratio_stat;
+    TGraphAsymmErrors * ratio_syst;
+    
+    const Int_t n = 5;
+    Double_t x[n]   = {0.1,0.25,0.38,0.53,0.8};
+    Double_t y[n]   = {1.0,1.0,1.0,1.0,1.0};
+    Double_t exl[n] = {0.1,.05,.08,.08,.2};
+    Double_t exh[n] = {0.1,.05,.08,.08,.2};
+
+    // STAT:
+    Double_t eyl[n] = {0.13,0.052,0.03,0.025,0.051};
+    // TOT
+    Double_t eyh[n] = {0.199,0.117,0.061,0.048,0.097};
+
+    ratio_stat = new TGraphAsymmErrors(n,x,y,exl,exh,eyl,eyl);
+    //ratio_stat->SetFillStyle(3005);
+    ratio_stat->SetFillColor(kOrange-4);
+    ratio_stat->SetLineColor(0);
+
+    ratio_syst = new TGraphAsymmErrors(n,x,y,exl,exh,eyh,eyh);
+    //ratio_syst->SetFillStyle(3005);
+    ratio_syst->SetFillColor(kGray+2);
+    ratio_syst->SetLineColor(0);
+
     // Draw the ratio pad:
-    massextractor::drawRatio(reference, denominators.at(0), uncBand,
-			     NULL, NULL, 
+    massextractor::drawRatio(reference, denominators.at(0), 
+			     uncBand,
+			     //NULL, 
+			     //ratio_stat, ratio_syst, 
+			     NULL, NULL,
 			     denominators.at(1), denominators.at(2), denominators.at(3), denominators.at(4), denominators.at(5), denominators.at(6), 
-			     0.5,1.5,have_data);
+			     0.7,1.5,have_data);
+
 
     c->Update();
     c->Modified();
